@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("HostelTransportAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c2e11757fc692954b1f878d5500b096c8aed612f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f86837994aca3ae1fb0c82ca90fb87a3254a7451")]
 [assembly: System.Reflection.AssemblyProductAttribute("HostelTransportAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("HostelTransportAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

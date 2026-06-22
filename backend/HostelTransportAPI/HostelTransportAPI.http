@@ -1,4 +1,4 @@
-@HostelTransportAPI_HostAddress = https://esklimo-subtype-snoring.ngrok-free.dev
+@HostelTransportAPI_HostAddress = @HostelTransportAPI_HostAddress = http://localhost:5077
 
 GET {{HostelTransportAPI_HostAddress}}/weatherforecast/
 Accept: application/json

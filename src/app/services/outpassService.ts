@@ -1,4 +1,4 @@
-const API_URL = "https://esklimo-subtype-snoring.ngrok-free.dev";
+const API_URL = "http://localhost:5077/api/outpasses";
 
 export const createOutpass = async (data: any) => {
   const response = await fetch(API_URL, {
@@ -27,11 +27,8 @@ async (studentId: string) => {
 };
 
 
-
 export const getAllOutpasses = async () => {
-  const response = await fetch(
-    "https://esklimo-subtype-snoring.ngrok-free.dev/api/outpasses"
-  );
+  const response = await fetch(API_URL);
 
   if (!response.ok) {
     throw new Error("Failed to load outpasses");
@@ -39,12 +36,11 @@ export const getAllOutpasses = async () => {
 
   return response.json();
 };
-
 export const approveOutpass = async (
   id: number
 ) => {
   const response = await fetch(
-    `https://esklimo-subtype-snoring.ngrok-free.dev/api/outpasses/approve/${id}`,
+  `${API_URL}/approve/${id}`,
     {
       method: "PUT",
     }
@@ -57,7 +53,7 @@ export const rejectOutpass = async (
   id: number
 ) => {
   const response = await fetch(
-    `https://esklimo-subtype-snoring.ngrok-free.dev/api/outpasses/reject/${id}`,
+   `${API_URL}/reject/${id}`,
     {
       method: "PUT",
     }

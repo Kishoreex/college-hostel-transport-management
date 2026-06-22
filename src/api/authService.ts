@@ -4,7 +4,7 @@ export async function login(
   module: string
 ) {
   const response = await fetch(
-   "http://localhost:5077/api/Auth/login",
+   "https://college-hostel-transport-management.onrender.com/api/Auth/login",
     {
       method: "POST",
       headers: {

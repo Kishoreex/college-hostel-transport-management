@@ -1,4 +1,4 @@
-@HostelTransportAPI_HostAddress = @HostelTransportAPI_HostAddress = http://localhost:5077
+@HostelTransportAPI_HostAddress = @HostelTransportAPI_HostAddress = https://college-hostel-transport-management.onrender.com
 
 GET {{HostelTransportAPI_HostAddress}}/weatherforecast/
 Accept: application/json

@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5077/api/outpasses";
+const API_URL = "https://college-hostel-transport-management.onrender.com/api/outpasses";
 
 export const createOutpass = async (data: any) => {
   const response = await fetch(API_URL, {

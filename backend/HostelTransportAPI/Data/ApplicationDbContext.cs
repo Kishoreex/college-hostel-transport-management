@@ -16,6 +16,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<ActivityLog> ActivityLogs { get; set; }
     public DbSet<StudentRegistration> StudentRegistrations => Set<StudentRegistration>();
     public DbSet<TransportRegistration> TransportRegistrations { get; set; }
+    public DbSet<TransportRoute> TransportRoutes { get; set; }
+
+public DbSet<TransportStop> TransportStops { get; set; }
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<NotificationSetting> NotificationSettings { get; set; }
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();

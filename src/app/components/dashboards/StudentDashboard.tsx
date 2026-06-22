@@ -171,21 +171,60 @@ const activeOutpass = outpasses.find(
     }
   );
 
-  const timer = setInterval(() => {
+const timer = setInterval(() => {
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        console.log(
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+
+      const distance =
+        getDistanceMeters(
+          HOSTEL_LAT,
+          HOSTEL_LNG,
           position.coords.latitude,
           position.coords.longitude
         );
-      },
-      (error) => {
-        console.log(error);
-      }
-    );
 
-  }, 15000);
+      console.log("Distance:", distance);
+
+      if (
+        distance > GEOFENCE_RADIUS &&
+        !activeOutpass.actualExitTime
+      ) {
+
+        await markExit(
+          activeOutpass.id,
+          position.coords.latitude,
+          position.coords.longitude
+        );
+
+        await loadOutpasses();
+
+        toast.success("Exit Recorded");
+      }
+
+      if (
+        distance <= GEOFENCE_RADIUS &&
+        activeOutpass.actualExitTime &&
+        !activeOutpass.actualReturnTime
+      ) {
+
+        await markReturn(
+          activeOutpass.id,
+          position.coords.latitude,
+          position.coords.longitude
+        );
+
+        await loadOutpasses();
+
+        toast.success("Return Recorded");
+      }
+    },
+    (error) => {
+      console.log(error);
+    }
+  );
+
+}, 15000);
 
   return () => clearInterval(timer);
 

@@ -2,7 +2,7 @@ import {
   registerStudent,
   submitTransportRegistration
 } from "../../../api/registrationService";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, ChevronRight } from 'lucide-react';
 import type { ServiceType } from '../../types';
 
@@ -36,15 +36,18 @@ const batches = [
   '2026-2030',
 ];
 
-const busRoutes = [
-  { id: 'R1', name: 'Route 1 - Anna Nagar', bus: 'TN-01-AB-1234', driver: 'Mr. Kumar', stops: ['Anna Nagar', 'Kilpauk', 'Shenoy Nagar'] },
-  { id: 'R2', name: 'Route 2 - Tambaram', bus: 'TN-01-CD-5678', driver: 'Mr. Ravi', stops: ['Tambaram', 'Chromepet', 'Pallavaram'] },
-  { id: 'R3', name: 'Route 3 - Velachery', bus: 'TN-01-EF-9012', driver: 'Mr. Siva', stops: ['Velachery', 'Adyar', 'Guindy'] },
-  { id: 'R4', name: 'Route 4 - OMR', bus: 'TN-01-GH-3456', driver: 'Mr. Raja', stops: ['Sholinganallur', 'Perungudi', 'Thoraipakkam'] },
-  { id: 'R5', name: 'Route 5 - GST Road', bus: 'TN-01-IJ-7890', driver: 'Mr. Balu', stops: ['St. Thomas Mount', 'Meenambakkam', 'Nanganallur'] },
-];
 
 export default function Registration({ serviceType, onBack, onSuccess }: RegistrationProps) {
+  const [routes, setRoutes] = useState<any[]>([]);
+
+const [selectedRoute, setSelectedRoute] =
+  useState<any>(null);
+
+useEffect(() => {
+  fetch("https://localhost:5001/api/transportroutes")
+    .then(res => res.json())
+    .then(data => setRoutes(data));
+}, []);
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     college: '',
@@ -64,18 +67,27 @@ export default function Registration({ serviceType, onBack, onSuccess }: Registr
   });
 
   const [departments, setDepartments] = useState<string[]>([]);
-  const [selectedRoute, setSelectedRoute] = useState<typeof busRoutes[0] | null>(null);
+
+  
 
   const handleCollegeChange = (college: string) => {
     setFormData({ ...formData, college, department: '' });
     setDepartments(departmentsByCollege[college] || []);
   };
 
-  const handleRouteChange = (routeId: string) => {
-    const route = busRoutes.find((r) => r.id === routeId);
-    setSelectedRoute(route || null);
-    setFormData({ ...formData, busRoute: routeId, busStop: '' });
-  };
+ const handleRouteChange = (routeId: string) => {
+  const route = routes.find(
+    (r: any) => r.id.toString() === routeId
+  );
+
+  setSelectedRoute(route);
+
+  setFormData({
+    ...formData,
+    busRoute: routeId,
+    busStop: ""
+  });
+};
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
   const handleBackStep = () => setActiveStep((prev) => prev - 1);
@@ -378,9 +390,14 @@ return formData.fullName &&
                     required
                   >
                     <option value="">Select Route</option>
-                    {busRoutes.map((route) => (
-                      <option key={route.id} value={route.id}>{route.name}</option>
-                    ))}
+                    {routes.map((route) => (
+  <option
+    key={route.id}
+    value={route.id}
+  >
+    {route.routeName}
+  </option>
+))}
                   </select>
                 </div>
 
@@ -388,9 +405,26 @@ return formData.fullName &&
                   <div className="bg-green-50 rounded-2xl p-4 border-2 border-green-300">
                     <p className="text-sm font-bold text-green-900 mb-2">Bus Details</p>
                     <div className="space-y-1 text-sm text-green-800">
-                      <p><span className="font-medium">Bus Number:</span> {selectedRoute.bus}</p>
-                      <p><span className="font-medium">Driver:</span> {selectedRoute.driver}</p>
-                      <p><span className="font-medium">Stops:</span> {selectedRoute.stops.join(' → ')}</p>
+                      <p>
+  <span className="font-medium">
+    Bus Number:
+  </span>
+  {selectedRoute.busNumber}
+</p>
+
+<p>
+  <span className="font-medium">
+    Driver:
+  </span>
+  {selectedRoute.driverName}
+</p>
+
+<p>
+  <span className="font-medium">
+    Stops:
+  </span>
+  {selectedRoute.stops?.length}
+</p>
                     </div>
                   </div>
                 )}
@@ -405,9 +439,14 @@ return formData.fullName &&
                     required
                   >
                     <option value="">Select Stop</option>
-                    {(selectedRoute?.stops || []).map((stop) => (
-                      <option key={stop} value={stop}>{stop}</option>
-                    ))}
+                  {selectedRoute?.stops?.map((stop: any) => (
+  <option
+    key={stop.id}
+    value={stop.id}
+  >
+    {stop.stopName}
+  </option>
+))}
                   </select>
                   {!selectedRoute && <p className="text-white/80 text-xs mt-2">Please select a route first</p>}
                 </div>

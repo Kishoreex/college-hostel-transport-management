@@ -164,3 +164,4 @@ D:\College Hostel Transport Management\backend\HostelTransportAPI\obj\Debug\net1
 D:\College Hostel Transport Management\backend\HostelTransportAPI\obj\Debug\net10.0\HostelTransportAPI.pdb
 D:\College Hostel Transport Management\backend\HostelTransportAPI\obj\Debug\net10.0\HostelTransportAPI.genruntimeconfig.cache
 D:\College Hostel Transport Management\backend\HostelTransportAPI\obj\Debug\net10.0\ref\HostelTransportAPI.dll
+D:\College Hostel Transport Management\backend\HostelTransportAPI\obj\Debug\net10.0\HostelTransportAPI.sourcelink.json

@@ -4,7 +4,7 @@ export async function login(
   module: string
 ) {
   const response = await fetch(
-    "https://esklimo-subtype-snoring.ngrok-free.dev",
+    "https://esklimo-subtype-snoring.ngrok-free.dev/api/Auth/login",
     {
       method: "POST",
       headers: {

@@ -941,25 +941,59 @@ const displayStudents =
   );
 })
 .map(h => {
-                      const isOut = !h.actualReturnTime;
-                     const delayMins =
-  h.lateMinutes || 0;
-                      const isDelayed = delayMins > 0;
-                      const isCurrentlyLate = isOut; // still outside past expected time
+     const waitingForExit =
+  !h.actualExitTime;
+
+const exitedEarly =
+  h.actualExitTime &&
+  new Date(h.actualExitTime) <
+  new Date(
+    `${h.validFrom.split("T")[0]}T${h.timeOut}`
+  );
+
+const stillOut =
+  h.actualExitTime &&
+  !h.actualReturnTime;
+
+const overdue =
+  stillOut &&
+  new Date() >
+  new Date(
+    `${h.validTo.split("T")[0]}T${h.returnTime}`
+  );
+
+const returnedLate =
+  h.actualReturnTime &&
+  (h.lateMinutes || 0) > 0;
+
+const delayMins =
+  h.lateMinutes || 0;// still outside past expected time
                       return (
-                        <div key={h.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${isCurrentlyLate ? 'border-red-300' : isDelayed ? 'border-amber-200' : 'border-gray-100'}`}>
+                        <div key={h.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${overdue ? 'border-red-300' : returnedLate ? 'border-amber-200' : 'border-gray-100'}`}>
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center space-x-3">
-                              <div className={`p-2.5 rounded-xl ${isCurrentlyLate ? 'bg-red-100' : isDelayed ? 'bg-amber-100' : 'bg-green-100'}`}>
-                                <UserCircle size={20} className={isCurrentlyLate ? 'text-red-500' : isDelayed ? 'text-amber-600' : 'text-green-600'} />
+                              <div className={`p-2.5 rounded-xl ${overdue ? 'bg-red-100' : returnedLate ? 'bg-amber-100' : 'bg-green-100'}`}>
+                                <UserCircle size={20} className={overdue ? 'text-red-500' : returnedLate ? 'text-amber-600' : 'text-green-600'} />
                               </div>
                               <div>
                                 <p className="font-bold text-gray-800 text-sm">{h.studentName}</p>
                                 <p className="text-xs text-gray-400">{h.studentId}</p>
                               </div>
                             </div>
-                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isCurrentlyLate ? 'bg-red-100 text-red-700' : isDelayed ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
-                              {isCurrentlyLate ? '🔴 Still Out' : isDelayed ? '⚠️ Delayed' : '✅ On Time'}
+                            <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${overdue ? 'bg-red-100 text-red-700' : returnedLate ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                             {
+waitingForExit
+? '🟡 Waiting For Exit'
+: exitedEarly
+? '🔴 Exited Early'
+: overdue
+? '🔴 Overdue'
+: returnedLate
+? '⚠️ Returned Late'
+: h.actualReturnTime
+? '✅ Returned'
+: '🟢 Outside With Valid Outpass'
+}
                             </span>
                           </div>
                           <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
@@ -972,19 +1006,19 @@ const displayStudents =
                             {h.actualReturnTime && (
                               <div className="flex justify-between text-sm">
                                 <span className="text-gray-400">Actual Return</span>
-                                <span className={`font-medium ${isDelayed ? 'text-amber-600' : 'text-green-600'}`}>{new Date(
+                                <span className={`font-medium ${returnedLate ? 'text-amber-600' : 'text-green-600'}`}>{new Date(
   h.actualReturnTime
-).toLocaleString()}{h.actualReturn}</span>
+).toLocaleString()}{h.actualReturnTime}</span>
                               </div>
                             )}
                           </div>
-                          {isDelayed && h.actualReturn && (
+                          {returnedLate && h.actualReturnTime && (
                             <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
                               <Clock size={14} className="text-amber-600 shrink-0" />
-                              <p className="text-xs text-amber-800 font-semibold">Returned {delayMins} min{delayMins !== 1 ? 's' : ''} late — entered campus at {h.actualReturn}</p>
+                              <p className="text-xs text-amber-800 font-semibold">Returned {delayMins} min{delayMins !== 1 ? 's' : ''} late — entered campus at {h.actualReturnTime}</p>
                             </div>
                           )}
-                          {isCurrentlyLate && (
+                          {overdue && (
                             <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-2.5 mt-3">
                               <AlertCircle size={14} className="text-red-500 shrink-0" />
                               <p className="text-xs text-red-700 font-semibold">Student has not returned yet — expected by {h.expectedReturn}</p>
@@ -1008,7 +1042,13 @@ const displayStudents =
                         <div key={h.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${isOut ? 'border-red-300' : isDelayed ? 'border-amber-200' : 'border-gray-100'}`}>
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center space-x-3">
-                              <div className={`p-2.5 rounded-xl ${isOut ? 'bg-red-100' : isDelayed ? 'bg-amber-100' : 'bg-teal-100'}`}>
+                              <div className={`p-2.5 rounded-xl ${
+   isOut
+    ? 'bg-red-100'
+    : isDelayed
+    ? 'bg-amber-100'
+    : 'bg-green-100'
+}`}>
                                 <UserCircle size={20} className={isOut ? 'text-red-500' : isDelayed ? 'text-amber-600' : 'text-teal-600'} />
                               </div>
                               <div>
@@ -1035,16 +1075,24 @@ const displayStudents =
                             {h.actualReturn && h.campus === 'outcampus' && (
                               <div className="flex justify-between text-sm">
                                 <span className="text-gray-400">Actual Return</span>
-                                <span className={`font-medium ${isDelayed ? 'text-amber-600' : 'text-green-600'}`}>{h.actualReturn}</span>
+                               <span className={`font-medium ${
+  isDelayed
+
+    ? 'text-amber-600'
+    : 'text-green-600'
+}`}>{h.actualReturn}</span>
                               </div>
                             )}
                           </div>
-                          {isDelayed && h.actualReturn && (
-                            <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
-                              <Clock size={14} className="text-amber-600 shrink-0" />
-                              <p className="text-xs text-amber-800 font-semibold">Returned {delayDays} day{delayDays !== 1 ? 's' : ''} late — entered campus on {h.actualReturn}</p>
-                            </div>
-                          )}
+                       {isDelayed && h.actualReturn && (
+  <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
+    <Clock size={14} className="text-amber-600 shrink-0" />
+    <p className="text-xs text-amber-800 font-semibold">
+      Returned {delayDays} day{delayDays !== 1 ? 's' : ''} late —
+      entered campus on {h.actualReturn}
+    </p>
+  </div>
+)}
                           {isOut && (
                             <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-2.5 mt-3">
                               <AlertCircle size={14} className="text-red-500 shrink-0" />

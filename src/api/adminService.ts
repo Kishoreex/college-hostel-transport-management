@@ -1,0 +1,20 @@
+const API_URL = "http://192.168.0.167:5077/api";
+
+export async function getRegistrations() {
+  const response = await fetch(
+    `${API_URL}/StudentRegistrations`
+  );
+
+  return await response.json();
+}
+
+export async function approveStudent(id: number) {
+  const response = await fetch(
+    `${API_URL}/StudentRegistrations/approve/${id}`,
+    {
+      method: "POST"
+    }
+  );
+
+  return await response.json();
+}

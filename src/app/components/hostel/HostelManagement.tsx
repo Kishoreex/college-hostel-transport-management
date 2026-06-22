@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../common/DashboardLayout';
 import type { User } from '../../types';
+import API_URL from "../../../api/api";
 
 interface HostelManagementProps {
   user: User;
@@ -313,7 +314,7 @@ setOutpasses(data);
   const loadApplications = async () => {
   try {
     const response = await fetch(
-      "http://192.168.0.167:5077/api/StudentRegistrations"
+      `${API_URL}/api/StudentRegistrations`
     );
 
     const data = await response.json();
@@ -1166,7 +1167,7 @@ waitingForExit
                         <button
                         onClick={async () => {
     await fetch(
-      `http://192.168.0.167:5077/api/StudentRegistrations/approve/${app.id}`,
+      `${API_URL}/api/StudentRegistrations/approve/${app.id}`,
       {
         method: "POST"
       }
@@ -1181,7 +1182,7 @@ waitingForExit
                         <button 
                         onClick={async () => {
     await fetch(
-      `http://192.168.0.167:5077/api/StudentRegistrations/reject/${app.id}`,
+      `${API_URL}/api/StudentRegistrations/reject/${app.id}`,
       {
         method: "POST"
       }

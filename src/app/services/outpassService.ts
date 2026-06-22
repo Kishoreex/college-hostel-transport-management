@@ -1,4 +1,4 @@
-const API_URL = "http://192.168.0.167:5077/api/outpasses";
+const API_URL = "https://esklimo-subtype-snoring.ngrok-free.dev";
 
 export const createOutpass = async (data: any) => {
   const response = await fetch(API_URL, {
@@ -30,7 +30,7 @@ async (studentId: string) => {
 
 export const getAllOutpasses = async () => {
   const response = await fetch(
-    "http://192.168.0.167:5077/api/outpasses"
+    "https://esklimo-subtype-snoring.ngrok-free.dev/api/outpasses"
   );
 
   if (!response.ok) {
@@ -44,7 +44,7 @@ export const approveOutpass = async (
   id: number
 ) => {
   const response = await fetch(
-    `http://192.168.0.167:5077/api/outpasses/approve/${id}`,
+    `https://esklimo-subtype-snoring.ngrok-free.dev/api/outpasses/approve/${id}`,
     {
       method: "PUT",
     }
@@ -57,7 +57,7 @@ export const rejectOutpass = async (
   id: number
 ) => {
   const response = await fetch(
-    `http://192.168.0.167:5077/api/outpasses/reject/${id}`,
+    `https://esklimo-subtype-snoring.ngrok-free.dev/api/outpasses/reject/${id}`,
     {
       method: "PUT",
     }

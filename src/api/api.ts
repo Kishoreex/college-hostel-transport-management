@@ -1,3 +1,3 @@
-const API_URL = "http://192.168.0.167:5077/api";
+const API_URL = "https://esklimo-subtype-snoring.ngrok-free.dev";
 
 export default API_URL;

@@ -1,6 +1,8 @@
+import API_URL from "./api";
+
 export async function approveTransportStudent(id: number) {
   const response = await fetch(
-    `http://192.168.0.167:5077/api/TransportRegistrations/approve/${id}`,
+    `${API_URL}/api/TransportRegistrations/approve/${id}`,
     {
       method: "POST"
     }
@@ -15,7 +17,7 @@ export async function approveTransportStudent(id: number) {
 
 export async function rejectTransportStudent(id: number) {
   const response = await fetch(
-    `http://192.168.0.167:5077/api/TransportRegistrations/reject/${id}`,
+    `${API_URL}/api/TransportRegistrations/reject/${id}`,
     {
       method: "POST"
     }
@@ -29,7 +31,7 @@ export async function rejectTransportStudent(id: number) {
 }
 export async function getTransportApplications() {
   const response = await fetch(
-    "http://192.168.0.167:5077/api/TransportRegistrations"
+    `${API_URL}/api/TransportRegistrations`
   );
 
   return await response.json();

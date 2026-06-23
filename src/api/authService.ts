@@ -3,20 +3,20 @@ export async function login(
   password: string,
   module: string
 ) {
-  const response = await fetch(
-   "https://college-hostel-transport-management.onrender.com/api/Auth/login",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        userId,
-        password,
-        module
-      })
-    }
-  );
+const response = await fetch(
+  "http://localhost:10000/api/Auth/login",
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      userId,
+      password,
+      module
+    })
+  }
+);
 
   if (!response.ok) {
     throw new Error("Login Failed");

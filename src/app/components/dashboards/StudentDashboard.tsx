@@ -4,6 +4,11 @@ import {
   markExit,
   markReturn
 } from "../../services/outpassService";
+import {
+  createVacatingRequest,
+  getStudentVacatingRequest
+} from "../../../api/vacatingService";
+
 import { useState, useRef, useEffect } from 'react';  
 import { toast } from 'sonner';
 import {
@@ -91,7 +96,31 @@ export default function StudentDashboard({ user, onLogout }: StudentDashboardPro
   const [vacateDialogOpen, setVacateDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [vacateReason, setVacateReason] = useState('');
+  const [
+  vacatingRequest,
+  setVacatingRequest
+] = useState<any>(null);
+const handleVacateSubmit = async () => {
+  try {
+  await createVacatingRequest({
+    studentId: user.studentId,
+      studentName: user.name,
+    reason: vacateReason
+  });
+await loadVacatingRequest();
+  toast.success(
+    "Vacating request submitted!"
+  );
 
+  setVacateDialogOpen(false);
+  setVacateReason("");
+}
+catch (error: any) {
+  toast.error(
+    "You already have a pending vacating request."
+  );
+}
+};
   const [outpassForm, setOutpassForm] = useState({
     reason: '',
     destination: '',
@@ -136,6 +165,20 @@ export default function StudentDashboard({ user, onLogout }: StudentDashboardPro
 };
 useEffect(() => {
   loadOutpasses();
+}, []);
+
+const loadVacatingRequest =
+  async () => {
+    const data =
+      await getStudentVacatingRequest(
+        user.studentId || ""
+      );
+
+    setVacatingRequest(data);
+  };
+
+useEffect(() => {
+  loadVacatingRequest();
 }, []);
   const [outpasses, setOutpasses] =
 useState<any[]>([]);
@@ -330,7 +373,17 @@ await loadOutpasses();
     { icon: <Calendar size={22} />, label: 'Apply Leave', active: currentView === 'leave', onClick: () => { setCurrentView('dashboard'); setLeaveDialogOpen(true); } },
     { icon: <History size={22} />, label: 'Request History', active: currentView === 'history', onClick: () => setCurrentView('history') },
     { icon: <UserIcon size={22} />, label: 'My Profile', active: false, onClick: () => { setProfileDialogOpen(true); setProfileTab('info'); } },
-    { icon: <LogOut size={22} />, label: 'Vacate Hostel', active: currentView === 'vacate', onClick: () => { setCurrentView('dashboard'); setVacateDialogOpen(true); } },
+   ...(vacatingRequest?.status !== "Pending"
+  ? [{
+      icon: <LogOut size={22} />,
+      label: 'Vacate Hostel',
+      active: currentView === 'vacate',
+      onClick: () => {
+        setCurrentView('dashboard');
+        setVacateDialogOpen(true);
+      }
+    }]
+  : []),
   ];
 
   const transportMenuItems: MenuItemType[] = [
@@ -527,7 +580,15 @@ await loadOutpasses();
             {/* HOSTEL VIEW */}
             {isHostel && (
               
-              <>
+              <>{vacatingRequest?.status === "Pending" && (
+  <Card sx={{ borderRadius: 3 }}>
+    <CardContent>
+      <p className="text-orange-600 font-semibold">
+        Your vacating request is pending approval.
+      </p>
+    </CardContent>
+  </Card>
+)}
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
@@ -954,10 +1015,7 @@ await loadOutpasses();
                   <span className="text-gray-600">Name:</span>
                   <span className="font-medium text-gray-800">{user.name}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Department:</span>
-                  <span className="font-medium text-gray-800">{user.department}</span>
-                </div>
+             
               </div>
             </CardContent>
           </Card>
@@ -982,13 +1040,15 @@ await loadOutpasses();
               Cancel
             </button>
             <button
-              onClick={() => {
-                if (vacateReason.trim()) {
-                  toast.success('Vacating request submitted!', { description: 'The warden will review your request.' });
-                  setVacateDialogOpen(false);
-                  setVacateReason('');
-                }
-              }}
+             onClick={() => {
+  if (!vacateReason.trim()) {
+    toast.error("Enter reason");
+    return;
+  }
+
+  handleVacateSubmit();
+}}
+
               disabled={!vacateReason.trim()}
               className="flex-1 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform disabled:opacity-50"
             >

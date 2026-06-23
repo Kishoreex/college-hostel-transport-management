@@ -23,6 +23,9 @@ public DbSet<TransportStop> TransportStops { get; set; }
     public DbSet<NotificationSetting> NotificationSettings { get; set; }
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<Outpass> Outpasses => Set<Outpass>();
+    public DbSet<VacatingRequest> VacatingRequests => Set<VacatingRequest>();
+    public DbSet<HostelRoomAllocation> HostelRoomAllocations => Set<HostelRoomAllocation>();
+    public DbSet<HostelRoom> HostelRooms => Set<HostelRoom>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

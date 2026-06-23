@@ -3,6 +3,18 @@ import {
   approveOutpass,
   rejectOutpass
 } from "../../services/outpassService";
+import {
+  getAllVacatingRequests,
+  approveVacatingRequest,
+  rejectVacatingRequest
+} from "../../services/vacatingService";
+import {
+  getAllRooms,
+  createRoom
+} from "../../services/hostelRoomService";
+import {
+  getAllRoomAllocations
+} from "../../services/hostelRoomAllocationService";
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
@@ -228,12 +240,69 @@ const [roomGender, setRoomGender] =
 const [outpassGender, setOutpassGender] =
   useState<'boys' | 'girls'>(defaultGender);
 
+
+  const [vacatingGender, setVacatingGender] =
+  useState<'boys' | 'girls'>(defaultGender);
 const [historyGender, setHistoryGender] =
   useState<'boys' | 'girls'>(defaultGender);
   const [historyType, setHistoryType] = useState<'outpass' | 'leave'>('outpass');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(null);
-  const [rooms, setRooms] = useState<RoomData[]>(seedRooms);
+const [rooms, setRooms] = useState<any[]>([]);
+
+useEffect(() => {
+  loadRooms();
+}, []);
+
+
+  const loadRooms = async () => {
+  try {
+    const roomsData = await getAllRooms();
+    const allocationsData =
+      await getAllRoomAllocations();
+
+    const rooms = roomsData.map(
+      (room: any) => ({
+        roomNumber: room.roomNumber,
+        capacity: room.capacity,
+        gender:
+          room.gender?.toLowerCase() === "male"
+            ? "boys"
+            : "girls",
+
+        students: allocationsData
+          .filter(
+            (a: any) =>
+              a.roomNumber === room.roomNumber
+          )
+          .map((a: any) => ({
+            id: a.studentId,
+            name: a.studentName,
+            phone: "",
+            college: "",
+            department: "",
+            year: "",
+            batch: "",
+            parentName: "",
+            parentPhone: "",
+            address: "",
+            roomNumber: a.roomNumber,
+            gender:
+              a.gender?.toLowerCase() === "male"
+                ? "boys"
+                : "girls",
+            roommates: []
+          }))
+      })
+    );
+
+    console.log("ROOMS:", rooms);
+
+    setRooms(rooms);
+  } catch (error) {
+    console.error(error);
+  }
+};
   const [outpasses, setOutpasses] =
   useState<any[]>([]);
 
@@ -273,7 +342,53 @@ console.log("API DATA:", data);
 
 setOutpasses(data);
 };
-  const [vacatingRequests, setVacatingRequests] = useState<VacatingRequest[]>(seedVacatingRequests);
+  const [vacatingRequests, setVacatingRequests] =
+  useState<any[]>([]);
+  useEffect(() => {
+  loadVacatingRequests();
+}, []);
+
+const loadVacatingRequests =
+  async () => {
+    const data =
+      await getAllVacatingRequests();
+console.log(vacatingRequests);
+  console.log(data);
+    setVacatingRequests(data);
+  };
+  const handleApproveVacating =
+  async (id: number) => {
+    try {
+      await approveVacatingRequest(id);
+
+      toast.success(
+        "Vacating Request Approved"
+      );
+
+      loadVacatingRequests();
+    } catch {
+      toast.error(
+        "Approval Failed"
+      );
+    }
+  };
+
+const handleRejectVacating =
+  async (id: number) => {
+    try {
+      await rejectVacatingRequest(id);
+
+      toast.success(
+        "Vacating Request Rejected"
+      );
+
+      loadVacatingRequests();
+    } catch {
+      toast.error(
+        "Reject Failed"
+      );
+    }
+  };
   const [applications, setApplications] = useState([]);
   const pendingOutpasses = outpasses.filter(o => {
   const gender = o.gender?.toLowerCase();
@@ -338,6 +453,14 @@ const boysCount =
 const girlsCount =
   visibleStudents.filter(s => s.gender === "girls").length;
 
+  const filteredVacatingRequests =
+  vacatingRequests.filter(req => {
+    const gender = req.gender?.toLowerCase();
+
+    return vacatingGender === "boys"
+      ? gender === "male"
+      : gender === "female";
+  });
   const filteredRooms = rooms.filter(r => r.gender === roomGender);
   const allStudentsFlat = rooms.flatMap(r => r.students);
   const filteredStudents = allStudentsFlat.filter(student => {
@@ -369,12 +492,37 @@ const displayStudents =
     setRejectSheet({ open: false, id: '', type: '' });
     setRejectRemark('');
   };
+const handleAddRoom = async () => {
+  try {
+    await createRoom({
+      gender:
+        roomGender === "boys"
+          ? "Male"
+          : "Female",
 
-  const handleAddRoom = () => {
-    if (!newRoomNum || !newRoomCap) return;
-    setRooms(prev => [...prev, { roomNumber: newRoomNum, capacity: parseInt(newRoomCap), gender: roomGender, students: [] }]);
-    setNewRoomNum(''); setNewRoomCap(''); setAddRoomSheet(false);
-  };
+      block:
+        roomGender === "boys"
+          ? "B"
+          : "G",
+
+      roomNumber: newRoomNum,
+      capacity: Number(newRoomCap),
+      status: "Available"
+    });
+
+    await loadRooms();
+
+    setNewRoomNum("");
+    setNewRoomCap("");
+    setAddRoomSheet(false);
+
+    toast.success("Room Added Successfully");
+  } catch (error) {
+    console.error(error);
+
+    toast.error("Failed To Add Room");
+  }
+};
 
   const handleEditRoom = () => {
     if (!editRoomSheet.room) return;
@@ -837,15 +985,15 @@ const displayStudents =
     ? ['girls']
     : ['boys']
 ).map(g => (
-                    <button key={g} onClick={() => setOutpassGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${outpassGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
+                    <button key={g} onClick={() => setVacatingGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${ vacatingGender === g? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
                       {g === 'boys' ? '👦 Boys' : '👧 Girls'}
                     </button>
                   ))}
                 </div>
-                {vacatingRequests.filter(r => r.gender === outpassGender).length === 0 && (
+             {vacatingRequests.length === 0&& (
                   <div className="text-center py-10"><LogOut size={36} className="text-gray-200 mx-auto mb-2" /><p className="text-gray-400 text-sm">No vacating requests</p></div>
                 )}
-                {vacatingRequests.filter(r => r.gender === outpassGender).map(req => (
+             {filteredVacatingRequests.map(req => (
                   <div key={req.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${req.status === 'closed' ? 'border-gray-300 bg-gray-50' : 'border-gray-100'}`}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center space-x-3">
@@ -873,11 +1021,25 @@ const displayStudents =
                       <p className="text-xs font-semibold text-red-700 mb-1">Reason for Vacating:</p>
                       <p className="text-xs text-red-600">{req.reason}</p>
                     </div>
-                    {req.status === 'pending' && (
-                      <button onClick={() => { if (confirm(`Approve and close ${req.studentName}'s hostel account?`)) { setVacatingRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'closed' } : r)); toast.success('Account closed', { description: `${req.studentName}'s hostel account has been closed.` }); } }} className="w-full flex items-center justify-center space-x-1.5 bg-red-500 hover:bg-red-600 active:scale-95 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
-                        <CheckCircle2 size={15} /><span>Approve & Close Account</span>
-                      </button>
-                    )}
+                    {req.status?.toLowerCase() === "pending" && (
+  <div className="space-y-2">
+    <button
+      onClick={() => handleApproveVacating(Number(req.id))}
+      className="w-full flex items-center justify-center space-x-1.5 bg-red-500 hover:bg-red-600 active:scale-95 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm"
+    >
+      <CheckCircle2 size={15} />
+      <span>Approve & Close Account</span>
+    </button>
+
+    <button
+      onClick={() => handleRejectVacating(Number(req.id))}
+      className="w-full flex items-center justify-center space-x-1.5 bg-white border-2 border-red-200 hover:bg-red-50 active:scale-95 text-red-500 py-2.5 rounded-xl text-sm font-semibold transition-all"
+    >
+      <X size={15} />
+      <span>Reject</span>
+    </button>
+  </div>
+)}
                     {req.status === 'closed' && (
                       <div className="flex items-center justify-center space-x-2 bg-gray-100 py-2.5 rounded-xl">
                         <CheckCircle2 size={14} className="text-gray-500" />

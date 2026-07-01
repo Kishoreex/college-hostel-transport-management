@@ -24,11 +24,14 @@ public class TransportRegistration
 
     public string TokenNumber { get; set; } = "";
     public string Status { get; set; } = "Pending";
-
+public DateTime CreatedAt { get; set; } = DateTime.Now;
     public bool IsApproved { get; set; }
 
     public string? StudentId { get; set; }
 
-    public string BusRoute { get; set; } = "";
-    public string BusStop { get; set; } = "";
+public int RouteId { get; set; }
+public int StopId { get; set; }
+
+public TransportRoute? Route { get; set; }
+public TransportStop? Stop { get; set; }
 }

@@ -7,4 +7,5 @@ public class LoginRequestDto
     public string Password { get; set; } = string.Empty;
 
     public string Module { get; set; } = string.Empty;
+    public string DeviceId { get; set; } = "";
 }

@@ -1,1 +1,22 @@
-node_modules
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# .NET
+**/bin/
+**/obj/
+
+# React
+node_modules/
+dist/
+
+# Logs
+*.log
+
+# Publish
+publish/
+
+# Environment
+.env
+.env.*

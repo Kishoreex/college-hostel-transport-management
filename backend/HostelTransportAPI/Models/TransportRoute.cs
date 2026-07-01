@@ -1,3 +1,5 @@
+namespace HostelTransportAPI.Models;
+
 public class TransportRoute
 {
     public int Id { get; set; }

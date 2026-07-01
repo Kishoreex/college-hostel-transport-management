@@ -52,12 +52,38 @@ public class StudentRegistrationsController : ControllerBase
         return Ok(registration);
     }
 
-    [HttpGet]
-    public IActionResult GetAll()
-    {
-        return Ok(_context.StudentRegistrations.ToList());
-    }
-    
+   [HttpGet]
+public IActionResult GetAll()
+{
+    var data = _context.StudentRegistrations
+        .Where(x =>
+            x.Status == "Pending"
+
+            ||
+
+            (x.Status == "Approved" &&
+             x.ApprovedDate != null &&
+             x.ApprovedDate >= DateTime.Now.AddHours(-72))
+
+            ||
+
+            (x.Status == "Rejected" &&
+             x.RejectedDate != null &&
+             x.RejectedDate >= DateTime.Now.AddHours(-72))
+        )
+        .ToList();
+
+    return Ok(data);
+}
+    [HttpGet("approved")]
+public IActionResult GetApprovedStudents()
+{
+    var data = _context.StudentRegistrations
+        .Where(x => x.Status == "Approved")
+        .ToList();
+
+    return Ok(data);
+}
     [HttpPost("approve/{id}")]
     public async Task<IActionResult> ApproveStudent(int id)
     {
@@ -96,6 +122,7 @@ _context.Users.Add(user);
 
 registration.IsApproved = true;
 registration.Status = "Approved";
+registration.ApprovedDate = DateTime.Now;
 registration.StudentId = userId;
 
 await _context.SaveChangesAsync();
@@ -139,6 +166,7 @@ public async Task<IActionResult> RejectStudent(int id)
         return NotFound("Student Registration Not Found");
 
     registration.Status = "Rejected";
+    registration.RejectedDate = DateTime.Now;
 
     await _context.SaveChangesAsync();
 
@@ -146,5 +174,15 @@ public async Task<IActionResult> RejectStudent(int id)
     {
         Message = "Student Rejected Successfully"
     });
+}
+[HttpGet("history")]
+public IActionResult GetHistory()
+{
+    var history = _context.StudentRegistrations
+        .Where(x => x.Status != "Pending")
+        .OrderByDescending(x => x.Id)
+        .ToList();
+
+    return Ok(history);
 }
 }

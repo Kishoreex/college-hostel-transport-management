@@ -20,15 +20,51 @@ public class LeaveRequestsController : ControllerBase
     public async Task<IActionResult> Create(
         CreateLeaveRequestDto dto)
     {
-        var leaveRequest = new LeaveRequest
-        {
-            StudentId = dto.StudentId,
-            LeaveType = dto.LeaveType,
-            CampusStatus = dto.CampusStatus,
-            FromDate = dto.FromDate,
-            ToDate = dto.ToDate,
-            Reason = dto.Reason
-        };
+       var hasActiveLeave = _context.LeaveRequests.Any(x =>
+    x.StudentId == dto.StudentId &&
+    (
+        x.Status == "Pending" ||
+        x.Status == "Approved"
+    )
+);
+
+if (hasActiveLeave)
+{
+    return BadRequest(
+        "Student already has an active leave request."
+    );
+}
+       var leaveRequest = new LeaveRequest
+{
+    StudentId = dto.StudentId,
+    StudentName = dto.StudentName,
+
+   LeaveNumber = $"LV-{DateTime.Now:yyyyMMddHHmmss}",
+
+    LeaveType = dto.LeaveType,
+
+    Campus = dto.Campus,
+
+    Department = dto.Department,
+
+    Gender = dto.Gender,
+
+    Year = dto.Year,
+
+    FromDate = dto.FromDate,
+
+    ToDate = dto.ToDate,
+
+    Reason = dto.Reason,
+
+Destination = dto.Destination,
+    ExitTime = dto.ExitTime,
+
+ReturnTime = dto.ReturnTime,
+    Status = "Pending",
+
+    CreatedDate = DateTime.Now
+};
 
         _context.LeaveRequests.Add(leaveRequest);
         var systemAdmins = _context.Users
@@ -89,18 +125,59 @@ foreach (var admin in systemAdmins)
         Module = "Leave",
         CreatedAt = DateTime.Now
     });
-       if (leave.CampusStatus == "Out Campus")
-{
-    var outpass = new Outpass
-    {
-        OutpassNumber = $"OP{DateTime.Now:yyyyMMddHHmmss}",
-        StudentId = leave.StudentId,
-        LeaveRequestId = leave.Id,
-        ValidFrom = leave.FromDate,
-        ValidTo = leave.ToDate,
-        Status = "Active"
-    };
+       if (leave.Campus == "Out Campus")
+{DateTime validFrom;
+DateTime validTo;
 
+if (leave.FromDate.Date == leave.ToDate.Date)
+{
+    // Same-day leave
+    validFrom = leave.FromDate.Date + TimeSpan.Parse(leave.ExitTime);
+
+    validTo = leave.ToDate.Date + TimeSpan.Parse(leave.ReturnTime);
+}
+else
+{
+    // Multiple-day leave
+    validFrom = leave.FromDate.Date;
+
+    validTo = leave.ToDate.Date
+    .AddHours(23)
+    .AddMinutes(59)
+    .AddSeconds(59);
+}
+  var outpass = new Outpass
+{
+    OutpassNumber = $"OP{DateTime.Now:yyyyMMddHHmmss}",
+
+    StudentId = leave.StudentId,
+
+    StudentName = leave.StudentName,
+
+    Gender = leave.Gender,
+
+    LeaveRequestId = leave.Id,
+
+   ValidFrom = validFrom,
+
+ValidTo = validTo,
+
+    Status = "Approved",
+
+   OutpassState = "Active",
+
+    Reason = leave.Reason,
+
+    Destination = leave.Destination,
+
+    TimeOut = string.IsNullOrWhiteSpace(leave.ExitTime)
+    ? "00:00"
+    : leave.ExitTime,
+
+ReturnTime = string.IsNullOrWhiteSpace(leave.ReturnTime)
+    ? "23:59"
+    : leave.ReturnTime
+};
     _context.Outpasses.Add(outpass);
 
     _context.ActivityLogs.Add(
@@ -123,7 +200,10 @@ foreach (var admin in systemAdmins)
     }
 
     [HttpPost("reject/{id}")]
-    public async Task<IActionResult> Reject(int id)
+    public async Task<IActionResult> Reject(
+    int id,
+    RejectLeaveDto dto
+)
     {
         var leave = await _context.LeaveRequests.FindAsync(id);
 
@@ -131,6 +211,7 @@ foreach (var admin in systemAdmins)
             return NotFound("Leave Request Not Found");
 
         leave.Status = "Rejected";
+        leave.RejectReason = dto.RejectReason;
         leave.ApprovedDate = DateTime.UtcNow;
         leave.ApprovedBy = "Admin";
         _context.ActivityLogs.Add(
@@ -150,4 +231,17 @@ foreach (var admin in systemAdmins)
             Message = "Leave Rejected"
         });
     }
+    [HttpGet("history")]
+public IActionResult GetHistory()
+{
+    var history = _context.LeaveRequests
+        .Where(x =>
+            x.Status == "Completed" ||
+            x.Status == "Expired")
+        .OrderByDescending(x => x.CreatedDate)
+        .ToList();
+
+    return Ok(history);
+}
+
 }

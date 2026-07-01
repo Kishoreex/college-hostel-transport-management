@@ -39,19 +39,45 @@ public class TransportRoutesController : ControllerBase
 
         _context.TransportRoutes.Add(route);
 
-        await _context.SaveChangesAsync();
+    await _context.SaveChangesAsync();
 
-        return Ok(route);
+return Ok(new
+{
+    id = route.Id,
+    routeName = route.RouteName,
+    busNumber = route.BusNumber,
+    driverName = route.DriverName,
+    driverPhone = route.DriverPhone,
+    morningTime = route.MorningTime,
+    eveningTime = route.EveningTime
+});
     }
 
     [HttpGet]
     public async Task<IActionResult> GetRoutes()
     {
         var routes = await _context.TransportRoutes
-            .Include(x => x.Stops)
-            .ToListAsync();
+    .Include(r => r.Stops)
+    .Select(r => new
+    {
+        id = r.Id,
+        routeName = r.RouteName,
+        busNumber = r.BusNumber,
+        driverName = r.DriverName,
+        driverPhone = r.DriverPhone,
+        morningTime = r.MorningTime,
+        eveningTime = r.EveningTime,
 
-        return Ok(routes);
+        stops = r.Stops.Select(s => new
+        {
+            id = s.Id,
+            stopName = s.StopName,
+            pickupTime = s.PickupTime
+        }).ToList()
+    })
+    .ToListAsync();
+
+return Ok(routes);
     }
 
     [HttpPut("{id}")]
@@ -82,8 +108,11 @@ public class TransportRoutesController : ControllerBase
                 PickupTime = x.PickupTime
             }).ToList();
 
-        await _context.SaveChangesAsync();
+       await _context.SaveChangesAsync();
 
-        return Ok();
+return Ok(new
+{
+    message = "Route updated successfully"
+});
     }
 }

@@ -44,10 +44,22 @@ const [selectedRoute, setSelectedRoute] =
   useState<any>(null);
 
 useEffect(() => {
-  fetch("https://localhost:5001/api/transportroutes")
-    .then(res => res.json())
-    .then(data => setRoutes(data));
+  loadRoutes();
 }, []);
+
+const loadRoutes = async () => {
+  try {
+    const response = await fetch("https://202.61.121.102:8443/api/transportroutes");
+
+    const data = await response.json();
+
+    setRoutes(data);
+
+    console.log("Routes Loaded", data);
+  } catch (error) {
+    console.error(error);
+  }
+};
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     college: '',
@@ -116,8 +128,8 @@ useEffect(() => {
   parentPhone: formData.parentMobile,
   address: formData.address,
 
-  busRoute: formData.busRoute,
-  busStop: formData.busStop
+routeId: Number(formData.busRoute),
+stopId: Number(formData.busStop)
 };
 
   let result;

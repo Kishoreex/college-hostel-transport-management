@@ -173,7 +173,7 @@ _context.ActivityLogs.Add(
                 dto.CurrentPassword,
                 user.PasswordHash
             );
-
+Console.WriteLine($"Password Valid : {validPassword}");
         if (!validPassword)
             return BadRequest("Current Password Incorrect");
 

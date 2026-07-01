@@ -31,4 +31,12 @@ public class User
     public bool CanManageGirlsHostel { get; set; }
 
     public bool IsActive { get; set; } = true;
+    public string? DeviceId { get; set; }
+
+public string? ProfilePhoto { get; set; }
+
+public DateTime? LastLogin { get; set; }
+
+
+public DateTime? LastProfileUpdate { get; set; }
 }

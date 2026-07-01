@@ -1,4 +1,4 @@
-@HostelTransportAPI_HostAddress = @HostelTransportAPI_HostAddress = "http://localhost:10000",
+@HostelTransportAPI_HostAddress = @HostelTransportAPI_HostAddress = "https://202.61.121.102:8443",
 
 GET {{HostelTransportAPI_HostAddress}}/weatherforecast/
 Accept: application/json

@@ -42,10 +42,33 @@ public IActionResult GetAll()
 
         return Ok(outpasses);
     }
-
-  [HttpPost]
+[HttpPost]
 public async Task<IActionResult> Create(Outpass outpass)
 {
+    var hasActiveOutpass = _context.Outpasses.Any(x =>
+    x.StudentId == outpass.StudentId &&
+    (
+        x.Status == "Pending" ||
+        x.OutpassState == "Waiting For Exit" ||
+        x.OutpassState == "Active" ||
+        x.OutpassState == "Outside Hostel"
+    )
+);
+
+if (hasActiveOutpass)
+{
+    return BadRequest(
+        "Student already has an active outpass."
+    );
+}
+    outpass.ValidFrom = DateTime.SpecifyKind(
+        outpass.ValidFrom,
+        DateTimeKind.Local);
+
+    outpass.ValidTo = DateTime.SpecifyKind(
+        outpass.ValidTo,
+        DateTimeKind.Local);
+
     var student = _context.StudentRegistrations
         .FirstOrDefault(x => x.StudentId == outpass.StudentId);
 
@@ -70,8 +93,7 @@ public async Task<IActionResult> Approve(int id)
     if (outpass == null)
         return NotFound();
 
-   outpass.Status = "Approved";
-
+outpass.Status = "Approved";
 outpass.OutpassState = "Active";
 
     await _context.SaveChangesAsync();
@@ -118,6 +140,10 @@ public async Task<IActionResult> MarkExit(
     if (outpass == null)
         return NotFound();
 
+    // Prevent duplicate exit recording
+    if (outpass.ExitRecorded)
+        return Ok(outpass);
+
     outpass.OutpassState = "Outside Hostel";
 
     outpass.ActualExitTime = DateTime.Now;
@@ -125,6 +151,26 @@ public async Task<IActionResult> MarkExit(
     outpass.ExitLatitude = dto.Latitude;
 
     outpass.ExitLongitude = dto.Longitude;
+
+    outpass.ExitRecorded = true;
+
+    // Calculate requested departure DateTime
+    var requestedExit =
+        outpass.ValidFrom.Date +
+        TimeSpan.Parse(outpass.TimeOut);
+
+    // Calculate early exit
+    if (outpass.ActualExitTime.Value < requestedExit)
+    {
+        outpass.EarlyExitMinutes =
+            (int)(requestedExit -
+            outpass.ActualExitTime.Value)
+            .TotalMinutes;
+    }
+    else
+    {
+        outpass.EarlyExitMinutes = 0;
+    }
 
     await _context.SaveChangesAsync();
 
@@ -141,7 +187,7 @@ public async Task<IActionResult> MarkReturn(
         return NotFound();
 
     outpass.OutpassState = "Returned";
-
+outpass.Status = "Completed";
     outpass.ActualReturnTime = DateTime.Now;
 
     outpass.ReturnLatitude = dto.Latitude;
@@ -154,9 +200,98 @@ public async Task<IActionResult> MarkReturn(
             (int)(outpass.ActualReturnTime.Value - outpass.ValidTo)
             .TotalMinutes;
     }
+if (outpass.LeaveRequestId > 0)
+{
+    var leave = await _context.LeaveRequests
+        .FindAsync(outpass.LeaveRequestId);
 
+    if (leave != null)
+    {
+        leave.Status = "Completed";
+    }
+}
     await _context.SaveChangesAsync();
 
     return Ok(outpass);
+}[HttpGet("active/{studentId}")]
+public IActionResult HasActiveOutpass(string studentId)
+{
+    var now = DateTime.Now;
+
+var expiredOutpasses = _context.Outpasses
+    .Where(x =>
+        (x.OutpassState == "Active" ||
+         x.OutpassState == "Waiting For Exit") &&
+        x.ValidTo < now &&
+        x.ActualExitTime == null)
+    .ToList();
+
+foreach (var item in expiredOutpasses)
+{
+    item.OutpassState = "Expired";
+    
+}
+
+_context.SaveChanges();
+    Console.WriteLine("StudentId = " + studentId);
+
+    var list = _context.Outpasses
+        .Where(x => x.StudentId == studentId)
+        .ToList();
+
+    Console.WriteLine("Found = " + list.Count);
+
+    foreach (var item in list)
+    {
+        Console.WriteLine(
+            item.StudentId +
+            " " +
+            item.OutpassState
+        );
+    }
+
+   var active = list.Any(x =>
+    x.OutpassState == "Waiting For Exit" ||
+    x.OutpassState == "Active" ||
+    x.OutpassState == "Outside Hostel"
+);
+
+    Console.WriteLine("Active = " + active);
+
+    return Ok(active);
+}
+[HttpPut("expire")]
+public async Task<IActionResult> ExpireOldOutpasses()
+{
+    var now = DateTime.Now;
+
+    var list = _context.Outpasses
+   .Where(x =>
+    (x.OutpassState == "Active" ||
+     x.OutpassState == "Waiting For Exit") &&
+    x.ValidTo < now &&
+    x.ActualExitTime == null)
+        .ToList();
+
+    foreach (var item in list)
+{
+    item.OutpassState = "Expired";
+    item.Status = "Completed";
+
+    if (item.LeaveRequestId > 0)
+    {
+        var leave = await _context.LeaveRequests
+            .FindAsync(item.LeaveRequestId);
+
+        if (leave != null)
+        {
+            leave.Status = "Completed";
+        }
+    }
+}
+
+    await _context.SaveChangesAsync();
+
+    return Ok();
 }
 }

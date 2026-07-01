@@ -51,7 +51,8 @@ const result = await login(
     ? "Hostel"
     : "Transport"
 );
-
+console.log("STUDENT LOGIN RESULT");
+console.log(result);
 if (result.role !== "Student") {
   toast.error("Please use Admin Login");
   return;
@@ -59,20 +60,28 @@ if (result.role !== "Student") {
 
 const studentUser: User = {
   id: result.id.toString(),
+  userId: result.userId,
   name: result.fullName,
   role: "student",
   email: result.email,
   studentId: result.userId,
-  serviceType: serviceType
+  serviceType: serviceType,
+
+  profilePhoto: result.profilePhoto
 };
 
 onLogin(studentUser);
 
     toast.success("Login Successful");
   }
-  catch {
-    toast.error("Invalid Credentials");
-  }
+  catch (error: any) {
+
+    console.log(error);
+
+    toast.error(
+        error.message || "Login Failed"
+    );
+}
   finally {
     setLoading(false);
   }
@@ -92,31 +101,53 @@ const handleAdminLogin = async (
   "Admin"
 );
 
+console.log("============== LOGIN RESPONSE ==============");
+console.log(result);
+
+console.log("result.id =", result.id);
+console.log("result.userId =", result.userId);
+console.log("result.UserId =", result.UserId);
+console.log("Object Keys =", Object.keys(result));
 if (result.role !== "Admin") {
   toast.error("Please use Student Login");
   return;
 }
 
-const adminUser: User = {
-  id: result.id.toString(),
-  name: result.fullName,
-  role: "admin",
-  email: result.email,
-  phoneNumber: result.phoneNumber,
+const adminUser = {
+    id: result.id.toString(),
 
-  isSystemAdmin: result.isSystemAdmin,
-  canManageTransport: result.canManageTransport,
-  canManageBoysHostel: result.canManageBoysHostel,
-  canManageGirlsHostel: result.canManageGirlsHostel
+    // Accept either camelCase or PascalCase
+    userId: result.userId ?? result.UserId,
+
+    name: result.fullName ?? result.FullName,
+    role: "admin",
+
+    email: result.email ?? result.Email,
+    phoneNumber: result.phoneNumber ?? result.PhoneNumber,
+
+    isSystemAdmin: result.isSystemAdmin ?? result.IsSystemAdmin,
+    canManageTransport: result.canManageTransport ?? result.CanManageTransport,
+    canManageBoysHostel: result.canManageBoysHostel ?? result.CanManageBoysHostel,
+    canManageGirlsHostel: result.canManageGirlsHostel ?? result.CanManageGirlsHostel,
+
+    profilePhoto: result.profilePhoto ?? result.ProfilePhoto
 };
 
-onLogin(adminUser);
+console.log("ADMIN USER");
+console.log(adminUser);
+
+onLogin(adminUser as User);
 
     toast.success("Login Successful");
   }
-  catch {
-    toast.error("Invalid Credentials");
-  }
+catch (error: any) {
+
+    console.log(error);
+
+    toast.error(
+        error.message || "Login Failed"
+    );
+}
   finally {
     setLoading(false);
   }
@@ -415,17 +446,15 @@ onLogin(adminUser);
             </button>
 
             {/* Forgot Password */}
-            <div className="text-center pt-2">
-              <button type="button" onClick={() => { setForgotPasswordType('admin'); setForgotPasswordOpen(true); setResetSent(false); setForgotPasswordEmail(''); }} className="text-slate-600 text-sm font-semibold hover:text-slate-800 active:scale-95 transition-all">
-                Forgot Password?
-              </button>
-            </div>
+           {/* <div className="text-center pt-2">
+              <button type="button" onClick={() => { setForgotPasswordType('admin'); setForgotPasswordOpen(true); setResetSent(false); setForgotPasswordEmail(''); }} className="text-slate-600 text-sm font-semibold hover:text-slate-800 active:scale-95 transition-all"> Forgot Password? </button>
+            </div> */}
           </form>
 
           {/* Footer */}
           <div className="text-center mt-8 pb-4">
             <p className="text-gray-400 text-xs">© 2026 Madha Group of Institutions</p>
-            <p className="text-gray-400 text-xs mt-1">Secure Admin Access</p>
+            <p className="text-gray-400 text-xs mt-1"></p>
           </div>
         </div>
       </div>

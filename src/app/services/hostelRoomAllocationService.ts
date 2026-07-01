@@ -7,3 +7,15 @@ export const getAllRoomAllocations = async () => {
 
   return await response.json();
 };
+
+
+
+export const getAvailableStudents = async (
+  gender: string
+) => {
+  const response = await fetch(
+    `${API_URL}/HostelRoomAllocation/available-students/${gender}`
+  );
+
+  return await response.json();
+};

@@ -6,7 +6,7 @@ public class CreateTransportRegistrationDto
     public string CollegeName { get; set; } = "";
     public string Department { get; set; } = "";
     public string Year { get; set; } = "";
-    public string Batch { get; set; } = "";
+    public string Batch { get; set; } = ""; 
     
     public string StudentName { get; set; } = "";
     public string RegisterNumber { get; set; } = "";
@@ -19,7 +19,6 @@ public class CreateTransportRegistrationDto
     public string ParentPhone { get; set; } = "";
     public string Address { get; set; } = "";
 
-    public string BusRoute { get; set; } = "";
-    public string BusStop { get; set; } = "";
-
+   public int RouteId { get; set; }
+public int StopId { get; set; }
 }

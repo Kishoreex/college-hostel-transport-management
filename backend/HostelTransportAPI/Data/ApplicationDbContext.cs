@@ -19,6 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<TransportRoute> TransportRoutes { get; set; }
 
 public DbSet<TransportStop> TransportStops { get; set; }
+public DbSet<TransportCancellation> TransportCancellations => Set<TransportCancellation>();
     public DbSet<Notification> Notifications { get; set; }
     public DbSet<NotificationSetting> NotificationSettings { get; set; }
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
@@ -29,7 +30,17 @@ public DbSet<TransportStop> TransportStops { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+modelBuilder.Entity<TransportRegistration>()
+    .HasOne(x => x.Route)
+    .WithMany()
+    .HasForeignKey(x => x.RouteId)
+    .OnDelete(DeleteBehavior.Restrict);
 
+modelBuilder.Entity<TransportRegistration>()
+    .HasOne(x => x.Stop)
+    .WithMany()
+    .HasForeignKey(x => x.StopId)
+    .OnDelete(DeleteBehavior.Restrict);
       modelBuilder.Entity<Role>().HasData(
     new Role { Id = 1, Name = "Admin" },
     new Role { Id = 2, Name = "Student" }

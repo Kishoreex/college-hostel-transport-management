@@ -34,7 +34,11 @@ public class Outpass
 public DateTime? ActualExitTime { get; set; }
 
 public DateTime? ActualReturnTime { get; set; }
+public int? EarlyExitMinutes { get; set; }
 
+public string? StudentPhoto { get; set; }
+
+public bool LocationPermissionGranted { get; set; } = false;
 public int? LateMinutes { get; set; }
 
 public double? ExitLatitude { get; set; }
@@ -44,4 +48,7 @@ public double? ExitLongitude { get; set; }
 public double? ReturnLatitude { get; set; }
 
 public double? ReturnLongitude { get; set; }
+public bool ExitRecorded { get; set; } = false;
+
+public bool ReturnRecorded { get; set; } = false;
 }

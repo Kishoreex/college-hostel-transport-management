@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
-
+using Microsoft.EntityFrameworkCore;
 
 namespace HostelTransportAPI.Controllers;
 
@@ -22,7 +22,7 @@ public class TransportRegistrationsController : ControllerBase
     public async Task<IActionResult> Create(
         CreateTransportRegistrationDto dto)
     {
-        var registration = new TransportRegistration
+  var registration = new TransportRegistration
 {
     RegistrationType = dto.RegistrationType,
 
@@ -41,9 +41,14 @@ public class TransportRegistrationsController : ControllerBase
     ParentPhone = dto.ParentPhone,
     Address = dto.Address,
 
+    RouteId = dto.RouteId,
+    StopId = dto.StopId,
+
     TokenNumber = "TRN" + DateTime.Now.Year +
-              Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper(),
-    Status = "Pending"
+                  Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper(),
+
+    Status = "Pending",
+    CreatedAt = DateTime.Now,
 };
 
         _context.TransportRegistrations.Add(registration);
@@ -53,12 +58,49 @@ public class TransportRegistrationsController : ControllerBase
         return Ok(registration);
     }
 
-    [HttpGet]
-    public IActionResult GetAll()
+   [HttpGet]
+public async Task<IActionResult> GetAll()
+{
+    // Delete applications older than 24 hours
+    var expired = await _context.TransportRegistrations
+        .Where(x =>
+            !x.IsApproved &&
+            x.CreatedAt < DateTime.Now.AddHours(-24))
+        .ToListAsync();
+
+    if (expired.Any())
     {
-        return Ok(_context.TransportRegistrations.ToList());
+        _context.TransportRegistrations.RemoveRange(expired);
+        await _context.SaveChangesAsync();
     }
-    
+
+    var data = await _context.TransportRegistrations
+        .Where(x =>
+            x.CreatedAt >= DateTime.Now.AddHours(-24))
+        .Include(x => x.Route)
+        .Include(x => x.Stop)
+        .Select(x => new
+        {
+            id = x.Id,
+            studentId = x.StudentId,
+            studentName = x.StudentName,
+            collegeName = x.CollegeName,
+            department = x.Department,
+            year = x.Year,
+            batch = x.Batch,
+            phone = x.Phone,
+            parentName = x.ParentName,
+            parentPhone = x.ParentPhone,
+            address = x.Address,
+            status = x.Status,
+            preferredRoute = x.Route != null ? x.Route.RouteName : "",
+            pickupPoint = x.Stop != null ? x.Stop.StopName : "",
+            appliedDate = x.TokenNumber
+        })
+        .ToListAsync();
+
+    return Ok(data);
+}
     [HttpPost("approve/{id}")]
     public async Task<IActionResult> ApproveStudent(int id)
     {
@@ -147,5 +189,69 @@ public async Task<IActionResult> RejectStudent(int id)
     {
         Message = "Student Rejected Successfully"
     });
+}
+[HttpGet("students")]
+public async Task<IActionResult> GetApprovedStudents()
+{
+    var students = await _context.TransportRegistrations
+        .Where(x => x.IsApproved)
+        .Include(x => x.Route)
+        .Include(x => x.Stop)
+        .Select(x => new
+        {
+            id = x.Id,
+            studentId = x.StudentId,
+            studentName = x.StudentName,
+            phone = x.Phone,
+
+            collegeName = x.CollegeName,
+            department = x.Department,
+            year = x.Year,
+            batch = x.Batch,
+
+            parentName = x.ParentName,
+            parentPhone = x.ParentPhone,
+            address = x.Address,
+
+            status = x.Status,
+            isApproved = x.IsApproved,
+
+            busRoute = x.Route != null ? x.Route.RouteName : "",
+            busNumber = x.Route != null ? x.Route.BusNumber : "",
+            pickupPoint = x.Stop != null ? x.Stop.StopName : "",
+            pickupTime = x.Stop != null ? x.Stop.PickupTime.ToString(@"hh\:mm") : ""
+        })
+        .ToListAsync();
+
+    return Ok(students);
+}
+
+[HttpGet("student/{studentId}")]
+public IActionResult GetStudentTransport(string studentId)
+{
+    var student = _context.TransportRegistrations
+        .Where(x =>
+            x.StudentId == studentId &&
+            x.IsApproved)
+        .Select(x => new
+        {
+            x.StudentId,
+            x.StudentName,
+
+            RouteName = x.Route.RouteName,
+            BusNumber = x.Route.BusNumber,
+
+            DriverName = x.Route.DriverName,
+            DriverPhone = x.Route.DriverPhone,
+
+            StopName = x.Stop.StopName,
+            PickupTime = x.Stop.PickupTime
+        })
+        .FirstOrDefault();
+
+    if (student == null)
+        return NotFound();
+
+    return Ok(student);
 }
 }

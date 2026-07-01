@@ -32,11 +32,20 @@ export async function approveLeave(id:number) {
   );
 }
 
-export async function rejectLeave(id:number) {
+export async function rejectLeave(
+  id: number,
+  rejectReason: string
+) {
   await fetch(
     `${API_URL}/LeaveRequests/reject/${id}`,
     {
-      method: "POST"
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        rejectReason
+      })
     }
   );
 }

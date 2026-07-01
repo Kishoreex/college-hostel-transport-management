@@ -3,9 +3,10 @@ export type UserRole = 'student' | 'warden' | 'transport' | 'security' | 'admin'
 export type ServiceType = 'hostel' | 'transport';
 
 export interface User {
-  id: string;
-  name: string;
-  role: UserRole;
+    id: string;
+    userId: string;
+    name: string;
+    role: UserRole;
   email: string;
   phoneNumber?: string;
 

@@ -33,6 +33,12 @@ public class StudentRegistration
     public bool IsApproved { get; set; } = false;
 
     public string Status { get; set; } = "Pending";
+    public DateTime? ApprovedDate { get; set; }
+
+public DateTime? RejectedDate { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public string? ProfilePhoto { get; set; }
+
+public DateTime? LastProfileUpdate { get; set; }
 }

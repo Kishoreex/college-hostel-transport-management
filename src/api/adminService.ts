@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:10000";
+const API_URL = "https://202.61.121.102:8443";
 
 export async function getRegistrations() {
   const response = await fetch(

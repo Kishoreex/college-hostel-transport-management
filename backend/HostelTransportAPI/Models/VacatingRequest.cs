@@ -17,6 +17,9 @@ public string Phone { get; set; } = "";
     public string Reason { get; set; } = "";
 
     public string Status { get; set; } = "Pending";
+    public DateTime? ApprovedDate { get; set; }
+
+public DateTime? RejectedDate { get; set; }
 
     public DateTime RequestDate { get; set; }
 }

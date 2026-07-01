@@ -92,7 +92,7 @@ public class HostelRoomAllocationController : ControllerBase
         var allocation =
             await _context.HostelRoomAllocations
             .FindAsync(id);
-
+ 
         if (allocation == null)
             return NotFound();
 

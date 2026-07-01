@@ -2,22 +2,39 @@ import {
   createOutpass,
   getStudentOutpasses,
   markExit,
-  markReturn
+  markReturn,
+  expireOldOutpasses
 } from "../../services/outpassService";
+import {
+  getStudentTransport,
+  submitTransportCancellation,
+  getTransportCancellation
+} from "../../../api/transportService";
+import {
+  getStudentProfile,
+  uploadStudentProfilePhoto
+} from "../../../api/studentService";
 import {
   createVacatingRequest,
   getStudentVacatingRequest
 } from "../../../api/vacatingService";
-
+import {
+  createLeaveRequest,
+  getLeaveRequests
+} from "../../../api/leaveService";
+import {
+  changePassword
+} from "../../../api/authService";
 import { useState, useRef, useEffect } from 'react';  
 import { toast } from 'sonner';
 import {
   Card,
   CardContent,
   Avatar,
-  Dialog,
+  Button,
   Chip,
-} from '@mui/material';
+  Dialog,
+} from "@mui/material";
 import {
   Building2,
   Bus,
@@ -43,16 +60,18 @@ import DashboardLayout from '../common/DashboardLayout';
 import OutpassQRCard from '../outpass/OutpassQRCard';
 import type { User, OutpassRequest } from '../../types';
 import type { MenuItemType } from '../common/DashboardLayout';
+import {
+  HOSTEL_LOCATION,
+  HOSTEL_RADIUS
+} from "../../../config/hostelLocation";
 
 interface StudentDashboardProps {
   user: User;
   onLogout: () => void;
 }
-const HOSTEL_LAT = 12.991809;
-
-const HOSTEL_LNG = 80.085388;
-
-const GEOFENCE_RADIUS = 150;
+const HOSTEL_LAT = HOSTEL_LOCATION.latitude;
+const HOSTEL_LNG = HOSTEL_LOCATION.longitude;
+const GEOFENCE_RADIUS = HOSTEL_RADIUS;
 
 const getDistanceMeters = (
   lat1: number,
@@ -129,13 +148,16 @@ catch (error: any) {
     returnTime: '',
   });
 
-  const [leaveForm, setLeaveForm] = useState({
-    type: '',
-    campus: '' as '' | 'incampus' | 'outcampus',
-    fromDate: '',
-    toDate: '',
-    reason: '',
-  });
+const [leaveForm, setLeaveForm] = useState({
+    type: "",
+    campus: "",
+    destination: "",
+    fromDate: "",
+    toDate: "",
+    exitTime: "",
+    returnTime: "",
+    reason: ""
+});
 
   const isHostel = user.serviceType === 'hostel';
   const [profileDialogOpen, setProfileDialogOpen] = useState(false);
@@ -143,30 +165,157 @@ catch (error: any) {
   const [changePwdForm, setChangePwdForm] = useState({ current: '', newPwd: '', confirm: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  const [studentProfile, setStudentProfile] = useState<any>(null);
+  const [transportInfo, setTransportInfo] = useState<any>(null);
+  const [cancelReason, setCancelReason] = useState("");
+
+const [cancelRequest, setCancelRequest] =
+  useState<any>(null);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
-  const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handlePhotoChange = async (
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+
     const file = e.target.files?.[0];
-    if (file) setProfilePhoto(URL.createObjectURL(file));
-  };
-  const loadOutpasses = async () => {
+
+    if (!file) return;
+
+    try {
+
+        setProfilePhoto(
+            URL.createObjectURL(file)
+        );
+
+        const result =
+            await uploadStudentProfilePhoto(
+                user.studentId || "",
+                file
+            );
+
+        setStudentProfile((prev:any)=>({
+            ...prev,
+            profilePhoto: result.profilePhoto
+        }));
+
+        toast.success(
+            "Profile photo updated"
+        );
+
+    }
+    catch{
+
+        toast.error(
+            "Photo upload failed"
+        );
+
+    }
+
+};
+ const loadOutpasses = async () => {
   try {
-    const data =
-      await getStudentOutpasses(
-        user.studentId || ""
-      );
+
+    // Expire old outpasses first
+    await expireOldOutpasses();
+
+    // Then load student outpasses
+    const data = await getStudentOutpasses(
+      user.studentId || ""
+    );
 
     console.log(data);
 
     setOutpasses(data);
+
   } catch (err) {
     console.error(err);
   }
 };
-useEffect(() => {
-  loadOutpasses();
-}, []);
+const loadLeaveRequests = async () => {
 
+  try {
+
+    const data = await getLeaveRequests();
+
+    setLeaveRequests(
+      data.filter(
+        (x:any) => x.studentId === user.studentId
+      )
+    );
+
+  } catch (err) {
+
+    console.log(err);
+
+  }
+
+};
+useEffect(() => {
+
+  loadOutpasses();
+
+  loadLeaveRequests();
+
+  const timer = setInterval(() => {
+
+    loadOutpasses();
+
+    loadLeaveRequests();
+
+  },5000);
+
+  return () => clearInterval(timer);
+
+}, []);
+useEffect(() => {
+
+    async function loadProfile() {
+
+        try {
+
+            const data =
+                await getStudentProfile(
+                    user.studentId || ""
+                );
+
+            setStudentProfile(data);
+
+        } catch (err) {
+            console.log(err);
+        }
+
+    }
+
+    loadProfile();
+
+}, []);
+useEffect(() => {
+
+    if (isHostel) return;
+
+    async function loadTransport() {
+
+        try {
+
+            const data = await getStudentTransport(
+                user.studentId || ""
+            );
+
+            setTransportInfo(data);
+
+        }
+        catch (err) {
+
+            console.log(err);
+
+        }
+
+    }
+
+    loadTransport();
+
+}, [user.studentId, isHostel]);
 const loadVacatingRequest =
   async () => {
     const data =
@@ -176,110 +325,199 @@ const loadVacatingRequest =
 
     setVacatingRequest(data);
   };
+  const loadTransportCancellation =
+  async () => {
+
+    try {
+
+      const data =
+        await getTransportCancellation(
+          user.studentId || ""
+        );
+
+      setCancelRequest(data);
+
+    }
+    catch {
+
+      setCancelRequest(null);
+
+    }
+
+};
 
 useEffect(() => {
   loadVacatingRequest();
 }, []);
+useEffect(() => {
+  if (!isHostel) {
+    loadTransportCancellation();
+  }
+}, []);
   const [outpasses, setOutpasses] =
 useState<any[]>([]);
+const [outsideCounter, setOutsideCounter] = useState(0);
+const [insideCounter, setInsideCounter] = useState(0);
+const [leaveRequests, setLeaveRequests] =
+useState<any[]>([]);
+const [submittingOutpass, setSubmittingOutpass] = useState(false);
+const [submittingLeave, setSubmittingLeave] = useState(false);
+const activeOutpass = outpasses.find(x =>
 
-const activeOutpass = outpasses.find(
-  x =>
-    x.outpassState === "Active" ||
-    x.outpassState === "Outside Hostel"
+    x.status === "Approved" &&
+
+    (
+        x.outpassState === "Active" ||
+        x.outpassState === "Waiting For Exit" ||
+        x.outpassState === "Outside Hostel"
+    )
+
 );
-    useEffect(() => {
+console.log("ACTIVE OUTPASS =", activeOutpass);
+  useEffect(() => {
 
-  alert("GPS EFFECT STARTED");
+  if (!activeOutpass) return;
 
-  if (!activeOutpass) {
-    alert("NO ACTIVE OUTPASS");
-    return;
-  }
+  const timer = setInterval(() => {
 
-  alert("ACTIVE OUTPASS FOUND");
+    navigator.geolocation.getCurrentPosition(
 
-  navigator.geolocation.getCurrentPosition(
-    (position) => {
-      alert(
-        "LAT = " +
-        position.coords.latitude
-      );
-    },
-    (error) => {
-      alert(
-        "GPS ERROR: " +
-        error.message
-      );
-    }
-  );
+      async (position) => {
 
-const timer = setInterval(() => {
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-
-      const distance =
-        getDistanceMeters(
+        const distance = getDistanceMeters(
           HOSTEL_LAT,
           HOSTEL_LNG,
           position.coords.latitude,
           position.coords.longitude
         );
 
-      console.log("Distance:", distance);
+        console.log("Distance =", distance);
+console.log("Radius =", GEOFENCE_RADIUS);
+console.log("Latitude =", position.coords.latitude);
+console.log("Longitude =", position.coords.longitude);
+console.log("Exit Time =", activeOutpass.actualExitTime);
+console.log("Return Time =", activeOutpass.actualReturnTime);
+if (
+  distance > GEOFENCE_RADIUS &&
+  !activeOutpass.actualExitTime
+) {
 
+  await markExit(
+    activeOutpass.id,
+    position.coords.latitude,
+    position.coords.longitude
+  );
+
+  await loadOutpasses();
+
+  toast.success("Exit Recorded");
+
+  setInsideCounter(0);
+}
       if (
-        distance > GEOFENCE_RADIUS &&
-        !activeOutpass.actualExitTime
-      ) {
+  distance <= GEOFENCE_RADIUS &&
+  activeOutpass.actualExitTime &&
+  !activeOutpass.actualReturnTime
+) {
 
-        await markExit(
-          activeOutpass.id,
-          position.coords.latitude,
-          position.coords.longitude
-        );
+  setInsideCounter(prev => {
 
-        await loadOutpasses();
+    const count = prev + 1;
 
-        toast.success("Exit Recorded");
-      }
+    console.log("Inside Count =", count);
 
-      if (
-        distance <= GEOFENCE_RADIUS &&
-        activeOutpass.actualExitTime &&
-        !activeOutpass.actualReturnTime
-      ) {
+    if (count >= 2) {
 
-        await markReturn(
-          activeOutpass.id,
-          position.coords.latitude,
-          position.coords.longitude
-        );
+      markReturn(
+        activeOutpass.id,
+        position.coords.latitude,
+        position.coords.longitude
+      ).then(async () => {
 
         await loadOutpasses();
 
         toast.success("Return Recorded");
-      }
-    },
-    (error) => {
-      console.log(error);
-    }
-  );
 
-}, 15000);
+      });
+
+      return 0;
+    }
+
+    return count;
+  });
+
+  setOutsideCounter(0);
+
+} else if (distance > GEOFENCE_RADIUS) {
+
+  setInsideCounter(0);
+
+}
+      },
+
+      (error) => {
+        console.log(error);
+      }
+
+    );
+
+  }, 5000);
 
   return () => clearInterval(timer);
 
 }, [activeOutpass]);
 
-
-
   const handleOutpassSubmit = async (
   e: React.FormEvent
 ) => {
-  e.preventDefault();
+ e.preventDefault();
+if (submittingOutpass) return;
 
+setSubmittingOutpass(true);
+if (activeOutpass) {
+  toast.error(
+    "You already have an active outpass."
+  );
+  return;
+}
+
+let permissionGranted = false;
+
+try {
+  await new Promise<GeolocationPosition>((resolve, reject) => {
+   navigator.geolocation.getCurrentPosition(
+  (position) => {
+    console.log("GPS SUCCESS", position);
+    resolve(position);
+  },
+  (error) => {
+    console.log("GPS ERROR", error);
+    alert(
+      "Error Code: " +
+      error.code +
+      "\nMessage: " +
+      error.message
+    );
+    reject(error);
+  },
+  {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0
+  }
+);
+  });
+
+  permissionGranted = true;
+}
+catch {
+
+  toast.error(
+    "Location permission is required to request an outpass."
+  );
+
+  return;
+}
   try {
     const data = {
   outpassNumber: `OP${Date.now()}`,
@@ -293,16 +531,22 @@ const timer = setInterval(() => {
   returnTime: outpassForm.returnTime,
 
   leaveRequestId: 0,
-  validFrom: new Date(outpassForm.date),
-  validTo: new Date(outpassForm.date),
+validFrom: `${outpassForm.date}T${outpassForm.timeOut}:00`,
 
-  status: "Pending"
+validTo: `${outpassForm.date}T${outpassForm.returnTime}:00`,
+
+ status: "Pending",
+
+locationPermissionGranted: permissionGranted,
+
+studentPhoto:
+  studentProfile?.profilePhoto || ""
 };
 
     console.log("Sending:", data);
 
     await createOutpass(data);
-
+setSubmittingOutpass(false);
 await loadOutpasses();
     toast.success("Outpass submitted");
     setOutpassDialogOpen(false);
@@ -316,38 +560,105 @@ await loadOutpasses();
     });
 
   } catch (error) {
+    setSubmittingOutpass(false);
     console.error(error);
     toast.error("Failed to submit outpass");
   }
 };
 
-  const handleLeaveSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!leaveForm.campus) { toast.error('Please select In Campus or Out Campus.'); return; }
-    if (leaveForm.campus === 'outcampus') {
-      const generatedOutpass: OutpassRequest = {
-        id: `LV-OP${Date.now()}`,
-        studentId: user.studentId || 'CS2021001',
-        studentName: user.name,
-        department: user.department || 'BDS',
-        hostelBlock: 'A Block',
-        date: leaveForm.fromDate,
-        reason: `Leave - ${leaveForm.reason}`,
-        destination: 'Home / Outside Campus',
-        status: 'pending',
-        timeOut: '08:00 AM',
-        expectedReturn: leaveForm.toDate ? `${leaveForm.toDate} 08:00 PM` : '08:00 PM',
-      };
-      setOutpasses(prev => [generatedOutpass, ...prev]);
-    }
-    setLeaveForm({ type: '', campus: '', fromDate: '', toDate: '', reason: '' });
+const handleLeaveSubmit = async (
+  e: React.FormEvent
+) => {
+
+  e.preventDefault();
+  if (submittingLeave) return;
+
+setSubmittingLeave(true);
+const activeLeave = leaveRequests.find(
+  (x: any) =>
+    x.status === "Pending" ||
+    x.status === "Approved"
+);
+
+if (activeLeave) {
+  toast.error(
+    "You already have an active leave request."
+  );
+  setSubmittingLeave(false);
+  return;
+}
+  if (!leaveForm.campus) {
+    toast.error("Select Campus");
+     setSubmittingLeave(false);
+    return;
+  }
+
+  try {
+
+  await createLeaveRequest({
+  studentId: user.studentId,
+
+  studentName: user.name,
+
+  leaveType: leaveForm.type,
+
+  campus:
+    leaveForm.campus === "incampus"
+      ? "In Campus"
+      : "Out Campus",
+
+  department: studentProfile?.department,
+
+  gender: studentProfile?.gender,
+
+  year: studentProfile?.year,
+
+  fromDate: leaveForm.fromDate,
+
+  toDate: leaveForm.toDate,
+
+  reason: leaveForm.reason,
+
+destination: leaveForm.destination,
+
+exitTime: leaveForm.exitTime,
+
+returnTime: leaveForm.returnTime
+});
+setSubmittingLeave(false);
+
+await loadLeaveRequests();
+    toast.success(
+      "Leave application submitted"
+    );
+
     setLeaveDialogOpen(false);
-    toast.success('Leave application submitted!', {
-      description: leaveForm.campus === 'outcampus'
-        ? 'An outpass has been generated — pending warden approval.'
-        : 'Waiting for warden approval.'
-    });
-  };
+
+setLeaveForm({
+    type: "",
+    campus: "",
+    destination: "",
+    fromDate: "",
+    toDate: "",
+    exitTime: "",
+    returnTime: "",
+    reason: ""
+});
+
+  }
+ catch (err) {
+
+  setSubmittingLeave(false);
+
+  console.log(err);
+
+  toast.error(
+    "Failed to submit leave request"
+  );
+
+}
+
+};
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -369,8 +680,6 @@ await loadOutpasses();
 
   const hostelMenuItems: MenuItemType[] = [
     { icon: <Building2 size={22} />, label: 'Dashboard', active: currentView === 'dashboard', onClick: () => setCurrentView('dashboard') },
-    { icon: <FileText size={22} />, label: 'Request Outpass', active: currentView === 'outpass', onClick: () => { setCurrentView('dashboard'); setOutpassDialogOpen(true); } },
-    { icon: <Calendar size={22} />, label: 'Apply Leave', active: currentView === 'leave', onClick: () => { setCurrentView('dashboard'); setLeaveDialogOpen(true); } },
     { icon: <History size={22} />, label: 'Request History', active: currentView === 'history', onClick: () => setCurrentView('history') },
     { icon: <UserIcon size={22} />, label: 'My Profile', active: false, onClick: () => { setProfileDialogOpen(true); setProfileTab('info'); } },
    ...(vacatingRequest?.status !== "Pending"
@@ -404,34 +713,81 @@ await loadOutpasses();
     outpass: 'Request Outpass',
     leave: 'Apply Leave',
   }[currentView];
+    
 
   return (
-    <DashboardLayout user={user} onLogout={onLogout} title={viewTitle} menuItems={menuItems}>
+    <DashboardLayout
+user={{
+    ...user,
+    profilePhoto:
+        profilePhoto ||
+        studentProfile?.profilePhoto ||
+        user.profilePhoto
+}}
+onLogout={() => {
+
+if(activeOutpass){
+
+toast.error(
+"Return to hostel before logging out."
+);
+
+return;
+}
+
+onLogout();
+
+}} title={viewTitle} menuItems={menuItems}>
       <div className="space-y-4 max-w-2xl mx-auto">
 
         {/* History View */}
         {currentView === 'history' && (
           <Card sx={{ borderRadius: 3 }}>
             <CardContent className="p-4">
-              <h3 className="font-bold text-gray-800 mb-3 text-lg">All Outpass Requests</h3>
+              <h3 className="font-bold text-gray-800 mb-3 text-lg">
+Request History
+</h3>
               <div className="space-y-3">
-                {outpasses.map((outpass) => {console.log(outpasses);
+                {[...outpasses]
+.filter(x => x.leaveRequestId === 0)
+.sort((a,b)=>{
+
+const aActive =
+a.outpassState==="Active"||
+a.outpassState==="Outside Hostel";
+
+const bActive =
+b.outpassState==="Active"||
+b.outpassState==="Outside Hostel";
+
+if(aActive && !bActive) return -1;
+
+if(!aActive && bActive) return 1;
+
+return new Date(b.createdAt).getTime()
+-
+new Date(a.createdAt).getTime();
+
+})
+.map((outpass)=>{console.log(outpasses);
                   const isLeaveOutpass =
-  outpass.status?.toLowerCase() === "approved";
+                       outpass.status?.toLowerCase() === "approved";
                   return (
-                  <div
-  key={outpass.id}
-  className={`rounded-xl p-3 ${
-    outpass.status?.toLowerCase() === "approved"
-      ? "bg-green-50 border border-green-200"
-      : "bg-gray-50"
-  }`}
+                  <div key={outpass.id}
+    className={`rounded-xl p-3 ${
+(
+outpass.outpassState==="Active"||
+outpass.outpassState==="Outside Hostel"
+)
+?
+"bg-green-50 border border-green-200"
+:
+"bg-white border border-gray-200"
+}`}
 >  {isLeaveOutpass && (
                       <div className="flex items-center space-x-1.5 mb-2">
                         <Calendar size={12} className="text-teal-600" />
-                        <span className="text-xs font-semibold text-teal-700">
-  
-</span>
+                        <span className="text-xs font-semibold text-teal-700"></span>
                       </div>
                     )}
                     <div className="flex items-start justify-between mb-2">
@@ -447,7 +803,14 @@ await loadOutpasses();
                           />
                         </div>
                       </div>
-                      {outpass.status?.toLowerCase() === 'approved' && (
+                    {(
+    outpass.status?.toLowerCase() === "approved" &&
+    (
+        outpass.outpassState === "Active" ||
+        outpass.outpassState === "Outside Hostel" ||
+        outpass.outpassState === "Waiting For Exit"
+    )
+) && (
                         <button
                           onClick={() => { setSelectedOutpass(outpass); setQrCardOpen(true); }}
                           className="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs font-medium active:scale-95"
@@ -457,29 +820,229 @@ await loadOutpasses();
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-                     <span className="flex items-center">
-<Calendar size={12} className="mr-1" />
-{new Date(outpass.validFrom).toLocaleDateString()}
-</span>
-                      <span className="flex items-center"><Clock size={12} className="mr-1" />{new Date(`2000-01-01T${outpass.timeOut}`)
-  .toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })} - {new Date(`2000-01-01T${outpass.returnTime}`)
-  .toLocaleTimeString([], {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  })}</span>
-                      <span className="flex items-center"><MapPin size={12} className="mr-1" />{outpass.destination}</span>
-                    </div>
+
+  <span className="flex items-center">
+    <Calendar size={12} className="mr-1" />
+    {new Date(outpass.validFrom).toLocaleDateString()}
+  </span>
+
+  <span className="flex items-center">
+    <Clock size={12} className="mr-1" />
+
+    {new Date(`2000-01-01T${outpass.timeOut}`)
+      .toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      })}
+
+    {" - "}
+
+    {new Date(`2000-01-01T${outpass.returnTime}`)
+      .toLocaleTimeString([], {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true
+      })}
+  </span>
+
+  <span className="flex items-center">
+    <MapPin size={12} className="mr-1" />
+    {outpass.destination}
+  </span>
+{outpass.outpassState==="Expired" &&
+!outpass.actualExitTime && (
+
+<p className="w-full text-red-600 text-xs font-semibold">
+
+Not Exited
+
+</p>
+
+)}
+  {outpass.actualExitTime && (
+    <p className="w-full text-green-600 text-xs">
+      Exit Time :
+      {" "}
+      {new Date(outpass.actualExitTime).toLocaleString([], {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      })}
+    </p>
+  )}
+{outpass.outpassState==="Outside Hostel" &&
+!outpass.actualReturnTime && (
+
+<p className="w-full text-orange-600 text-xs font-semibold">
+
+Not Returned Yet
+
+</p>
+
+)}
+  {outpass.actualReturnTime && (
+    <p className="w-full text-blue-600 text-xs">
+      Return Time :
+      {" "}
+      {new Date(outpass.actualReturnTime).toLocaleString([], {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true
+      })}
+    </p>
+  )}
+
+  {outpass.lateMinutes > 0 && (
+    <p className="w-full text-red-600 text-xs">
+      Late :
+      {outpass.lateMinutes} minutes
+    </p>
+  )}
+
+</div>
                   </div>
                   );
                 })}
                 {outpasses.length === 0 && (
                   <p className="text-center text-gray-400 py-6 text-sm">No outpass requests yet</p>
                 )}
+                <hr className="my-5" />
+
+<h3 className="font-bold text-gray-800 mb-3">
+Leave Requests
+</h3>
+
+<div className="space-y-3">
+
+{leaveRequests
+.sort(
+(a,b)=>
+new Date(b.createdDate).getTime()-
+new Date(a.createdDate).getTime()
+)
+.map((leave)=>{
+
+const linkedOutpass=
+outpasses.find(
+x=>x.leaveRequestId===leave.id
+);
+
+return(
+
+<div
+key={leave.id}
+className="border rounded-xl p-3"
+>
+
+<div className="flex justify-between">
+
+<div>
+
+<p className="font-semibold">
+{leave.leaveType}
+</p>
+
+<p className="text-xs text-gray-500">
+{leave.campus}
+</p>
+
+</div>
+
+<Chip
+label={leave.status}
+color={getStatusColor(
+leave.status.toLowerCase()
+)}
+size="small"
+/>
+
+</div>
+
+<p className="text-xs mt-2">
+📅 {new Date(leave.fromDate).toLocaleDateString()}
+{" - "}
+{new Date(leave.toDate).toLocaleDateString()}
+</p>
+
+<div className="mt-2 space-y-1">
+
+  <p className="text-xs text-gray-700">
+    {leave.reason}
+  </p>
+
+  {leave.destination && (
+    <p className="flex items-center text-xs text-gray-600">
+      <MapPin size={12} className="mr-1 text-red-500" />
+      {leave.destination}
+    </p>
+  )}
+
+</div>
+
+{leave.status==="Rejected" &&
+leave.rejectReason && (
+
+<p className="text-xs text-red-600 mt-2">
+
+Reject Reason :
+
+{" "}
+
+{leave.rejectReason}
+
+</p>
+
+)}
+
+{leave.campus==="Out Campus" &&
+linkedOutpass &&
+linkedOutpass.status==="Approved" &&
+(
+linkedOutpass.outpassState==="Active" ||
+linkedOutpass.outpassState==="Waiting For Exit" ||
+linkedOutpass.outpassState==="Outside Hostel"
+) && (
+
+<button
+onClick={()=>{
+setSelectedOutpass(linkedOutpass);
+setQrCardOpen(true);
+}}
+className="mt-3 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
+>
+
+Show Pass
+
+</button>
+
+)}
+
+</div>
+
+);
+
+})}
+
+{leaveRequests.length===0 && (
+
+<p className="text-center text-gray-400">
+
+No Leave Requests
+
+</p>
+
+)}
+
+</div>
               </div>
             </CardContent>
           </Card>
@@ -495,12 +1058,12 @@ await loadOutpasses();
                   <Bus size={20} className="text-green-500" />
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-gray-500 text-xs">Route</p><p className="font-medium">Route 5 - Anna Nagar</p></div>
-                  <div><p className="text-gray-500 text-xs">Bus Number</p><p className="font-medium">TN-01-AB-1234</p></div>
-                  <div><p className="text-gray-500 text-xs">Boarding Point</p><p className="font-medium">Anna Nagar East</p></div>
-                  <div><p className="text-gray-500 text-xs">Pickup Time</p><p className="font-medium">7:30 AM</p></div>
+                  <div><p className="text-gray-500 text-xs">Route</p><p className="font-medium">{transportInfo?.routeName ?? "-"}</p></div>
+                  <div><p className="text-gray-500 text-xs">Bus Number</p><p className="font-medium">{transportInfo?.busNumber ?? "-"}</p></div>
+                  <div><p className="text-gray-500 text-xs">Boarding Point</p><p className="font-medium">{transportInfo?.stopName ?? "-"}</p></div>
+                  <div><p className="text-gray-500 text-xs">Pickup Time</p><p className="font-medium">{transportInfo?.pickupTime ?? "-"}</p></div>
                   <div><p className="text-gray-500 text-xs">Drop Point</p><p className="font-medium">College Gate</p></div>
-                  <div><p className="text-gray-500 text-xs">Drop Time</p><p className="font-medium">5:30 PM</p></div>
+                  {/*<div><p className="text-gray-500 text-xs">Drop Time</p><p className="font-medium">5:30 PM</p></div>*/}
                 </div>
               </CardContent>
             </Card>
@@ -522,26 +1085,51 @@ await loadOutpasses();
 
 
         {/* Announcements View */}
-        {currentView === 'announcements' && (
-          <div className="space-y-3">
-            {[
-              { title: 'Route 5 - Time Change', body: 'Pickup time changed to 7:15 AM from Monday, June 8th onwards.', date: '2 days ago', color: 'border-blue-500 bg-blue-50' },
-              { title: 'Holiday Notice', body: 'No bus service on June 15th (Public Holiday). Plan your travel accordingly.', date: '3 days ago', color: 'border-orange-500 bg-orange-50' },
-              { title: 'Fee Reminder', body: 'Transport fee for June must be paid by June 15th to avoid service suspension.', date: '5 days ago', color: 'border-red-500 bg-red-50' },
-              { title: 'New Pickup Stop Added', body: 'New stop added at Koyambedu Signal on Route 5.', date: '1 week ago', color: 'border-green-500 bg-green-50' },
-            ].map((ann, i) => (
-              <Card key={i} sx={{ borderRadius: 3 }}>
-                <CardContent className="p-4">
-                  <div className={`border-l-4 pl-3 ${ann.color} rounded-r-xl p-3`}>
-                    <p className="font-semibold text-gray-800 text-sm">{ann.title}</p>
-                    <p className="text-xs text-gray-600 mt-1">{ann.body}</p>
-                    <p className="text-xs text-gray-400 mt-2">{ann.date}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+      {currentView === "announcements" && (
+  <div className="space-y-3">
+
+    {announcements.length === 0 ? (
+
+      <Card sx={{ borderRadius: 3 }}>
+        <CardContent className="text-center py-8">
+
+          <Bell
+            size={40}
+            className="mx-auto text-gray-300 mb-3"
+          />
+
+ <p className="text-gray-500">
+    No announcements available
+</p>
+
+        </CardContent>
+      </Card>
+
+    ) : (
+
+      announcements.map((ann: any) => (
+        <Card key={ann.id} sx={{ borderRadius: 3 }}>
+          <CardContent>
+
+         <p className="font-semibold">
+    {ann.title}
+</p>
+<p className="mt-1 text-gray-600">
+    {ann.message}
+</p>
+
+           <p className="text-xs text-gray-400 mt-2">
+    {ann.createdDate}
+</p>
+
+          </CardContent>
+        </Card>
+      ))
+
+    )}
+
+  </div>
+)}
 
         {/* Default Dashboard View */}
         {currentView === 'dashboard' && (
@@ -552,7 +1140,14 @@ await loadOutpasses();
               <CardContent className="px-4 pb-4 -mt-10">
                 <div className="flex items-start space-x-4">
                   <div className="relative">
-                    <Avatar src={profilePhoto || user.avatar} alt={user.name} sx={{ width: 80, height: 80, border: '4px solid white' }} />
+                <Avatar
+  src={
+    profilePhoto ||
+    (studentProfile?.profilePhoto
+      ? `https://202.61.121.102:8443${studentProfile.profilePhoto}`
+      : user.avatar)
+  }
+  alt={user.name}sx={{ width: 80, height: 80, border: '4px solid white' }} />
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 shadow-md border-2 border-white active:scale-90 transition-transform"
@@ -562,15 +1157,15 @@ await loadOutpasses();
                     <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   </div>
                   <div className="flex-1 mt-10">
-                    <h2 className="text-xl font-bold text-gray-800">{user.name}</h2>
+                    <h2 className="text-xl font-bold text-gray-800">{studentProfile?.studentName}</h2>
                     <div className="flex flex-wrap gap-2 mt-2 text-sm text-gray-600">
-                      <span className="flex items-center"><UserIcon size={14} className="mr-1" />{user.studentId}</span>
-                      <span className="flex items-center"><Building2 size={14} className="mr-1" />{user.department}</span>
+                      <span className="flex items-center"><UserIcon size={14} className="mr-1" />{studentProfile?.studentId}</span>
+                      <span className="flex items-center"><Building2 size={14} className="mr-1" />{studentProfile?.department}</span>
                     </div>
                     <div className="flex flex-wrap gap-2 mt-1 text-xs text-gray-500">
-                      <span>{user.year}</span>
+                      <span>{studentProfile?.year}</span>
                       <span>•</span>
-                      <span>{user.college}</span>
+                      <span>{studentProfile?.collegeName}</span>
                     </div>
                   </div>
                 </div>
@@ -593,7 +1188,9 @@ await loadOutpasses();
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <FileText size={24} className="text-green-500" />
-                      <span className="text-2xl font-bold text-gray-800">{outpasses.length}</span>
+                      <span className="text-2xl font-bold text-gray-800">{
+outpasses.filter(x => x.leaveRequestId === 0).length
+}</span>
                     </div>
                     <p className="text-xs text-gray-600">Total Outpasses</p>
                   </CardContent>
@@ -606,9 +1203,9 @@ await loadOutpasses();
                       <Building2 size={20} className="text-blue-500" />
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div><p className="text-gray-500 text-xs">Block</p><p className="font-medium">A Block</p></div>
-                      <div><p className="text-gray-500 text-xs">Room</p><p className="font-medium">A-301</p></div>
-                      <div><p className="text-gray-500 text-xs">Bed</p><p className="font-medium">B2</p></div>
+                      <div><p className="text-gray-500 text-xs">Block</p><p className="font-medium">{studentProfile?.block ?? "-"}</p></div>
+                      <div><p className="text-gray-500 text-xs">Room</p><p className="font-medium">{studentProfile?.roomNumber ?? "-"}</p></div>
+                      <div><p className="text-gray-500 text-xs">Bed</p><p className="font-medium">{studentProfile?.bedNumber ?? "-"}</p></div>
                       <div><p className="text-gray-500 text-xs">Warden</p><p className="font-medium">Dr. Sharma</p></div>
                     </div>
                   </CardContent>
@@ -616,21 +1213,195 @@ await loadOutpasses();
 
                 <div className="grid grid-cols-2 gap-3">
                   <button
-                    onClick={() => setOutpassDialogOpen(true)}
-                    className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-2xl shadow-lg active:scale-95 transition-transform"
-                  >
+  disabled={!!activeOutpass}
+  onClick={() => setOutpassDialogOpen(true)}
+  className={`bg-gradient-to-br from-blue-500 to-blue-600
+    text-white p-4 rounded-2xl shadow-lg
+    ${activeOutpass ? "opacity-50 cursor-not-allowed" : ""}
+  `}
+>
                     <FileText size={28} className="mb-2" />
                     <p className="font-semibold text-sm">Request Outpass</p>
                   </button>
                   <button
-                    onClick={() => setLeaveDialogOpen(true)}
-                    className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg active:scale-95 transition-transform"
-                  >
+ disabled={
+  !!activeOutpass ||
+  leaveRequests.some(
+    (x: any) =>
+      x.status === "Pending" ||
+      x.status === "Approved"
+  )
+}
+  onClick={() => setLeaveDialogOpen(true)}
+  className={`bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg ${
+    !!activeOutpass ||
+    leaveRequests.some(
+      (x: any) =>
+        x.status === "Pending" ||
+        x.status === "Approved"
+    )
+      ? "opacity-50 cursor-not-allowed"
+      : ""
+  }`}
+>
                     <Calendar size={28} className="mb-2" />
                     <p className="font-semibold text-sm">Apply Leave</p>
                   </button>
                 </div>
+{activeOutpass && (
 
+<Card sx={{ borderRadius: 3 }}>
+
+<CardContent className="p-4">
+
+<div className="flex items-center justify-between mb-3">
+
+<h3 className="font-bold text-gray-800">
+Active Outpass
+</h3>
+
+<Chip
+label={activeOutpass.status}
+color="success"
+size="small"
+/>
+
+</div>
+
+<div
+className="rounded-xl p-3 bg-green-50 border border-green-200"
+>
+
+<p className="font-semibold text-gray-800 text-sm">
+{activeOutpass.reason}
+</p>
+
+<div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-600">
+
+<span className="flex items-center">
+<Calendar size={12} className="mr-1"/>
+{new Date(activeOutpass.validFrom).toLocaleDateString()}
+</span>
+
+<span className="flex items-center">
+<Clock size={12} className="mr-1"/>
+
+{new Date(`2000-01-01T${activeOutpass.timeOut}`)
+.toLocaleTimeString([],{
+hour:"numeric",
+minute:"2-digit",
+hour12:true
+})}
+
+{" - "}
+
+{new Date(`2000-01-01T${activeOutpass.returnTime}`)
+.toLocaleTimeString([],{
+hour:"numeric",
+minute:"2-digit",
+hour12:true
+})}
+
+</span>
+
+<span className="flex items-center">
+<MapPin size={12} className="mr-1"/>
+{activeOutpass.destination}
+</span>
+
+</div>
+
+<p className="mt-3 text-sm">
+
+<b>State :</b>
+
+<span className="text-green-700 font-semibold ml-1">
+{activeOutpass.outpassState}
+</span>
+
+</p>
+
+{activeOutpass.actualExitTime && (
+
+<p className="mt-2 text-green-600 text-sm">
+
+Exit Time :
+
+{" "}
+
+{new Date(activeOutpass.actualExitTime)
+.toLocaleString([],{
+day:"2-digit",
+month:"2-digit",
+year:"numeric",
+hour:"numeric",
+minute:"2-digit",
+second:"2-digit",
+hour12:true
+})}
+
+</p>
+
+)}
+
+{activeOutpass.actualReturnTime && (
+
+<p className="mt-1 text-blue-600 text-sm">
+
+Return Time :
+
+{" "}
+
+{new Date(activeOutpass.actualReturnTime)
+.toLocaleString([],{
+day:"2-digit",
+month:"2-digit",
+year:"numeric",
+hour:"numeric",
+minute:"2-digit",
+second:"2-digit",
+hour12:true
+})}
+
+</p>
+
+)}
+
+{activeOutpass.lateMinutes>0 && (
+
+<p className="mt-1 text-red-600 text-sm">
+
+Late :
+
+{activeOutpass.lateMinutes} minutes
+
+</p>
+
+)}
+
+<div className="mt-4">
+
+<button
+onClick={()=>{
+setSelectedOutpass(activeOutpass);
+setQrCardOpen(true);
+}}
+className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
+>
+
+Show Pass
+
+</button>
+
+</div>
+
+</div>
+
+</CardContent>
+
+</Card>
+
+)}
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-3">
@@ -641,19 +1412,40 @@ await loadOutpasses();
                     </div>
                     <div className="space-y-3">
                       {outpasses
-  .filter(
-    x =>
-      x.reason &&
-      x.destination
-  )
-  .slice(0, 2)
+.filter(
+  x =>
+    x.reason &&
+    x.destination &&
+    x.leaveRequestId === 0
+)
+.sort((a, b) => {
+
+    if (
+        a.outpassState === "Active" ||
+        a.outpassState === "Outside Hostel"
+    ) return -1;
+
+    if (
+        b.outpassState === "Active" ||
+        b.outpassState === "Outside Hostel"
+    ) return 1;
+
+    return new Date(b.createdAt).getTime()
+         - new Date(a.createdAt).getTime();
+})
+.slice(0,2)
   .map((outpass) => (
   <div
     key={outpass.id}
     className={`rounded-xl p-3 ${
-      outpass.status?.toLowerCase() === "approved"
-        ? "bg-green-50 border border-green-200"
-        : "bg-gray-50"
+     (
+outpass.outpassState==="Active" ||
+outpass.outpassState==="Outside Hostel"
+)
+?
+"bg-green-50 border border-green-200"
+:
+"bg-white border border-gray-200"
     }`}
   >
     <div className="flex items-start justify-between mb-2">
@@ -676,9 +1468,14 @@ await loadOutpasses();
           />
         </div>
       </div>
-
-      {outpass.status?.toLowerCase() ===
-        "approved" && (
+{(
+    outpass.status?.toLowerCase() === "approved" &&
+    (
+        outpass.outpassState === "Active" ||
+        outpass.outpassState === "Outside Hostel" ||
+        outpass.outpassState === "Waiting For Exit"
+    )
+) && (
         <button
           onClick={() => {
             setSelectedOutpass(outpass);
@@ -723,76 +1520,273 @@ await loadOutpasses();
         <MapPin size={12} className="mr-1" />
         {outpass.destination}
       </span>
+      {outpass.outpassState==="Expired" &&
+!outpass.actualExitTime && (
 
+<p className="w-full text-red-600 text-xs font-semibold">
+
+Not Exited
+
+</p>
+
+)}
+{outpass.actualExitTime && (
+  <p className="w-full text-green-600 text-xs">
+    Exit Time :
+    {new Date(outpass.actualExitTime).toLocaleString()}
+  </p>
+)}
+{outpass.outpassState==="Outside Hostel" &&
+!outpass.actualReturnTime && (
+
+<p className="w-full text-orange-600 text-xs font-semibold">
+
+Not Returned Yet
+
+</p>
+
+)}
+{outpass.actualReturnTime && (
+  <p className="w-full text-blue-600 text-xs">
+    Return Time :
+    {new Date(outpass.actualReturnTime).toLocaleString()}
+  </p>
+)}
+
+
+{outpass.lateMinutes > 0 && (
+  <p className="w-full text-red-600 text-xs">
+    Late :
+    {outpass.lateMinutes} minutes
+  </p>
+)}
     </div>
   </div>
 ))}
                     </div>
                   </CardContent>
                 </Card>
-              </>
-            )}
-{activeOutpass && (
-  <Card sx={{ borderRadius: 3 }}>
-    <CardContent>
+                <Card sx={{ borderRadius: 3 }}>
+  <CardContent className="p-4">
 
-      <h3 className="font-bold text-green-700">
-        Active Outpass
+    <div className="flex items-center justify-between mb-3">
+      <h3 className="font-bold text-gray-800">
+        Recent Leave Requests
       </h3>
+    </div>
 
-      <p>
-        {activeOutpass.reason}
-      </p>
+    <div className="space-y-3">
 
-      <p>
-        {activeOutpass.destination}
-      </p>
-<p>
-  State :
-  {activeOutpass.outpassState}
+      {leaveRequests
+        .sort(
+          (a,b)=>
+            new Date(b.createdDate).getTime()-
+            new Date(a.createdDate).getTime()
+        )
+        .slice(0,2)
+        .map((leave)=>{
+
+          const linkedOutpass =
+            outpasses.find(
+              x=>x.leaveRequestId===leave.id
+            );
+
+          return(
+
+            <div
+  key={leave.id}
+  className={`rounded-xl p-3 ${
+    leave.status === "Approved"
+      ? "bg-green-50 border border-green-200"
+      : leave.status === "Rejected"
+      ? "bg-red-50 border border-red-200"
+      : "bg-yellow-50 border border-yellow-200"
+  }`}
+>
+              <div className="flex items-start justify-between mb-2">
+
+                <div>
+
+                 <p className="font-semibold text-gray-800 text-sm">
+  {leave.leaveType}
 </p>
 
-<p>
-  Exit Time :
-  {
-    activeOutpass.actualExitTime
-      ? new Date(
-          activeOutpass.actualExitTime
-        ).toLocaleString()
-      : "-"
-  }
+                <p className="text-xs text-gray-500">
+  {leave.campus}
 </p>
 
-<p>
-  Return Time :
-  {
-    activeOutpass.actualReturnTime
-      ? new Date(
-          activeOutpass.actualReturnTime
-        ).toLocaleString()
-      : "-"
-  }
-</p>
-
-<p>
-  Late Minutes :
-  {
-    activeOutpass.lateMinutes ?? 0
-  }
-</p>
-      <button
-        onClick={() => {
-          setSelectedOutpass(activeOutpass);
-          setQrCardOpen(true);
-        }}
-        className="bg-blue-500 text-white px-4 py-2 rounded"
-      >
-        Show Pass
-      </button>
-
-    </CardContent>
-  </Card>
+{leave.destination && (
+  <p className="text-xs text-gray-600 mt-1">
+    <MapPin size={12} className="inline mr-1" />
+    {leave.destination}
+  </p>
 )}
+
+                </div>
+
+                <Chip
+                  label={leave.status}
+                  color={getStatusColor(
+                    leave.status.toLowerCase()
+                  )}
+                  size="small"
+                />
+
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-600">
+
+  <span className="flex items-center">
+    <Calendar size={12} className="mr-1" />
+    {new Date(leave.fromDate).toLocaleDateString()}
+    {" - "}
+    {new Date(leave.toDate).toLocaleDateString()}
+  </span>
+
+</div>
+
+             <p className="text-xs text-gray-700 mt-2">
+  {leave.reason}
+</p>
+
+              {leave.status==="Rejected" &&
+                leave.rejectReason && (
+
+                <p className="text-xs text-red-600 mt-2">
+                  Reject Reason :
+                  {" "}
+                  {leave.rejectReason}
+                </p>
+
+              )}
+{linkedOutpass && (
+
+<>
+
+<p className="text-xs mt-2">
+<b>State :</b> {linkedOutpass.outpassState}
+</p>
+
+{linkedOutpass.outpassState === "Expired" &&
+!linkedOutpass.actualExitTime && (
+
+<p className="text-xs text-red-600 mt-1">
+Not Exited
+</p>
+
+)}
+
+{linkedOutpass.actualExitTime && (
+
+<p className="text-xs text-green-600 mt-1">
+
+Exit Time :
+{" "}
+{new Date(linkedOutpass.actualExitTime)
+.toLocaleString([],{
+day:"2-digit",
+month:"2-digit",
+year:"numeric",
+hour:"numeric",
+minute:"2-digit",
+second:"2-digit",
+hour12:true
+})}
+
+</p>
+
+)}
+
+{linkedOutpass.outpassState==="Outside Hostel" &&
+!linkedOutpass.actualReturnTime && (
+
+<p className="text-xs text-orange-600 mt-1">
+
+Not Returned Yet
+
+</p>
+
+)}
+
+{linkedOutpass.actualReturnTime && (
+
+<p className="text-xs text-blue-600 mt-1">
+
+Return Time :
+{" "}
+{new Date(linkedOutpass.actualReturnTime)
+.toLocaleString([],{
+day:"2-digit",
+month:"2-digit",
+year:"numeric",
+hour:"numeric",
+minute:"2-digit",
+second:"2-digit",
+hour12:true
+})}
+
+</p>
+
+)}
+
+{linkedOutpass.lateMinutes>0 && (
+
+<p className="text-xs text-red-600 mt-1">
+
+Late :
+{linkedOutpass.lateMinutes} minutes
+
+</p>
+
+)}
+
+</>
+
+)}
+              {leave.campus==="Out Campus" &&
+               linkedOutpass &&
+               linkedOutpass.status==="Approved" &&
+               (
+                 linkedOutpass.outpassState==="Active" ||
+                 linkedOutpass.outpassState==="Waiting For Exit" ||
+                 linkedOutpass.outpassState==="Outside Hostel"
+               ) && (
+
+                <button
+                  onClick={()=>{
+                    setSelectedOutpass(linkedOutpass);
+                    setQrCardOpen(true);
+                  }}
+                 className="bg-blue-500 text-white px-3 py-1 rounded-lg text-xs font-medium mt-3"
+                >
+                  Show Pass
+                </button>
+
+              )}
+
+            </div>
+
+          );
+
+      })}
+
+      {leaveRequests.length===0 && (
+
+        <p className="text-center text-gray-400 py-6">
+
+          No Leave Requests
+
+        </p>
+
+      )}
+
+    </div>
+
+  </CardContent>
+</Card>
+              </>
+              
+            )}
             {/* TRANSPORT VIEW */}
             {!isHostel && (
               <>
@@ -800,7 +1794,9 @@ await loadOutpasses();
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
                       <MapPin size={24} className="text-blue-500" />
-                      <span className="text-lg font-bold text-gray-800">Route 5</span>
+                    <span className="text-lg font-bold text-gray-800">
+{transportInfo?.routeName ?? "-"}
+</span>
                     </div>
                     <p className="text-xs text-gray-600">Active Route</p>
                   </CardContent>
@@ -813,11 +1809,11 @@ await loadOutpasses();
                       <Bus size={20} className="text-green-500" />
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-sm">
-                      <div><p className="text-gray-500 text-xs">Route</p><p className="font-medium">Route 5 - Anna Nagar</p></div>
-                      <div><p className="text-gray-500 text-xs">Bus Number</p><p className="font-medium">TN-01-AB-1234</p></div>
-                      <div><p className="text-gray-500 text-xs">Boarding Point</p><p className="font-medium">Anna Nagar</p></div>
-                      <div><p className="text-gray-500 text-xs">Pickup Time</p><p className="font-medium">7:30 AM</p></div>
-                      <div><p className="text-gray-500 text-xs">Drop Time</p><p className="font-medium">5:30 PM</p></div>
+                      <div><p className="text-gray-500 text-xs">Route</p><p className="font-medium">{transportInfo?.routeName ?? "-"}</p></div>
+                      <div><p className="text-gray-500 text-xs">Bus Number</p><p className="font-medium">{transportInfo?.busNumber ?? "-"}</p></div>
+                      <div><p className="text-gray-500 text-xs">Boarding Point</p><p className="font-medium">{transportInfo?.stopName ?? "-"}</p></div>
+                      <div><p className="text-gray-500 text-xs">Pickup Time</p><p className="font-medium">{transportInfo?.pickupTime ?? "-"}</p></div>
+
                     </div>
                   </CardContent>
                 </Card>
@@ -847,11 +1843,33 @@ await loadOutpasses();
                         View All
                       </button>
                     </div>
-                    <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-lg">
-                      <p className="font-semibold text-gray-800 text-sm">Route 5 - Time Change</p>
-                      <p className="text-xs text-gray-600 mt-1">Pickup time changed to 7:15 AM from Monday</p>
-                      <p className="text-xs text-gray-400 mt-2">2 days ago</p>
-                    </div>
+                  {announcements.length === 0 ? (
+
+<div className="text-center py-8 text-gray-500">
+
+No announcements available
+
+</div>
+
+) : (
+
+<div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-lg">
+
+<p className="font-semibold text-gray-800 text-sm">
+{announcements[0].title}
+</p>
+
+<p className="text-xs text-gray-600 mt-1">
+{announcements[0].message}
+</p>
+
+<p className="text-xs text-gray-400 mt-2">
+{announcements[0].createdDate}
+</p>
+
+</div>
+
+)}
                   </CardContent>
                 </Card>
               </>
@@ -908,8 +1926,8 @@ await loadOutpasses();
                 className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400" required />
             </div>
           </div>
-          <button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
-            Submit Request
+          <button type="submit"disabled={submittingOutpass} className="w-full bg-gradient-to-r from-blue-500 to-blue-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
+           {submittingOutpass ? "Submitting..." : "Submit Request"}
           </button>
         </form>
       </Dialog>
@@ -949,6 +1967,33 @@ await loadOutpasses();
               ))}
             </div>
           </div>
+          {leaveForm.campus === "outcampus" && (
+
+<div className="bg-white rounded-2xl p-4">
+
+<label className="block text-sm font-medium text-gray-700 mb-2">
+
+Destination
+
+</label>
+
+<input
+type="text"
+value={leaveForm.destination}
+onChange={(e)=>
+setLeaveForm({
+...leaveForm,
+destination:e.target.value
+})
+}
+className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl"
+placeholder="Enter Destination"
+required
+/>
+
+</div>
+
+)}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-2xl p-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">From Date</label>
@@ -963,6 +2008,43 @@ await loadOutpasses();
                 className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400" required />
             </div>
           </div>
+          {
+leaveForm.campus === "outcampus" &&
+leaveForm.fromDate === leaveForm.toDate && (
+<>
+
+<div className="bg-white rounded-2xl p-4">
+<label>Exit Time</label>
+
+<input
+type="time"
+value={leaveForm.exitTime}
+onChange={(e)=>
+setLeaveForm({
+...leaveForm,
+exitTime:e.target.value
+})}
+required
+/>
+</div>
+
+<div className="bg-white rounded-2xl p-4">
+<label>Return Time</label>
+
+<input
+type="time"
+value={leaveForm.returnTime}
+onChange={(e)=>
+setLeaveForm({
+...leaveForm,
+returnTime:e.target.value
+})}
+required
+/>
+</div>
+
+</>
+)}
           <div className="bg-white rounded-2xl p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Reason</label>
             <textarea value={leaveForm.reason}
@@ -976,15 +2058,28 @@ await loadOutpasses();
               <p className="text-xs text-amber-800 font-medium">Out Campus leave — an <span className="font-bold">Outpass will be auto-generated</span> once the warden approves your leave request.</p>
             </div>
           )}
-          <button type="submit" className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
-            Submit Application
+          <button type="submit" disabled={submittingLeave} className="w-full bg-gradient-to-r from-green-500 to-green-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
+             {submittingLeave
+        ? "Submitting..."
+        : "Submit Application"}
           </button>
         </form>
       </Dialog>
 
-      {selectedOutpass && (
-        <OutpassQRCard open={qrCardOpen} onClose={() => setQrCardOpen(false)} outpass={selectedOutpass} student={user} />
-      )}
+     {selectedOutpass && (
+  <OutpassQRCard
+    open={qrCardOpen}
+    onClose={() => setQrCardOpen(false)}
+    outpass={selectedOutpass}
+    student={{
+      ...user,
+      profilePhoto: studentProfile?.profilePhoto,
+      department: studentProfile?.department,
+      year: studentProfile?.year,
+      college: studentProfile?.collegeName
+    }}
+  />
+)}
 
       {/* Vacate Hostel Dialog */}
       <Dialog open={vacateDialogOpen} onClose={() => setVacateDialogOpen(false)} fullScreen PaperProps={{ sx: { bgcolor: '#f9fafb' } }}>
@@ -1009,11 +2104,11 @@ await loadOutpasses();
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Student ID:</span>
-                  <span className="font-medium text-gray-800">{user.studentId}</span>
+                  <span className="font-medium text-gray-800">{studentProfile?.studentId}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Name:</span>
-                  <span className="font-medium text-gray-800">{user.name}</span>
+                  <span className="font-medium text-gray-800">{studentProfile?.studentName}</span>
                 </div>
              
               </div>
@@ -1022,9 +2117,9 @@ await loadOutpasses();
 
           <div className="bg-white rounded-2xl p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Vacating</label>
-            <textarea
-              value={vacateReason}
-              onChange={(e) => setVacateReason(e.target.value)}
+        <textarea
+value={vacateReason}
+onChange={(e) => setVacateReason(e.target.value)}
               className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-400"
               rows={4}
               placeholder="Please provide a detailed reason for vacating the hostel..."
@@ -1049,7 +2144,7 @@ await loadOutpasses();
   handleVacateSubmit();
 }}
 
-              disabled={!vacateReason.trim()}
+             disabled={!vacateReason.trim()}
               className="flex-1 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform disabled:opacity-50"
             >
               Submit Request
@@ -1087,27 +2182,29 @@ await loadOutpasses();
                   <span className="text-gray-600">Name:</span>
                   <span className="font-medium text-gray-800">{user.name}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Department:</span>
-                  <span className="font-medium text-gray-800">{user.department}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Route:</span>
-                  <span className="font-medium text-gray-800">Route 5 - Anna Nagar</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Bus Number:</span>
-                  <span className="font-medium text-gray-800">TN-01-AB-1234</span>
-                </div>
+                
+               <div className="flex justify-between">
+  <span className="text-gray-600">Route:</span>
+  <span className="font-medium text-gray-800">
+    {transportInfo?.routeName ?? "-"}
+  </span>
+</div>
+
+<div className="flex justify-between">
+  <span className="text-gray-600">Bus Number:</span>
+  <span className="font-medium text-gray-800">
+    {transportInfo?.busNumber ?? "-"}
+  </span>
+</div>
               </div>
             </CardContent>
           </Card>
 
           <div className="bg-white rounded-2xl p-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">Reason for Cancellation</label>
-            <textarea
-              value={vacateReason}
-              onChange={(e) => setVacateReason(e.target.value)}
+           <textarea
+  value={cancelReason}
+  onChange={(e) => setCancelReason(e.target.value)}
               className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400"
               rows={4}
               placeholder="Please provide a detailed reason for cancelling transport service..."
@@ -1117,20 +2214,45 @@ await loadOutpasses();
 
           <div className="flex gap-3">
             <button
-              onClick={() => { setCancelDialogOpen(false); setVacateReason(''); }}
+             onClick={() => {
+    setCancelDialogOpen(false);
+    setCancelReason("");
+}}
               className="flex-1 bg-white border-2 border-gray-300 text-gray-700 font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform"
             >
               Cancel
             </button>
             <button
-              onClick={() => {
-                if (vacateReason.trim()) {
-                  toast.success('Cancellation request submitted!', { description: 'Transport Coordinator will review shortly.' });
-                  setCancelDialogOpen(false);
-                  setVacateReason('');
-                }
-              }}
-              disabled={!vacateReason.trim()}
+           onClick={async () => {
+
+  if (!cancelReason.trim()) {
+    toast.error("Enter reason");
+    return;
+  }
+
+  try {
+
+    await submitTransportCancellation(
+      user.studentId || "",
+      user.name,
+      cancelReason
+    );
+
+    await loadTransportCancellation();
+
+    toast.success("Cancellation request submitted");
+
+    setCancelDialogOpen(false);
+    setCancelReason("");
+
+  } catch (err: any) {
+
+    toast.error(err.message);
+
+  }
+
+}}
+             disabled={!cancelReason.trim()}
               className="flex-1 bg-gradient-to-r from-orange-500 to-orange-700 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform disabled:opacity-50"
             >
               Submit Request
@@ -1147,8 +2269,11 @@ await loadOutpasses();
         </div>
 
         {/* Tab bar */}
-        <div className="flex bg-white border-b border-gray-200 shadow-sm">
-          {(['info', 'history', 'password'] as const).map(tab => (
+       <div className="flex bg-white border-b border-gray-200 shadow-sm">
+  {(isHostel
+    ? (['info', 'history', 'password'] as const)
+    : (['info', 'password'] as const)
+  ).map(tab => (
             <button key={tab} onClick={() => setProfileTab(tab)}
               className={`flex-1 py-3 text-sm font-semibold capitalize transition-colors ${profileTab === tab ? (isHostel ? 'text-blue-600 border-b-2 border-blue-600' : 'text-green-600 border-b-2 border-green-600') : 'text-gray-400'}`}>
               {tab === 'info' ? '👤 Info' : tab === 'history' ? '📋 History' : '🔒 Password'}
@@ -1164,7 +2289,13 @@ await loadOutpasses();
               <div className={`${isHostel ? 'bg-gradient-to-br from-blue-500 to-blue-700' : 'bg-gradient-to-br from-green-500 to-green-700'} rounded-3xl p-5 text-white`}>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <Avatar src={profilePhoto || user.avatar} alt={user.name} sx={{ width: 72, height: 72, border: '3px solid rgba(255,255,255,0.5)' }} />
+                   <Avatar
+  src={
+    profilePhoto ||
+    (studentProfile?.profilePhoto
+      ? `https://202.61.121.102:8443${studentProfile.profilePhoto}`
+      : user.avatar)
+  } alt={user.name} sx={{ width: 72, height: 72, border: '3px solid rgba(255,255,255,0.5)' }} />
                     <button onClick={() => profileFileInputRef.current?.click()} className="absolute bottom-0 right-0 bg-white text-blue-600 rounded-full p-1 shadow-md active:scale-90 transition-transform">
                       <Camera size={12} />
                     </button>
@@ -1205,26 +2336,119 @@ await loadOutpasses();
                   <h3 className="font-bold text-gray-800 text-sm">All Outpass Requests ({outpasses.length})</h3>
                 </div>
                 <div className="divide-y divide-gray-100">
-                  {outpasses.map(op => {
-                    const isLeaveOp = op.id.startsWith('LV-OP') || op.id === 'OP-LEAVE-AUTO';
-                    return (
-                      <div key={op.id} className="p-3">
-                        <div className="flex items-start justify-between mb-1">
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-800 leading-snug">{op.reason}</p>
-                            {isLeaveOp && <span className="text-xs text-teal-600 font-medium">📅 From approved leave</span>}
-                          </div>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ml-2 ${op.status === 'approved' ? 'bg-green-100 text-green-700' : op.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {op.status}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-400">{op.date} • {op.timeOut} → {op.expectedReturn}</p>
-                        <p className="text-xs text-gray-400">📍 {op.destination}</p>
-                      </div>
-                    );
-                  })}
-                  {outpasses.length === 0 && <p className="text-center text-gray-400 py-6 text-sm">No records</p>}
-                </div>
+               {[...outpasses]
+.filter(x => x.leaveRequestId === 0)
+.sort(
+(a,b)=>
+new Date(b.createdAt).getTime()-
+new Date(a.createdAt).getTime()
+)
+.map(op => (
+
+<div key={op.id} className="p-3">
+
+<div className="flex justify-between">
+
+<p className="font-semibold">
+{op.reason}
+</p>
+
+<Chip
+label={op.status}
+color={getStatusColor(op.status?.toLowerCase())}
+size="small"
+/>
+
+</div>
+
+<p className="text-xs text-gray-500 mt-1">
+📅 {new Date(op.validFrom).toLocaleDateString()}
+</p>
+
+<p className="text-xs text-gray-500">
+🕒 {op.timeOut} - {op.returnTime}
+</p>
+
+<p className="text-xs text-gray-500">
+📍 {op.destination}
+</p>
+
+<p className="text-xs mt-1">
+<b>State :</b> {op.outpassState}
+</p>
+
+{op.actualExitTime && (
+
+<p className="text-xs text-green-600">
+
+Exit :
+{" "}
+{new Date(op.actualExitTime).toLocaleString()}
+
+</p>
+
+)}
+
+{op.actualReturnTime && (
+
+<p className="text-xs text-blue-600">
+
+Return :
+{" "}
+{new Date(op.actualReturnTime).toLocaleString()}
+
+</p>
+
+)}
+
+{op.outpassState === "Expired" &&
+!op.actualExitTime && (
+
+<p className="text-xs text-red-600">
+
+Expired - Not Exited
+
+</p>
+
+)}
+
+{op.outpassState === "Outside Hostel" &&
+!op.actualReturnTime && (
+
+<p className="text-xs text-orange-600">
+
+Outside Hostel
+
+</p>
+
+)}
+
+{op.lateMinutes > 0 && (
+
+<p className="text-xs text-red-600">
+
+Late :
+{op.lateMinutes} minutes
+
+</p>
+
+)}
+
+<hr className="mt-3"/>
+
+</div>
+
+))}
+
+{outpasses.length===0 && (
+
+<p className="text-center text-gray-400 py-6">
+
+No Outpass History
+
+</p>
+
+)}</div>
               </div>
 
               {isHostel && (
@@ -1233,23 +2457,207 @@ await loadOutpasses();
                     <h3 className="font-bold text-gray-800 text-sm">Leave Applications</h3>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {[
-                      { id: 'LV-H1', type: 'Casual Leave', campus: 'Out Campus', from: '2026-05-28', to: '2026-05-31', status: 'approved', reason: 'Home visit' },
-                      { id: 'LV-H2', type: 'Sick Leave', campus: 'In Campus', from: '2026-06-01', to: '2026-06-02', status: 'approved', reason: 'Fever — rest in room' },
-                      { id: 'LV-H3', type: 'Emergency Leave', campus: 'Out Campus', from: '2026-06-12', to: '2026-06-15', status: 'approved', reason: 'Festival at home' },
-                    ].map(lv => (
-                      <div key={lv.id} className="p-3">
-                        <div className="flex items-start justify-between mb-1">
-                          <div>
-                            <p className="text-sm font-semibold text-gray-800">{lv.type}</p>
-                            <p className="text-xs text-gray-500">{lv.campus}</p>
-                          </div>
-                          <span className="text-xs px-2 py-0.5 rounded-full font-semibold bg-green-100 text-green-700">{lv.status}</span>
-                        </div>
-                        <p className="text-xs text-gray-400">{lv.from} → {lv.to}</p>
-                        <p className="text-xs text-gray-400">Reason: {lv.reason}</p>
-                      </div>
-                    ))}
+                  {leaveRequests
+.sort(
+(a,b)=>
+new Date(b.createdDate).getTime()-
+new Date(a.createdDate).getTime()
+)
+.map((leave)=>{
+
+const linkedOutpass =
+outpasses.find(
+x=>x.leaveRequestId===leave.id
+);
+
+return(
+
+<div
+key={leave.id}
+className="p-3"
+>
+
+<div className="flex items-start justify-between mb-1">
+
+<div>
+
+<p className="text-sm font-semibold text-gray-800">
+
+{leave.leaveType}
+
+</p>
+
+<p className="text-xs text-gray-500">
+
+{leave.campus}
+
+</p>
+
+</div>
+
+<Chip
+label={leave.status}
+color={getStatusColor(
+leave.status.toLowerCase()
+)}
+size="small"
+/>
+
+</div>
+
+<p className="text-xs text-gray-500">
+
+📅 {new Date(leave.fromDate).toLocaleDateString()}
+
+{" - "}
+
+{new Date(leave.toDate).toLocaleDateString()}
+
+</p>
+
+<p className="text-xs text-gray-500">
+
+Reason :
+{leave.reason}
+
+</p>
+{leave.destination && (
+
+<p className="text-xs text-gray-500">
+
+📍 {leave.destination}
+
+</p>
+
+)}
+{leave.status==="Rejected" &&
+leave.rejectReason && (
+
+<p className="text-xs text-red-600 mt-1">
+
+Reject Reason :
+
+{" "}
+
+{leave.rejectReason}
+
+</p>
+
+)}
+{linkedOutpass && (
+
+<>
+
+<p className="text-xs mt-2">
+
+<b>State :</b> {linkedOutpass.outpassState}
+
+</p>
+
+{linkedOutpass.outpassState==="Expired" &&
+!linkedOutpass.actualExitTime && (
+
+<p className="text-xs text-red-600">
+
+Not Exited
+
+</p>
+
+)}
+
+{linkedOutpass.actualExitTime && (
+
+<p className="text-xs text-green-600">
+
+Exit Time :
+
+{" "}
+
+{new Date(linkedOutpass.actualExitTime)
+.toLocaleString()}
+
+</p>
+
+)}
+
+{linkedOutpass.outpassState==="Outside Hostel" &&
+!linkedOutpass.actualReturnTime && (
+
+<p className="text-xs text-orange-600">
+
+Not Returned Yet
+
+</p>
+
+)}
+
+{linkedOutpass.actualReturnTime && (
+
+<p className="text-xs text-blue-600">
+
+Return Time :
+
+{" "}
+
+{new Date(linkedOutpass.actualReturnTime)
+.toLocaleString()}
+
+</p>
+
+)}
+
+{linkedOutpass.lateMinutes>0 && (
+
+<p className="text-xs text-red-600">
+
+Late :
+{linkedOutpass.lateMinutes} minutes
+
+</p>
+
+)}
+
+</>
+
+)}
+{leave.campus==="Out Campus" &&
+linkedOutpass &&
+linkedOutpass.status==="Approved" &&
+(
+linkedOutpass.outpassState==="Active" ||
+linkedOutpass.outpassState==="Waiting For Exit" ||
+linkedOutpass.outpassState==="Outside Hostel"
+) && (
+
+<button
+onClick={()=>{
+setSelectedOutpass(linkedOutpass);
+setQrCardOpen(true);
+}}
+className="mt-2 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs"
+>
+
+Show Pass
+
+</button>
+
+)}
+
+</div>
+
+);
+
+})}
+
+{leaveRequests.length===0 && (
+
+<p className="text-center text-gray-400 py-6">
+
+No Leave History
+
+</p>
+
+)}
                   </div>
                 </div>
               )}
@@ -1292,13 +2700,46 @@ await loadOutpasses();
                   <p className="text-xs text-red-500 font-medium">Passwords do not match</p>
                 )}
                 <button
-                  onClick={() => {
-                    if (!changePwdForm.current) { toast.error('Enter your current password'); return; }
-                    if (changePwdForm.newPwd.length < 8) { toast.error('New password must be at least 8 characters'); return; }
-                    if (changePwdForm.newPwd !== changePwdForm.confirm) { toast.error('Passwords do not match'); return; }
-                    setChangePwdForm({ current: '', newPwd: '', confirm: '' });
-                    toast.success('Password changed successfully!');
-                  }}
+                  onClick={async () => {
+
+  if (!changePwdForm.current) {
+    toast.error("Enter your current password");
+    return;
+  }
+
+  if (changePwdForm.newPwd.length < 8) {
+    toast.error("New password must be at least 8 characters");
+    return;
+  }
+
+  if (changePwdForm.newPwd !== changePwdForm.confirm) {
+    toast.error("Passwords do not match");
+    return;
+  }
+
+  try {
+
+    await changePassword(
+      user.studentId!,
+      changePwdForm.current,
+      changePwdForm.newPwd
+    );
+
+    toast.success("Password updated successfully");
+
+    setChangePwdForm({
+      current: "",
+      newPwd: "",
+      confirm: ""
+    });
+
+  } catch (err: any) {
+
+    toast.error(err.message);
+
+  }
+
+}}
                   className={`w-full ${isHostel ? 'bg-gradient-to-r from-blue-500 to-blue-600' : 'bg-gradient-to-r from-green-500 to-green-600'} text-white font-bold py-3.5 rounded-2xl shadow-md active:scale-95 transition-transform`}
                 >
                   Update Password

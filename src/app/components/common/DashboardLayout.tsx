@@ -104,7 +104,10 @@ const mockNotifications = [
 ];
 
 export default function DashboardLayout({ user, children, onLogout, title, menuItems }: DashboardLayoutProps) {
-  console.log("Current User", user);
+console.log(
+  "Current User",
+  JSON.stringify(user, null, 2)
+);
   const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -208,7 +211,15 @@ const markAllRead = async () => {
             </Badge>
           </IconButton>
 
-          <Avatar src={user.avatar} alt={user.name} sx={{ width: 36, height: 36, cursor: 'pointer' }} />
+     <Avatar
+  src={
+    user.profilePhoto
+      ? `https://202.61.121.102:8443${user.profilePhoto}`
+      : user.avatar
+  }
+  alt={user.name}
+  sx={{ width: 36, height: 36, cursor: 'pointer' }}
+/>
         </Toolbar>
       </AppBar>
       
@@ -223,7 +234,15 @@ const markAllRead = async () => {
           {/* User Profile */}
           <div className="p-5 bg-white/10 backdrop-blur-sm">
             <div className="flex items-center space-x-3 mb-1">
-              <Avatar src={user.avatar} alt={user.name} sx={{ width: 56, height: 56 }} />
+              <Avatar
+    src={
+      user.profilePhoto
+        ? `https://202.61.121.102:8443${user.profilePhoto}`
+        : user.avatar
+    }
+    alt={user.name}
+    sx={{ width: 56, height: 56 }}
+/>
               <div className="flex-1 min-w-0">
                 <p className="font-bold text-white text-base truncate">{user.name}</p>
                 <p className="text-sm text-blue-200 capitalize">{user.role}</p>

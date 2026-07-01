@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Toaster } from 'sonner';
 import Login from './components/auth/Login';
 import StudentDashboard from './components/dashboards/StudentDashboard';
@@ -13,18 +13,75 @@ import TransportManagement from './components/transport/TransportManagement';
 import Analytics from './components/analytics/Analytics';
 import Settings from './components/settings/Settings';
 import type { User } from './types';
-
+import { logout } from "../api/authService";
+import { hasActiveOutpass } from "./services/outpassService";
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+const [user, setUser] = useState<User | null>(null);
 
-  const handleLogin = (userData: User) => {
+useEffect(() => {
+
+  const saved =
+    localStorage.getItem("hostelUser");
+
+  if (saved) {
+
+    setUser(JSON.parse(saved));
+
+  }
+
+}, []);
+
+const handleLogin = (userData: User) => {
+
+    console.log("LOGIN USER");
+    console.log(userData);
+
+    localStorage.setItem(
+        "hostelUser",
+        JSON.stringify(userData)
+    );
+
     setUser(userData);
-  };
+};
+const handleLogout = async () => {
+console.log("LOGOUT USER");
+console.log(JSON.stringify(user, null, 2));
+    if (user?.role === "student") {
+console.log("Student ID =", user.studentId);
+     const active =
+    await hasActiveOutpass(user.studentId ?? user.userId);
 
-  const handleLogout = () => {
-    window.history.replaceState(null, '', '/');
+        console.log("Active Outpass:", active);
+
+        if (active) {
+
+            alert("You have an active outpass. Logout is not allowed.");
+
+            return;
+        }
+
+       await logout(user.studentId ?? user.userId);
+    }
+    else {
+console.log("=== BEFORE LOGOUT ===");
+console.log(user);
+
+console.log("user.id =", user.id);
+console.log("user.userId =", user.userId);
+
+const logoutId = user.userId ?? user.id;
+
+console.log("FINAL logoutId =", logoutId);
+
+await logout(logoutId);
+    }
+
+    localStorage.removeItem("hostelUser");
+
+    window.history.replaceState(null, "", "/");
+
     setUser(null);
-  };
+};
 
   if (!user) {
     return (

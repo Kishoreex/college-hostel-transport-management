@@ -1,7 +1,18 @@
-const API_URL = "http://localhost:10000";
+
+
+export async function getOutpasses() {
+  const response = await fetch(
+    `${API_URL}/Outpasses`
+  );
+
+  return await response.json();
+}
+
+
+const API_URL = "https://202.61.121.102:8443/api";
 
 export const createOutpass = async (data: any) => {
-  const response = await fetch(API_URL, {
+const response = await fetch(`${API_URL}/Outpasses`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -20,7 +31,7 @@ export const getStudentOutpasses =
 async (studentId: string) => {
 
   const response = await fetch(
-    `${API_URL}/${studentId}`
+    `${API_URL}/Outpasses/${studentId}`
   );
 
   return response.json();
@@ -28,7 +39,7 @@ async (studentId: string) => {
 
 
 export const getAllOutpasses = async () => {
-  const response = await fetch(API_URL);
+  const response = await fetch(`${API_URL}/Outpasses`);
 
   if (!response.ok) {
     throw new Error("Failed to load outpasses");
@@ -40,7 +51,7 @@ export const approveOutpass = async (
   id: number
 ) => {
   const response = await fetch(
-  `${API_URL}/approve/${id}`,
+`${API_URL}/Outpasses/approve/${id}`,
     {
       method: "PUT",
     }
@@ -53,7 +64,7 @@ export const rejectOutpass = async (
   id: number
 ) => {
   const response = await fetch(
-   `${API_URL}/reject/${id}`,
+   `${API_URL}/Outpasses/reject/${id}`,
     {
       method: "PUT",
     }
@@ -67,7 +78,7 @@ export const markExit = async (
   longitude: number
 ) => {
   const response = await fetch(
-    `${API_URL}/exit/${id}`,
+    `${API_URL}/Outpasses/exit/${id}`,
     {
       method: "PUT",
       headers: {
@@ -89,7 +100,7 @@ export const markReturn = async (
   longitude: number
 ) => {
   const response = await fetch(
-    `${API_URL}/return/${id}`,
+    `${API_URL}/Outpasses/return/${id}`,
     {
       method: "PUT",
       headers: {
@@ -99,8 +110,25 @@ export const markReturn = async (
         latitude,
         longitude,
       }),
+
     }
   );
 
   return response.json();
 };
+export async function hasActiveOutpass(studentId: string) {
+
+    const response = await fetch(
+        `${API_URL}/Outpasses/active/${studentId}`
+    );
+
+    return await response.json();
+}
+export async function expireOldOutpasses() {
+    await fetch(
+        `${API_URL}/Outpasses/expire`,
+        {
+            method: "PUT",
+        }
+    );
+}

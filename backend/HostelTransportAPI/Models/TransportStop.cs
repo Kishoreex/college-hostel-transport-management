@@ -1,3 +1,5 @@
+namespace HostelTransportAPI.Models;
+
 public class TransportStop
 {
     public int Id { get; set; }
@@ -8,5 +10,5 @@ public class TransportStop
 
     public TimeSpan PickupTime { get; set; }
 
-    public TransportRoute Route { get; set; }
+    public TransportRoute Route { get; set; } = null!;
 }

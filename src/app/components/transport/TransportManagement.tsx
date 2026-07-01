@@ -1,7 +1,15 @@
 import {
   getTransportApplications,
   approveTransportStudent,
-  rejectTransportStudent
+  rejectTransportStudent,
+  getRoutes,
+  createRoute,
+  updateRoute,
+  getTransportStudents,
+  downloadTransportReport,
+  getTransportCancellationRequests,
+  approveTransportCancellation,
+  rejectTransportCancellation
 } from "../../../api/transportService";
 
 import { useState, useEffect } from 'react'
@@ -96,19 +104,50 @@ export default function TransportManagement({ user, onLogout }: TransportManagem
   const [studentDetailOpen, setStudentDetailOpen] = useState(false);
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<TransportStudent | null>(null);
-  const handleApprove = async (id: number) => {
+  const [applicationMonths, setApplicationMonths] = useState(12);
+
+const [cancellationMonths, setCancellationMonths] = useState(12);
+const handleApprove = async (id: number) => {
   await approveTransportStudent(id);
 
   toast.success("Student Approved");
 
-  loadApplications();
+  await loadApplications();
+  await loadStudents();
 };
 const handleReject = async (id: number) => {
   await rejectTransportStudent(id);
 
   toast.success("Student Rejected");
 
-  loadApplications();
+  await loadApplications();
+  await loadStudents();
+};
+const handleApproveCancellation = async (id: number) => {
+  try {
+    await approveTransportCancellation(id);
+
+    toast.success("Transport cancelled successfully");
+
+    await loadStudents();
+    await loadCancellationRequests();
+  } catch (err) {
+    console.error(err);
+    toast.error("Approval failed");
+  }
+};
+
+const handleRejectCancellation = async (id: number) => {
+  try {
+    await rejectTransportCancellation(id);
+
+    toast.success("Cancellation rejected");
+
+    await loadCancellationRequests();
+  } catch (err) {
+    console.error(err);
+    toast.error("Reject failed");
+  }
 };
   const [editForm, setEditForm] = useState({
     routeName: '',
@@ -120,113 +159,79 @@ const handleReject = async (id: number) => {
     pickupPoints: [] as PickupPoint[],
   });
 
-  const stats = [
-    {
-      label: 'Total Routes',
-      value: '24',
-      icon: <MapPin className="w-8 h-8" />,
-      color: 'bg-green-500',
-    },
-    {
-      label: 'Students',
-      value: '856',
-      subtitle: 'Using transport',
-      icon: <Users className="w-8 h-8" />,
-      color: 'bg-purple-500',
-    },
-  ];
 
-  const [routes, setRoutes] = useState<Route[]>([
-    {
-      routeId: 'R001',
-      routeName: 'Route 1 - City Center',
-      busNumber: 'TN-01-AB-1234',
-      driver: 'Mr. Rajan',
-      driverPhone: '+91 98765 43210',
-      pickupPoints: [
-        { location: 'Central Bus Stand', time: '7:30 AM' },
-        { location: 'Railway Station', time: '7:45 AM' },
-        { location: 'Bus Stop A', time: '8:00 AM' },
-      ],
-      students: 42,
-      morningTime: '7:30 AM',
-      eveningTime: '5:30 PM',
-      status: 'active',
-    },
-    {
-      routeId: 'R002',
-      routeName: 'Route 2 - Airport Road',
-      busNumber: 'TN-01-AB-5678',
-      driver: 'Mr. Kumar',
-      driverPhone: '+91 98765 43211',
-      pickupPoints: [
-        { location: 'Airport Road', time: '7:45 AM' },
-        { location: 'IT Park', time: '8:00 AM' },
-        { location: 'Bus Stop B', time: '8:15 AM' },
-      ],
-      students: 38,
-      morningTime: '7:45 AM',
-      eveningTime: '5:45 PM',
-      status: 'active',
-    },
-  ]);
-
-  const students: TransportStudent[] = [
-    {
-      studentId: 'MDS2024001',
-      studentName: 'Rahul Kumar',
-      phone: '+91 98765 11111',
-      collegeName: 'Madha Dental College & Hospital',
-      department: 'BDS',
-      year: '2nd Year',
-      batch: '2024-2029',
-      parentName: 'Mr. Vijay Kumar',
-      parentPhone: '+91 98765 22222',
-      address: '123, Anna Nagar, Chennai - 600040',
-      busRoute: 'Route 1 - City Center',
-      busNumber: 'TN-01-AB-1234',
-      pickupPoint: 'Central Bus Stand',
-      pickupTime: '7:30 AM',
-    },
-    {
-      studentId: 'MCN2023045',
-      studentName: 'Priya Sharma',
-      phone: '+91 98765 33333',
-      collegeName: 'Madha College of Nursing',
-      department: 'B.Sc Nursing',
-      year: '3rd Year',
-      batch: '2023-2027',
-      parentName: 'Mrs. Lakshmi Sharma',
-      parentPhone: '+91 98765 44444',
-      address: '456, T Nagar, Chennai - 600017',
-      busRoute: 'Route 1 - City Center',
-      busNumber: 'TN-01-AB-1234',
-      pickupPoint: 'Railway Station',
-      pickupTime: '7:45 AM',
-    },
-    {
-      studentId: 'MCP2024012',
-      studentName: 'Arun Patel',
-      phone: '+91 98765 55555',
-      collegeName: 'Madha College of Physiotherapy',
-      department: 'BPT',
-      year: '1st Year',
-      batch: '2024-2028',
-      parentName: 'Mr. Suresh Patel',
-      parentPhone: '+91 98765 66666',
-      address: '789, Velachery, Chennai - 600042',
-      busRoute: 'Route 2 - Airport Road',
-      busNumber: 'TN-01-AB-5678',
-      pickupPoint: 'Airport Road',
-      pickupTime: '7:45 AM',
-    },
-  ];
-
+const [routes, setRoutes] = useState<Route[]>([]);
+ const [students, setStudents] = useState<TransportStudent[]>([]);
   const [applications, setApplications] =
   useState([]);
-  useEffect(() => {
+useEffect(() => {
   loadApplications();
+  loadRoutes();
+  loadStudents();
+  loadCancellationRequests();
 }, []);
+const loadCancellationRequests = async () => {
+  try {
+    const data = await getTransportCancellationRequests();
+
+    setCancellationRequests(
+      data.map((x: any) => ({
+        id: x.id,
+        studentId: x.studentId,
+        studentName: x.studentName,
+        department: x.department ?? "-",
+        year: x.year ?? "-",
+        batch: x.batch ?? "-",
+        busRoute: x.busRoute ?? "-",
+        busNumber: x.busNumber ?? "-",
+        pickupPoint: x.pickupPoint ?? "-",
+        phone: x.phone ?? "-",
+        reason: x.reason,
+        requestDate: x.requestedAt,
+        status: x.status.toLowerCase(),
+      }))
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
+const loadStudents = async () => {
+  try {
+    const data = await getTransportStudents();
+    setStudents(data);
+  } catch (err) {
+    console.error(err);
+  }
+};  
+
+
+const loadRoutes = async () => {
+  try {
+    const data = await getRoutes();
+
+    const formatted = data.map((r: any) => ({
+      routeId: r.id,
+      routeName: r.routeName,
+      busNumber: r.busNumber,
+      driver: r.driverName,
+      driverPhone: r.driverPhone,
+      students: 0,
+      morningTime: r.morningTime,
+      eveningTime: r.eveningTime,
+      status: "active",
+
+      pickupPoints: r.stops.map((s: any) => ({
+        location: s.stopName,
+        time: s.pickupTime
+      }))
+    }));
+
+    setRoutes(formatted);
+  }
+  catch (err) {
+    console.error(err);
+  }
+};
 
 const loadApplications = async () => {
   try {
@@ -239,11 +244,7 @@ const loadApplications = async () => {
   }
 };
 
-  const [cancellationRequests, setCancellationRequests] = useState<CancellationRequest[]>([
-    { id: 'CR001', studentId: 'MCP2020012', studentName: 'Aravind Kumar', department: 'Physiotherapy', year: 'Final Year', batch: '2020-2024', busRoute: 'Route 3 - Velachery', busNumber: 'TN-01-EF-9012', pickupPoint: 'Velachery', phone: '9876541111', reason: 'Course completed. No longer need transport service.', requestDate: '2026-06-04', status: 'pending' },
-    { id: 'CR002', studentId: 'MCN2021034', studentName: 'Deepa Nair', department: 'Nursing', year: '2nd Year', batch: '2023-2027', busRoute: 'Route 2 - Tambaram', busNumber: 'TN-01-CD-5678', pickupPoint: 'Chromepet', phone: '9876542222', reason: 'Family relocated closer to college. Will commute independently.', requestDate: '2026-06-07', status: 'pending' },
-    { id: 'CR003', studentId: 'MDS2019056', studentName: 'Rajesh Iyer', department: 'Dental', year: 'Internship', batch: '2019-2024', busRoute: 'Route 1 - City Center', busNumber: 'TN-01-AB-1234', pickupPoint: 'Railway Station', phone: '9876543333', reason: 'Internship completed successfully.', requestDate: '2026-05-30', status: 'closed' },
-  ]);
+const [cancellationRequests, setCancellationRequests] = useState<any[]>([]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -289,31 +290,75 @@ const loadApplications = async () => {
     setAddDialogOpen(true);
   };
 
-  const handleSaveRoute = () => {
-    if (selectedRoute) {
-      setRoutes(routes.map(r =>
-        r.routeId === selectedRoute.routeId
-          ? { ...r, ...editForm }
-          : r
-      ));
-      toast.success('Route updated successfully!');
-      setEditDialogOpen(false);
-      setSelectedRoute(null);
-    }
-  };
+const handleSaveRoute = async () => {
+  if (!selectedRoute) return;
 
-  const handleCreateRoute = () => {
-    const newRoute: Route = {
-      routeId: `R${String(routes.length + 1).padStart(3, '0')}`,
-      ...editForm,
-      students: 0,
-      status: 'active',
+  try {
+    const payload = {
+      routeName: editForm.routeName,
+      busNumber: editForm.busNumber,
+      driverName: editForm.driver,
+      driverPhone: editForm.driverPhone,
+      morningTime: editForm.morningTime,
+      eveningTime: editForm.eveningTime,
+
+      stops: editForm.pickupPoints.map((p) => ({
+        stopName: p.location,
+        pickupTime: p.time,
+      })),
     };
-    setRoutes([...routes, newRoute]);
-    toast.success('New route created!', { description: newRoute.routeName });
-    setAddDialogOpen(false);
-  };
 
+    await updateRoute(Number(selectedRoute.routeId), payload);
+
+    await loadRoutes();
+
+    setEditDialogOpen(false);
+    setSelectedRoute(null);
+
+    toast.success("Route updated successfully");
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to update route");
+  }
+};
+const handleCreateRoute = async () => {
+  try {
+    const payload = {
+      routeName: editForm.routeName,
+      busNumber: editForm.busNumber,
+      driverName: editForm.driver,
+      driverPhone: editForm.driverPhone,
+      morningTime: editForm.morningTime,
+      eveningTime: editForm.eveningTime,
+
+      stops: editForm.pickupPoints.map((point) => ({
+        stopName: point.location,
+        pickupTime: point.time,
+      })),
+    };
+
+    await createRoute(payload);
+
+    await loadRoutes();
+
+    setAddDialogOpen(false);
+
+    setEditForm({
+      routeName: "",
+      busNumber: "",
+      driver: "",
+      driverPhone: "",
+      morningTime: "",
+      eveningTime: "",
+      pickupPoints: [{ location: "", time: "" }],
+    });
+
+    toast.success("Route created successfully");
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to create route");
+  }
+};
   const addPickupPoint = () => {
     setEditForm({
       ...editForm,
@@ -339,20 +384,70 @@ const loadApplications = async () => {
     setStudentDetailOpen(true);
   };
 
-  const transportQuickActions = [
-    { label: 'Routes', icon: <Bus size={22} />, color: 'bg-blue-500', screen: 'routes' },
-    { label: 'Students', icon: <Users size={22} />, color: 'bg-purple-500', screen: 'students' },
-    { label: 'Applications', icon: <CheckCircle2 size={22} />, color: 'bg-green-500', screen: 'applications' },
-    { label: 'Cancellations', icon: <XCircle size={22} />, color: 'bg-red-500', screen: 'cancellations' },
-    { label: 'Route Map', icon: <MapPin size={22} />, color: 'bg-orange-500', screen: 'routemap' },
-    { label: 'Reports', icon: <Building2 size={22} />, color: 'bg-indigo-500', screen: 'reports' },
-  ];
+const pendingApplications = applications.filter(
+  (app: any) => app.status === "Pending"
+);
 
+ const transportQuickActions = [
+  {
+    label: "Routes",
+    icon: <Bus size={22} />,
+    color: "bg-blue-500",
+    screen: "routes",
+  },
+  {
+    label: "Students ",
+    icon: <Users size={22} />,
+    color: "bg-purple-500",
+    screen: "students",
+  },
+  {
+    label: "Applications ",
+    icon: <CheckCircle2 size={22} />,
+    color: "bg-green-500",
+    screen: "applications",
+  },
+  {
+    label: "Cancellations",
+    icon: <XCircle size={22} />,
+    color: "bg-red-500",
+    screen: "cancellations",
+  },
+  {
+    label: "Route Map",
+    icon: <MapPin size={22} />,
+    color: "bg-orange-500",
+    screen: "routemap",
+  },
+  {
+    label: "Reports",
+    icon: <Building2 size={22} />,
+    color: "bg-indigo-500",
+    screen: "reports",
+  },
+];
+const stats = [
+  {
+    label: "Total Routes",
+    value: routes.length,
+    icon: <MapPin className="w-8 h-8" />,
+    color: "bg-green-500",
+  },
+  {
+    label: "Students",
+    value: students.length,
+    
+    icon: <Users className="w-8 h-8" />,
+    color: "bg-purple-500",
+  },
+];
   return (
     <DashboardLayout user={user} onLogout={onLogout} title="Transport Management">
       <div className="space-y-4 max-w-2xl mx-auto pb-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-3">
+       {!activeScreen && (
+<>
+  {/* Stats Cards */}
+  <div className="grid grid-cols-2 gap-3">
           {stats.map((stat, index) => (
             <Card key={index} sx={{ borderRadius: 3 }}>
               <CardContent className="p-4">
@@ -391,7 +486,8 @@ const loadApplications = async () => {
             </CardContent>
           </Card>
         )}
-
+</>
+)}
         {/* ── SCREEN: ROUTES ── */}
         {activeScreen === 'routes' && (
           <Card sx={{ borderRadius: 3 }}>
@@ -493,11 +589,11 @@ const loadApplications = async () => {
                 <Home size={18} />
               </button>
               <h3 className="font-bold text-gray-800">Transport Applications</h3>
-              <Chip label={`${applications.length} Pending`} color="warning" size="small" sx={{ ml: 'auto' }} />
+              <Chip label={`${pendingApplications.length} Pending`} color="warning" size="small" sx={{ ml: 'auto' }} />
             </div>
             <CardContent className="p-4">
               <div className="space-y-3">
-                {applications.map((app) => (
+         {pendingApplications.map((app: any) => (
                   <div key={app.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-start justify-between mb-3">
                       <div>
@@ -574,9 +670,22 @@ const loadApplications = async () => {
                       <p className="text-xs text-orange-600">{req.reason}</p>
                     </div>
                     {req.status === 'pending' && (
-                      <button onClick={() => { if (confirm(`Close ${req.studentName}'s transport account?`)) { setCancellationRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'closed' } : r)); toast.success('Account closed', { description: `${req.studentName}'s transport account closed.` }); } }} className="w-full flex items-center justify-center space-x-1.5 bg-red-500 text-white py-2.5 rounded-xl text-sm font-semibold active:scale-95 transition-transform shadow-sm">
-                        <CheckCircle2 size={15} /><span>Approve & Close Account</span>
-                      </button>
+                <div className="flex gap-2">
+  <button
+    onClick={() => handleApproveCancellation(Number(req.id))}
+    className="flex-1 bg-green-600 text-white py-2.5 rounded-xl font-semibold"
+  >
+    Approve
+  </button>
+
+  <button
+    onClick={() => handleRejectCancellation(Number(req.id))}
+    className="flex-1 bg-red-600 text-white py-2.5 rounded-xl font-semibold"
+  >
+    Reject
+  </button>
+</div>
+                      
                     )}
                     {req.status === 'closed' && (
                       <div className="flex items-center justify-center space-x-2 bg-gray-100 py-2.5 rounded-xl">
@@ -645,8 +754,8 @@ const loadApplications = async () => {
               <div className="space-y-3">
                 {[
                   { title: 'Total Active Routes', value: `${routes.length}`, icon: <Bus size={20} />, color: 'bg-blue-500' },
-                  { title: 'Total Students', value: '856', icon: <Users size={20} />, color: 'bg-purple-500' },
-                  { title: 'Applications Pending', value: `${applications.length}`, icon: <CheckCircle2 size={20} />, color: 'bg-green-500' },
+                  { title: 'Total Students',value: `${students.length}`, icon: <Users size={20} />, color: 'bg-purple-500' },
+                  { title: 'Applications Pending',value: `${pendingApplications.length}`, icon: <CheckCircle2 size={20} />, color: 'bg-green-500' },
                   { title: 'Cancellation Requests', value: `${cancellationRequests.filter(r => r.status === 'pending').length}`, icon: <XCircle size={20} />, color: 'bg-red-500' },
                 ].map(stat => (
                   <div key={stat.title} className="flex items-center space-x-4 bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
@@ -657,16 +766,119 @@ const loadApplications = async () => {
                     </div>
                   </div>
                 ))}
-                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
-                  <p className="text-sm font-bold text-indigo-800 mb-2">Monthly Summary - June 2026</p>
-                  {[['New Registrations', '12'], ['Cancellations Processed', '3'], ['Route Modifications', '2'], ['Average Bus Occupancy', '78%']].map(([k, v]) => (
-                    <div key={k} className="flex justify-between text-sm py-1.5 border-b border-indigo-100 last:border-0">
-                      <span className="text-indigo-700">{k}</span>
-                      <span className="font-bold text-indigo-900">{v}</span>
-                    </div>
-                  ))}
-                </div>
+               
               </div>
+              <div className="space-y-4 mt-5">
+
+  {/* Students */}
+  <div className="bg-white border border-gray-100 rounded-2xl p-4">
+    <div className="flex items-center justify-between">
+      <span className="font-semibold text-gray-700">
+        Transport Students
+      </span>
+
+      <button
+        onClick={() => downloadTransportReport("students")}
+        className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
+        Download Excel
+      </button>
+    </div>
+  </div>
+
+  {/* Bus Details */}
+  <div className="bg-white border border-gray-100 rounded-2xl p-4">
+    <div className="flex items-center justify-between">
+      <span className="font-semibold text-gray-700">
+        Bus Details
+      </span>
+
+      <button
+        onClick={() => downloadTransportReport("buses")}
+        className="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
+        Download Excel
+      </button>
+    </div>
+  </div>
+
+  {/* Applications */}
+  <div className="bg-white border border-gray-100 rounded-2xl p-4">
+    <div className="flex items-center gap-3">
+
+      <span className="font-semibold text-gray-700 flex-1">
+        Applications
+      </span>
+
+     <select
+value={applicationMonths}
+onChange={(e) =>
+setApplicationMonths(Number(e.target.value))
+}
+className="border rounded-xl px-3 py-2">
+
+        <option value="1">1 Month</option>
+<option value="3">3 Months</option>
+<option value="6">6 Months</option>
+<option value="12">1 Year</option>
+<option value="36">3 Years</option>
+
+      </select>
+
+      <button
+        onClick={() =>
+downloadTransportReport(
+"applications",
+applicationMonths
+)
+}
+        className="bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
+
+        Download
+
+      </button>
+
+    </div>
+  </div>
+
+  {/* Cancellations */}
+  <div className="bg-white border border-gray-100 rounded-2xl p-4">
+    <div className="flex items-center gap-3">
+
+      <span className="font-semibold text-gray-700 flex-1">
+    Transport Cancellation Report
+</span>
+
+    <select
+value={cancellationMonths}
+onChange={(e)=>
+setCancellationMonths(Number(e.target.value))
+}
+className="border rounded-xl px-3 py-2">  
+
+  <option value="1">1 Month</option>
+<option value="3">3 Months</option>
+<option value="6">6 Months</option>
+<option value="12">1 Year</option>
+<option value="36">3 Years</option>
+
+      </select>
+
+      <button
+        onClick={() =>
+downloadTransportReport(
+"cancellations",
+cancellationMonths
+)
+}
+        className="bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
+
+        Download
+
+      </button>
+
+    </div>
+  </div>
+
+</div>
             </CardContent>
           </Card>
         )}

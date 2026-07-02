@@ -208,7 +208,17 @@ catch (error: any) {
 
           <div className="space-y-4 max-w-lg mx-auto w-full">
             <button
-              onClick={() => setScreen('studentLogin')}
+              onClick={() => {
+  setServiceType("hostel");
+
+  // Default Demo Hostel Student
+  setCredentials({
+    id: "2111222104010",
+    password: "Stu@337849"
+  });
+
+  setScreen("studentLogin");
+}}
              className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 p-5 md:p-7"  >
               <div className="flex items-center space-x-4">
           <div className="bg-blue-50 border-2 border-blue-200 p-3 md:p-5 rounded-2xl">
@@ -230,10 +240,17 @@ catch (error: any) {
             </button>
 
             <button
-              onClick={() => {
-                setSelectedAdminRole('admin');
-                setScreen('adminLogin');
-              }}
+             onClick={() => {
+  setSelectedAdminRole("admin");
+
+  // Demo Admin Credentials
+  setCredentials({
+    id: "MainAdmin@mdch",
+    password: "Admin@123"
+  });
+
+  setScreen("adminLogin");
+}}
 className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 p-5 md:p-7"            >
               <div className="flex items-center space-x-4">
                 <div className="bg-slate-100 border-2 border-slate-300 p-3 md:p-5 rounded-2xl">
@@ -302,8 +319,16 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  type="button"
-                  onClick={() => setServiceType('hostel')}
+  type="button"
+  onClick={() => {
+    setServiceType('hostel');
+
+    // Demo Credentials
+    setCredentials({
+      id: "2111222104010",
+      password: "Stu@337849"
+    });
+  }}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     serviceType === 'hostel' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
                   }`}
@@ -314,8 +339,16 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
                   </p>
                 </button>
                 <button
-                  type="button"
-                  onClick={() => setServiceType('transport')}
+  type="button"
+  onClick={() => {
+    setServiceType('transport');
+
+    // Demo Credentials
+    setCredentials({
+      id: "2111222104002",
+      password: "Tra@962313"
+    });
+  }}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     serviceType === 'transport' ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'
                   }`}

@@ -127,25 +127,50 @@ registration.StudentId = userId;
 
 await _context.SaveChangesAsync();
 
-// SEND EMAIL HERE
+// // SEND EMAIL
 var emailService = new EmailService();
 
 await emailService.SendEmailAsync(
     registration.Email,
-    "Hostel Registration Approved",
+    "Hostel Registration Approved – College Hostel Management System",
     $@"
 Dear {registration.StudentName},
 
-Your hostel registration has been approved.
+Congratulations!
 
-Login ID : {userId}
+Your hostel registration has been successfully approved by the Hostel Administration.
 
-Password : {password}
+----------------------------------------------------
+LOGIN DETAILS
+----------------------------------------------------
 
-Please change your password after first login.
+User ID : {userId}
 
-Regards,
+Temporary Password : {password}
+
+----------------------------------------------------
+IMPORTANT
+----------------------------------------------------
+
+• Please log in using the credentials above.
+
+• Keep your login credentials confidential and do not share them with anyone.
+
+You can now access the Hostel Management Portal to:
+
+    • Apply for Outpasses
+    • Submit Leave Requests
+    • View Hostel Information
+    • Track Request Status
+
+If you experience any issues accessing your account, please contact the Hostel Administration Office.
+
+Thank you for being a part of our hostel community.
+
+Kind Regards,
+
 Hostel Administration
+Madha College of Nursing
 ");
 
 return Ok(new

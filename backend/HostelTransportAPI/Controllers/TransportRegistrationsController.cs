@@ -84,6 +84,7 @@ public async Task<IActionResult> GetAll()
             id = x.Id,
             studentId = x.StudentId,
             studentName = x.StudentName,
+            tokenNumber = x.TokenNumber,
             collegeName = x.CollegeName,
             department = x.Department,
             year = x.Year,
@@ -143,25 +144,51 @@ registration.StudentId = userId;
 
 await _context.SaveChangesAsync();
 
-// SEND EMAIL HERE
+// SEND EMAIL
 var emailService = new EmailService();
 
 await emailService.SendEmailAsync(
     registration.Email,
-    "Transport Registration Approved",
+    "Transport Registration Approved – College Transport Management System",
     $@"
 Dear {registration.StudentName},
 
-Your transport registration has been approved.
+Congratulations!
 
-Login ID : {userId}
+Your transport registration has been successfully approved by the Transport Administration.
 
-Password : {password}
+----------------------------------------------------
+LOGIN DETAILS
+----------------------------------------------------
 
-Please change your password after first login.
+User ID : {userId}
 
-Regards,
+Temporary Password : {password}
+
+----------------------------------------------------
+IMPORTANT
+----------------------------------------------------
+
+• Please log in using the credentials above.
+
+• Keep your login credentials confidential and do not share them with anyone.
+
+You can now access the Transport Management Portal to:
+
+• View Your Bus Route
+
+• View Assigned Bus Information
+
+• View Pickup and Drop Stops
+
+If you experience any issues accessing your account, please contact the Transport Administration Office.
+
+Thank you for choosing the College Transport Service.
+
+Kind Regards,
+
 Transport Administration
+Madha College of Nursing
 ");
 
 return Ok(new

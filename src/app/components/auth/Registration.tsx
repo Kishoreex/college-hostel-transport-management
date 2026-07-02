@@ -5,7 +5,14 @@ import {
 import { useState, useEffect } from 'react';
 import { ArrowLeft, CheckCircle, ChevronRight } from 'lucide-react';
 import type { ServiceType } from '../../types';
-
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Typography
+} from "@mui/material";
 interface RegistrationProps {
   serviceType: ServiceType;
   onBack: () => void;
@@ -60,6 +67,9 @@ const loadRoutes = async () => {
     console.error(error);
   }
 };
+const [successOpen, setSuccessOpen] = useState(false);
+
+const [tokenNumber, setTokenNumber] = useState("");
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState({
     college: '',
@@ -131,7 +141,34 @@ const loadRoutes = async () => {
 routeId: Number(formData.busRoute),
 stopId: Number(formData.busStop)
 };
+const message =
+  serviceType === "hostel"
+    ? `Before submitting your Hostel Registration:
 
+• Please write your Token Number on the printed Hostel Registration Form.
+
+OR
+
+• Take a screenshot of the Token Number after registration.
+
+This Token Number is required for verification.
+
+Do you want to continue?`
+    : `Before submitting your Transport Registration:
+
+• Please write your Token Number on the printed Transport Registration Form.
+
+OR
+
+• Take a screenshot of the Token Number after registration.
+
+This Token Number is required for verification.
+
+Do you want to continue?`;
+
+if (!window.confirm(message)) {
+  return;
+}
   let result;
 
 if (serviceType === "transport") {
@@ -140,11 +177,9 @@ if (serviceType === "transport") {
   result = await registerStudent(payload);  
 }
 
-alert(
-  "Registration Successful\nToken Number: " +
-  result.tokenNumber
-);
-  onSuccess();
+setTokenNumber(result.tokenNumber);
+
+setSuccessOpen(true);
 };
 
   const steps = serviceType === 'transport'
@@ -298,7 +333,7 @@ return formData.fullName &&
                     value={formData.studentId}
                     onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
                     className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="e.g., MDC2024001"
+                    placeholder="e.g., 2111222104001"
                     required
                   />
                 </div>
@@ -500,7 +535,86 @@ return formData.fullName &&
             </button>
           )}
         </div>
-      </div>
+            </div>
+
+      <Dialog
+        open={successOpen}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            fontWeight: "bold",
+            color: "#1565c0"
+          }}
+        >
+          Registration Submitted Successfully
+        </DialogTitle>
+
+        <DialogContent>
+
+          <Typography
+            sx={{
+              textAlign: "center",
+              mb: 2
+            }}
+          >
+            Your registration has been submitted successfully.
+          </Typography>
+
+          <Typography
+            sx={{
+              fontSize: 26,
+              fontWeight: "bold",
+              textAlign: "center",
+              color: "#1976d2",
+              mb: 2
+            }}
+          >
+            {tokenNumber}
+          </Typography>
+
+          <Typography
+            sx={{
+              textAlign: "center",
+              color: "text.secondary"
+            }}
+          >
+            Please write this Token Number on your printed Registration Form.
+          </Typography>
+
+          <Typography
+            sx={{
+              textAlign: "center",
+              color: "text.secondary",
+              mt: 1
+            }}
+          >
+            If you do not have the printed form, take a screenshot of this Token Number.
+          </Typography>
+
+        </DialogContent>
+
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            pb: 3
+          }}
+        >
+          <Button
+            variant="contained"
+            onClick={() => {
+              setSuccessOpen(false);
+              onSuccess();
+            }}
+          >
+            Continue
+          </Button>
+        </DialogActions>
+      </Dialog>
+
     </div>
   );
 }
+  

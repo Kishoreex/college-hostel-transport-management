@@ -597,9 +597,18 @@ const stats = [
                   <div key={app.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                     <div className="flex items-start justify-between mb-3">
                       <div>
-                        <h4 className="font-bold text-gray-800">{app.studentName}</h4>
-                        <p className="text-xs text-gray-500">{app.studentId}</p>
-                      </div>
+  <h4 className="font-bold text-gray-800">
+    {app.studentName}
+  </h4>
+
+  <p className="text-xs text-gray-500">
+    {app.studentId}
+  </p>
+
+  <p className="text-xs text-blue-600 font-semibold">
+    Token No: {app.tokenNumber}
+  </p>
+</div>
                       <Chip label={app.status} color={getStatusColor(app.status)} size="small" sx={{ height: 22, fontSize: '0.7rem' }} />
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 mb-3">

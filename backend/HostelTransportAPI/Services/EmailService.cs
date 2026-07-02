@@ -34,7 +34,7 @@ public class EmailService
 
         await smtp.AuthenticateAsync(
             "kishore1kumar4@gmail.com",
-            "yaau mane hijt tejm");
+            "tbmd jdlp jefo qoyo");
 
         await smtp.SendAsync(email);
 

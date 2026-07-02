@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import type { User, UserRole, ServiceType } from '../../types';
 import Registration from './Registration';
 import { Dialog } from '@mui/material';
-
+import logo from '../../../assets/logo.png';
 interface LoginProps {
   onLogin: (user: User) => void;
 }
@@ -173,39 +173,59 @@ catch (error: any) {
   // Main Landing Screen
   if (screen === 'main') {
     return (
-      <div className="min-h-screen bg-white flex flex-col">
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 py-8 px-6 text-center shadow-lg">
-          <div className="flex items-center justify-center mb-3">
-            <div className="bg-white/20 backdrop-blur-sm p-3 rounded-2xl mr-3">
-              <Building2 size={30} className="text-white" />
-            </div>
-            <div className="text-left">
-              <h1 className="text-white font-bold text-xl leading-tight">Madha Group of Institutions</h1>
-              <p className="text-white/80 text-xs">Campus Management System</p>
-            </div>
-          </div>
-        </div>
+     <div className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-blue-50 flex flex-col">
+ <div className="bg-white border-b border-gray-100 shadow-sm py-3 md:py-5">
+
+  <div className="flex flex-col items-center">
+
+<img
+  src={logo}
+  alt="Madha Logo"
+  className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-blue-100 shadow-xl object-cover"
+/>
+
+    <h1 className="mt-3 text-2xl md:text-4xl font-bold text-blue-700 text-center">
+      Madha Group of Institutions
+    </h1>
+
+   <p className="text-sm md:text-lg text-gray-500 mt-1 text-center px-4">
+      Campus Hostel & Transport Management System
+    </p>
+
+  </div>
+
+</div>
 
         <div className="flex-1 flex flex-col justify-center px-6 py-10">
           <div className="text-center mb-10">
-            <h2 className="text-gray-800 text-2xl font-bold mb-2">Welcome Back</h2>
-            <p className="text-gray-500 text-sm">Select your login type to continue</p>
+    <h2 className="text-3xl md:text-5xl font-extrabold text-slate-800 mb-2">
+  Welcome
+</h2>
+           <p className="text-gray-500 text-lg">
+  Choose your portal to continue
+</p>
           </div>
 
-          <div className="space-y-4 max-w-md mx-auto w-full">
+          <div className="space-y-4 max-w-lg mx-auto w-full">
             <button
               onClick={() => setScreen('studentLogin')}
-              className="w-full bg-white border-2 border-blue-200 rounded-2xl p-6 shadow-md hover:shadow-xl active:scale-95 transition-all"
-            >
+             className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 p-5 md:p-7"  >
               <div className="flex items-center space-x-4">
-                <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-4 rounded-xl shadow-md">
-                  <Users size={32} className="text-white" />
-                </div>
+          <div className="bg-blue-50 border-2 border-blue-200 p-3 md:p-5 rounded-2xl">
+  <Users size={28} className="text-blue-600" />
+</div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold text-gray-800">Student Login</h3>
-                  <p className="text-sm text-gray-500">Access your hostel & transport services</p>
+                 <h3 className="text-xl md:text-2xl font-bold text-blue-700">
+  Student Portal
+</h3>
+                  <p className="text-base text-gray-600 mt-1">
+  Hostel • Transport • Outpass • Leave
+</p>
                 </div>
-                <ChevronRight size={22} className="text-blue-400" />
+               <ChevronRight
+  size={27}
+  className="text-blue-600"
+/>
               </div>
             </button>
 
@@ -214,26 +234,39 @@ catch (error: any) {
                 setSelectedAdminRole('admin');
                 setScreen('adminLogin');
               }}
-              className="w-full bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-md hover:shadow-xl active:scale-95 transition-all"
-            >
+className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:shadow-xl transition-all duration-300 p-5 md:p-7"            >
               <div className="flex items-center space-x-4">
-                <div className="bg-gradient-to-br from-slate-600 to-slate-700 p-4 rounded-xl shadow-md">
-                  <Shield size={32} className="text-white" />
-                </div>
+                <div className="bg-slate-100 border-2 border-slate-300 p-3 md:p-5 rounded-2xl">
+  <Shield size={28} className="text-slate-700" />
+</div>
                 <div className="flex-1 text-left">
-                  <h3 className="text-xl font-bold text-gray-800">Admin Login</h3>
-                  <p className="text-sm text-gray-500">Staff & management access</p>
+                 <h3 className="text-xl md:text-2xl font-bold text-slate-800">
+  Staff & Admin Portal
+</h3>
+                 <p className="text-base text-gray-600 mt-1">
+  Admin • Warden • Security • Transport
+</p>
                 </div>
-                <ChevronRight size={22} className="text-slate-400" />
+                <ChevronRight
+  size={30}
+  className="text-slate-700"
+/>
               </div>
             </button>
           </div>
         </div>
 
-        <div className="text-center pb-8 px-4">
-          <p className="text-gray-400 text-xs">© 2026 Madha Group of Institutions</p>
-          <p className="text-gray-400 text-xs mt-1">All rights reserved</p>
-        </div>
+       <div className="text-center pb-8">
+
+  <p className="text-xs text-gray-400">
+    Version 1.0.0
+  </p>
+
+  <p className="text-xs text-gray-400 mt-1">
+    © 2026 Madha Group of Institutions
+  </p>
+
+</div>
       </div>
     );
   }
@@ -255,7 +288,7 @@ catch (error: any) {
             </div>
             <h2 className="text-white text-2xl font-bold">Student Login</h2>
             <p className="text-white/80 text-sm mt-1">
-              {serviceType === 'hostel' ? 'Hostel Management Portal' : 'Transport Management Portal'}
+              {serviceType === 'hostel' ? 'Hostel Student Portal' : 'Transport Student Portal'}
             </p>
           </div>
         </div>
@@ -305,7 +338,7 @@ catch (error: any) {
                 value={credentials.id}
                 onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
                 className="w-full py-2 bg-transparent border-0 focus:outline-none text-gray-800 text-base placeholder-gray-300"
-                placeholder="e.g. MDS2024001"
+                placeholder="e.g. 2111222104010"
                 required
               />
             </div>
@@ -343,9 +376,7 @@ catch (error: any) {
             </button>
 
             <div className="flex justify-between items-center px-1 pt-1">
-              <button type="button" onClick={() => { setForgotPasswordType('student'); setForgotPasswordOpen(true); setResetSent(false); setForgotPasswordEmail(''); }} className="text-blue-600 text-sm font-medium">
-                Forgot Password?
-              </button>
+             
               <button
                 type="button"
                 onClick={() => setScreen('registration')}
@@ -381,7 +412,7 @@ catch (error: any) {
 
         {/* Mobile Login Form Card */}
         <div className="flex-1 bg-white rounded-t-[2.5rem] px-6 py-8 shadow-2xl">
-          <form onSubmit={handleAdminLogin} className="space-y-5 max-w-md mx-auto w-full">
+          <form onSubmit={handleAdminLogin} className="space-y-4 max-w-lg mx-auto w-full px-4">
             <div className="text-center mb-6">
               <h2 className="text-gray-800 text-xl font-bold">Welcome Back</h2>
               <p className="text-gray-500 text-sm mt-1">Sign in to continue</p>

@@ -231,15 +231,61 @@ ReturnTime = string.IsNullOrWhiteSpace(leave.ReturnTime)
             Message = "Leave Rejected"
         });
     }
-    [HttpGet("history")]
+[HttpGet("history")]
 public IActionResult GetHistory()
 {
-    var history = _context.LeaveRequests
-        .Where(x =>
-            x.Status == "Completed" ||
-            x.Status == "Expired")
-        .OrderByDescending(x => x.CreatedDate)
-        .ToList();
+    var history =
+        (from leave in _context.LeaveRequests
+
+         join outpass in _context.Outpasses
+         on leave.Id equals outpass.LeaveRequestId
+         into op
+
+         from outpass in op.DefaultIfEmpty()
+
+        where leave.Status == "Approved"
+   || leave.Status == "Completed"
+   || leave.Status == "Expired"
+
+         orderby leave.CreatedDate descending
+
+         select new
+         {
+             leave.Id,
+             leave.StudentId,
+             leave.StudentName,
+             leave.Gender,
+             leave.LeaveType,
+             leave.Campus,
+             Reason = leave.Reason,
+Destination = leave.Destination,
+             leave.FromDate,
+             leave.ToDate,
+             leave.ExitTime,
+             leave.ReturnTime,
+             leave.Status,
+
+             ActualExitTime =
+                 outpass == null
+                     ? null
+                     : outpass.ActualExitTime,
+
+             ActualReturnTime =
+                 outpass == null
+                     ? null
+                     : outpass.ActualReturnTime,
+
+             EarlyExitMinutes =
+                 outpass == null
+                     ? 0
+                     : outpass.EarlyExitMinutes,
+
+             LateMinutes =
+                 outpass == null
+                     ? 0
+                     : outpass.LateMinutes
+         })
+         .ToList();
 
     return Ok(history);
 }

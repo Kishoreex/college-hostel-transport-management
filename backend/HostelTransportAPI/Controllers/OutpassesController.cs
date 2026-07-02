@@ -162,10 +162,12 @@ public async Task<IActionResult> MarkExit(
     // Calculate early exit
     if (outpass.ActualExitTime.Value < requestedExit)
     {
-        outpass.EarlyExitMinutes =
-            (int)(requestedExit -
-            outpass.ActualExitTime.Value)
-            .TotalMinutes;
+       var diff = requestedExit - outpass.ActualExitTime.Value;
+
+outpass.EarlyExitMinutes =
+    diff.TotalMinutes >= 1
+        ? (int)Math.Floor(diff.TotalMinutes)
+        : 0;
     }
     else
     {

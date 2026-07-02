@@ -373,6 +373,11 @@ const activeOutpass = outpasses.find(x =>
     )
 
 );
+const activeLeave = leaveRequests.some(
+  (x: any) =>
+    x.status === "Pending" ||
+    x.status === "Approved"
+);
 console.log("ACTIVE OUTPASS =", activeOutpass);
   useEffect(() => {
 
@@ -948,7 +953,7 @@ className="border rounded-xl p-3"
 <div>
 
 <p className="font-semibold">
-{leave.leaveType}
+<span className="text-gray-500">Leave Type :</span> {leave.leaveType}
 </p>
 
 <p className="text-xs text-gray-500">
@@ -975,9 +980,9 @@ size="small"
 
 <div className="mt-2 space-y-1">
 
-  <p className="text-xs text-gray-700">
-    {leave.reason}
-  </p>
+ <p className="text-xs text-gray-700">
+<span className="font-medium">Reason :</span> {leave.reason}
+</p>
 
   {leave.destination && (
     <p className="flex items-center text-xs text-gray-600">
@@ -1206,43 +1211,33 @@ outpasses.filter(x => x.leaveRequestId === 0).length
                       <div><p className="text-gray-500 text-xs">Block</p><p className="font-medium">{studentProfile?.block ?? "-"}</p></div>
                       <div><p className="text-gray-500 text-xs">Room</p><p className="font-medium">{studentProfile?.roomNumber ?? "-"}</p></div>
                       <div><p className="text-gray-500 text-xs">Bed</p><p className="font-medium">{studentProfile?.bedNumber ?? "-"}</p></div>
-                      <div><p className="text-gray-500 text-xs">Warden</p><p className="font-medium">Dr. Sharma</p></div>
+                     
                     </div>
                   </CardContent>
                 </Card>
 
                 <div className="grid grid-cols-2 gap-3">
                   <button
-  disabled={!!activeOutpass}
+disabled={!!activeOutpass || activeLeave}
   onClick={() => setOutpassDialogOpen(true)}
   className={`bg-gradient-to-br from-blue-500 to-blue-600
     text-white p-4 rounded-2xl shadow-lg
-    ${activeOutpass ? "opacity-50 cursor-not-allowed" : ""}
+   ${!!activeOutpass || activeLeave
+    ? "opacity-50 cursor-not-allowed"
+    : ""}
   `}
 >
                     <FileText size={28} className="mb-2" />
                     <p className="font-semibold text-sm">Request Outpass</p>
                   </button>
                   <button
- disabled={
-  !!activeOutpass ||
-  leaveRequests.some(
-    (x: any) =>
-      x.status === "Pending" ||
-      x.status === "Approved"
-  )
-}
+disabled={!!activeOutpass || activeLeave}
   onClick={() => setLeaveDialogOpen(true)}
-  className={`bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg ${
-    !!activeOutpass ||
-    leaveRequests.some(
-      (x: any) =>
-        x.status === "Pending" ||
-        x.status === "Approved"
-    )
-      ? "opacity-50 cursor-not-allowed"
-      : ""
-  }`}
+className={`bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg ${
+  !!activeOutpass || activeLeave
+    ? "opacity-50 cursor-not-allowed"
+    : ""
+}`}
 >
                     <Calendar size={28} className="mb-2" />
                     <p className="font-semibold text-sm">Apply Leave</p>
@@ -1273,7 +1268,7 @@ className="rounded-xl p-3 bg-green-50 border border-green-200"
 >
 
 <p className="font-semibold text-gray-800 text-sm">
-{activeOutpass.reason}
+  <span className="text-gray-500">Reason :</span> {activeOutpass.reason}
 </p>
 
 <div className="flex flex-wrap gap-2 mt-2 text-xs text-gray-600">
@@ -1451,8 +1446,8 @@ outpass.outpassState==="Outside Hostel"
     <div className="flex items-start justify-between mb-2">
       <div className="flex-1">
         <p className="font-semibold text-gray-800 text-sm">
-          {outpass.reason}
-        </p>
+  <span className="text-gray-500">Reason :</span> {outpass.reason}
+</p>
 
         <div className="flex items-center gap-2 mt-1">
           <Chip
@@ -1607,8 +1602,8 @@ Not Returned Yet
 
                 <div>
 
-                 <p className="font-semibold text-gray-800 text-sm">
-  {leave.leaveType}
+<p className="font-semibold text-gray-800 text-sm">
+  <span className="text-gray-500">Leave Type :</span> {leave.leaveType}
 </p>
 
                 <p className="text-xs text-gray-500">
@@ -1645,8 +1640,8 @@ Not Returned Yet
 
 </div>
 
-             <p className="text-xs text-gray-700 mt-2">
-  {leave.reason}
+<p className="text-xs text-gray-700 mt-2">
+  <span className="font-medium">Reason :</span> {leave.reason}
 </p>
 
               {leave.status==="Rejected" &&
@@ -2481,10 +2476,8 @@ className="p-3"
 
 <div>
 
-<p className="text-sm font-semibold text-gray-800">
-
-{leave.leaveType}
-
+<p className="font-semibold">
+<span className="text-gray-500">Leave Type :</span> {leave.leaveType}
 </p>
 
 <p className="text-xs text-gray-500">

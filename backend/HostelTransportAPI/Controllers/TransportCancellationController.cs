@@ -142,11 +142,28 @@ public async Task<IActionResult> Reject(int id)
 
     request.Status = "Rejected";
 
+    request.StudentReadRejected = false;
+
     await _context.SaveChangesAsync();
 
     return Ok(new
     {
         message = "Cancellation rejected."
     });
+}
+[HttpPut("acknowledge/{id}")]
+public async Task<IActionResult> Acknowledge(int id)
+{
+    var request = await _context.TransportCancellations
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (request == null)
+        return NotFound();
+
+    request.StudentReadRejected = true;
+
+    await _context.SaveChangesAsync();
+
+    return Ok();
 }
 }

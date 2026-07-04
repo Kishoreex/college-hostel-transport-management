@@ -16,28 +16,34 @@ public class VacatingController : ControllerBase
         _context = context;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+   [HttpGet]
+public async Task<IActionResult> GetAll()
+{
+    try
     {
-      var data = await _context.VacatingRequests
-    .Where(x =>
-        x.Status == "Pending" ||
+        var data = await _context.VacatingRequests
+            .Where(x =>
+                x.Status == "Pending" ||
 
-        (x.Status == "Approved" &&
-         x.ApprovedDate != null &&
-         x.ApprovedDate >= DateTime.Now.AddHours(-72))
+                (x.Status == "Approved" &&
+                 x.ApprovedDate != null &&
+                 x.ApprovedDate >= DateTime.Now.AddHours(-72))
 
-        ||
+                ||
 
-        (x.Status == "Rejected" &&
-         x.RejectedDate != null &&
-         x.RejectedDate >= DateTime.Now.AddHours(-72))
-    )
-    .ToListAsync();
+                (x.Status == "Rejected" &&
+                 x.RejectedDate != null &&
+                 x.RejectedDate >= DateTime.Now.AddHours(-72))
+            )
+            .ToListAsync();
 
-return Ok(data);
+        return Ok(data);
     }
-
+    catch (Exception ex)
+    {
+        return StatusCode(500, ex.ToString());
+    }
+}
    [HttpPost]
 public async Task<IActionResult> Create(
     VacatingRequest request)
@@ -113,8 +119,11 @@ if (allocation != null)
         if (request == null)
             return NotFound();
 
-        request.Status = "Rejected";
-        request.RejectedDate = DateTime.Now;
+       request.Status = "Rejected";
+
+request.RejectedDate = DateTime.Now;
+
+request.StudentReadRejected = false;
 
         await _context.SaveChangesAsync();
 
@@ -132,15 +141,35 @@ public async Task<IActionResult> GetStudentRequest(
 
     return Ok(request);
 }
-
 [HttpGet("history")]
 public async Task<IActionResult> GetHistory()
 {
-    var history = await _context.VacatingRequests
-        .Where(x => x.Status != "Pending")
-        .OrderByDescending(x => x.Id)
-        .ToListAsync();
+    try
+    {
+        var history = await _context.VacatingRequests
+            .Where(x => x.Status != "Pending")
+            .OrderByDescending(x => x.Id)
+            .ToListAsync();
 
-    return Ok(history);
+        return Ok(history);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(500, ex.ToString());
+    }
+}
+[HttpPut("acknowledge/{id}")]
+public async Task<IActionResult> Acknowledge(int id)
+{
+    var request = await _context.VacatingRequests.FindAsync(id);
+
+    if (request == null)
+        return NotFound();
+
+   request.StudentReadRejected = true;
+
+    await _context.SaveChangesAsync();
+
+    return Ok();
 }
 }

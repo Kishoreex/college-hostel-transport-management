@@ -59,3 +59,17 @@ export async function getStudentVacatingRequest(
 
   return await response.json();
 }
+export async function acknowledgeVacatingReject(id: number) {
+
+    const response = await fetch(
+        `https://202.61.121.102:8443/api/Vacating/acknowledge/${id}`,
+        {
+            method: "PUT"
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed");
+    }
+
+}

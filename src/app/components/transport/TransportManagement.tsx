@@ -664,7 +664,21 @@ const stats = [
                           <p className="text-xs text-gray-500">{req.studentId}</p>
                         </div>
                       </div>
-                      <Chip label={req.status === 'closed' ? 'Closed' : 'Pending'} color={req.status === 'closed' ? 'default' : 'warning'} size="small" sx={{ height: 22, fontSize: '0.7rem' }} />
+                      <Chip
+  label={
+    req.status === "pending"
+      ? "Pending"
+      : req.status === "approved"
+      ? "Approved"
+      : "Rejected"
+  }
+  color={
+    req.status === "pending"
+      ? "warning"
+      : req.status === "approved"
+      ? "success"
+      : "error"
+  } size="small" sx={{ height: 22, fontSize: '0.7rem' }} />
                     </div>
                     <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 mb-3">
                       {[['Department', req.department], ['Year', req.year], ['Bus Route', req.busRoute], ['Bus No', req.busNumber], ['Pickup', req.pickupPoint], ['Phone', req.phone], ['Date', req.requestDate]].map(([k, v]) => (
@@ -696,7 +710,7 @@ const stats = [
 </div>
                       
                     )}
-                    {req.status === 'closed' && (
+                   {req.status === 'approved' && (
                       <div className="flex items-center justify-center space-x-2 bg-gray-100 py-2.5 rounded-xl">
                         <CheckCircle2 size={14} className="text-gray-500" />
                         <span className="text-xs font-semibold text-gray-500">Account Closed - Data Archived</span>

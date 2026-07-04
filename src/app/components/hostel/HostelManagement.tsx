@@ -703,14 +703,21 @@ const loadLeaveHistory = async () => {
       console.error(error);
     }
   };
-      const filteredVacatingRequests =
-      vacatingRequests.filter(req => {
-        const gender = req.gender?.toLowerCase();
+     const filteredVacatingRequests =
+  vacatingRequests.filter(req => {
 
-        return vacatingGender === "boys"
-          ? gender === "male"
-          : gender === "female";
-      });
+    const gender = req.gender?.toLowerCase();
+
+    const genderMatch =
+      vacatingGender === "boys"
+        ? gender === "male"
+        : gender === "female";
+
+    return (
+      genderMatch &&
+      req.status?.toLowerCase() === "pending"
+    );
+  });
       const filteredRooms = rooms.filter(r => r.gender === roomGender);
       const allStudentsFlat = rooms.flatMap(r => r.students);
       const filteredStudents = allStudentsFlat.filter(student => {
@@ -1600,7 +1607,10 @@ const reportTypes = [
 
    return (
     matchesGender &&
-    h.status?.toLowerCase() === "completed" &&
+    (
+        h.status?.toLowerCase() === "approved" ||
+        h.status?.toLowerCase() === "completed"
+    ) &&
     !h.leaveRequestId
 );
     })
@@ -1611,30 +1621,7 @@ const reportTypes = [
     )
     .map(h => {
    
-
-    const exitedEarly =
-      h.actualExitTime &&
-      new Date(h.actualExitTime) <
-      new Date(
-        `${h.validFrom.split("T")[0]}T${h.timeOut}`
-      );
-
-    const stillOut =
-      h.actualExitTime &&
-      !h.actualReturnTime;
-
-    const overdue =
-      stillOut &&
-      new Date() >
-      new Date(
-        `${h.validTo.split("T")[0]}T${h.returnTime}`
-      );
-
-    const returnedLate =
-      h.actualReturnTime &&
-      (h.lateMinutes || 0) > 0;
-
-   const now = new Date();
+const now = new Date();
 
 const exitTime = new Date(
   `${h.validFrom.split("T")[0]}T${h.timeOut}`
@@ -1646,11 +1633,29 @@ const returnTime = new Date(
 
 const waitingForExit =
   !h.actualExitTime &&
-  now < exitTime;
+  now < returnTime;
 
 const expiredWithoutExit =
   !h.actualExitTime &&
-  now >= exitTime;
+  now >= returnTime;
+
+const exitedEarly =
+  h.actualExitTime &&
+  new Date(h.actualExitTime) < exitTime;
+
+const studentOutside =
+  h.actualExitTime &&
+  !h.actualReturnTime &&
+  now <= returnTime;
+
+const stillOut =
+  h.actualExitTime &&
+  !h.actualReturnTime &&
+  now > returnTime;
+
+const returnedLate =
+  h.actualReturnTime &&
+  (h.lateMinutes || 0) > 0;
 
 const returnedInTime =
   h.actualReturnTime &&
@@ -1659,41 +1664,73 @@ const returnedInTime =
 const earlyMinutes =
   h.earlyExitMinutes || 0;
 
-    const delayMins =
-      h.lateMinutes || 0;// still outside past expected time
-                          return (
-                            <div key={h.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${overdue ? 'border-red-300' : returnedLate ? 'border-amber-200' : 'border-gray-100'}`}>
+const delayMins =
+  h.lateMinutes || 0;
+                            return (
+                            <div key={h.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${
+  stillOut
+    ? "border-red-300"
+    : returnedLate
+    ? "border-amber-200"
+    : "border-gray-100"
+}`}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center space-x-3">
-                                  <div className={`p-2.5 rounded-xl ${overdue ? 'bg-red-100' : returnedLate ? 'bg-amber-100' : 'bg-green-100'}`}>
-                                    <UserCircle size={20} className={overdue ? 'text-red-500' : returnedLate ? 'text-amber-600' : 'text-green-600'} />
-                                  </div>
+                                 <div
+className={`p-2.5 rounded-xl ${
+stillOut
+? "bg-red-100"
+: returnedLate
+? "bg-amber-100"
+: "bg-green-100"
+}`}
+>
+  <UserCircle
+className={
+stillOut
+? "text-red-500"
+: returnedLate
+? "text-amber-600"
+: "text-green-600"
+}
+/>                            </div>
                                   <div>
                                     <p className="font-bold text-gray-800 text-sm">{h.studentName}</p>
                                     <p className="text-xs text-gray-400">{h.studentId}</p>
                                   </div>
                                 </div>
-                                <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${overdue ? 'bg-red-100 text-red-700' : returnedLate ? 'bg-amber-100 text-amber-700' : 'bg-green-100 text-green-700'}`}>
+                                <span
+className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+stillOut
+? "bg-red-100 text-red-700"
+: returnedLate
+? "bg-amber-100 text-amber-700"
+: "bg-green-100 text-green-700"
+}`}
+>
 {
 waitingForExit
-? '🟡 Waiting For Exit'
+? "🟡 Waiting For Exit"
 
 : expiredWithoutExit
-? '❌ Not Exited'
+? "❌ Not Exited"
 
 : exitedEarly
 ? `🟠 Exited Early (${earlyMinutes} min)`
 
-: overdue
-? '🔴 Overdue'
+: studentOutside
+? "🟢 Student Outside"
+
+: stillOut
+? "🔴 Still Out"
 
 : returnedLate
 ? `⚠️ Returned Late (${h.lateMinutes} min)`
 
 : returnedInTime
-? '✅ Returned In Time'
+? "✅ Returned In Time"
 
-: '🟢 Outside Hostel'
+: "Completed"
 }
                    </span>
                               </div>
@@ -1777,7 +1814,13 @@ hour12:true
     </span>
   </div>
 )}
-   
+   {waitingForExit && (
+  <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+    <p className="text-blue-700 text-sm font-medium">
+      ⏳ Waiting for Exit
+    </p>
+  </div>
+)}
                                 {expiredWithoutExit && (
 <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3 text-red-700 text-sm font-semibold">
 ❌ Student did not exit before the outpass expired.
@@ -1795,6 +1838,13 @@ hour12:true
 ✅ Student returned within the permitted time.
 </div>
 )}
+{studentOutside && (
+<div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mt-3">
+  <p className="text-sm font-semibold text-blue-700">
+    🟢 Student is currently outside the hostel and is within the permitted outpass time.
+  </p>
+</div>
+)}
                               </div>
                               {returnedLate && h.actualReturnTime && (
                                 <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
@@ -1802,10 +1852,10 @@ hour12:true
                                   <p className="text-xs text-amber-800 font-semibold">Returned {delayMins} min{delayMins !== 1 ? 's' : ''} late — entered campus at {h.actualReturnTime}</p>
                                 </div>
                               )}
-                              {overdue && (
+                              {stillOut && (
                                 <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-2.5 mt-3">
                                   <AlertCircle size={14} className="text-red-500 shrink-0" />
-                                  <p className="text-xs text-red-700 font-semibold">Student has not returned yet — expected by {h.expectedReturn}</p>
+                                  <p className="text-xs text-red-700 font-semibold">🔴 Student is still outside after the permitted return time. — expected by {h.expectedReturn}</p>
                                 </div>
                               )}
                             </div>

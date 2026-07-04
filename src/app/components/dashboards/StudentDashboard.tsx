@@ -8,7 +8,8 @@ import {
 import {
   getStudentTransport,
   submitTransportCancellation,
-  getTransportCancellation
+  getTransportCancellation,
+  acknowledgeTransportRejectNotification
 } from "../../../api/transportService";
 import {
   getStudentProfile,
@@ -16,7 +17,8 @@ import {
 } from "../../../api/studentService";
 import {
   createVacatingRequest,
-  getStudentVacatingRequest
+  getStudentVacatingRequest,
+  acknowledgeVacatingReject
 } from "../../../api/vacatingService";
 import {
   createLeaveRequest,
@@ -119,6 +121,18 @@ export default function StudentDashboard({ user, onLogout }: StudentDashboardPro
   vacatingRequest,
   setVacatingRequest
 ] = useState<any>(null);
+const [rejectPopupOpen, setRejectPopupOpen] = useState(false);
+useEffect(() => {
+
+if(
+vacatingRequest?.status==="Rejected" &&
+!vacatingRequest?.studentReadRejected
+){
+setRejectPopupOpen(true);
+}
+
+},[vacatingRequest]);
+
 const handleVacateSubmit = async () => {
   try {
   await createVacatingRequest({
@@ -171,6 +185,10 @@ const [leaveForm, setLeaveForm] = useState({
 
 const [cancelRequest, setCancelRequest] =
   useState<any>(null);
+  useEffect(() => {
+  console.log("cancelRequest =", cancelRequest);
+}, [cancelRequest]);
+  const [cancelRejectPopupOpen, setCancelRejectPopupOpen] = useState(false);
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
@@ -325,35 +343,91 @@ const loadVacatingRequest =
 
     setVacatingRequest(data);
   };
-  const loadTransportCancellation =
-  async () => {
 
-    try {
+const acknowledgeReject = async () => {
 
-      const data =
-        await getTransportCancellation(
-          user.studentId || ""
-        );
+  try {
 
-      setCancelRequest(data);
+    await acknowledgeVacatingReject(
+      vacatingRequest.id
+    );
 
-    }
-    catch {
+    setRejectPopupOpen(false);
 
-      setCancelRequest(null);
+    await loadVacatingRequest();
 
-    }
+  }
+  catch {
 
+    toast.error(
+      "Failed to acknowledge notification"
+    );
+
+  }
+
+};
+const acknowledgeTransportReject = async () => {
+
+  try {
+
+    await acknowledgeTransportRejectNotification(
+      cancelRequest.id
+    );
+
+    setCancelRejectPopupOpen(false);
+
+    await loadTransportCancellation();
+
+  }
+  catch {
+
+    toast.error(
+      "Failed to acknowledge notification"
+    );
+
+  }
+
+
+  
+
+};
+const loadTransportCancellation = async () => {
+  try {
+    const data = await getTransportCancellation(
+      user.studentId || ""
+    );
+
+    console.log("Transport Data", data);
+
+    setCancelRequest(data);
+  } catch {
+    setCancelRequest(null);
+  }
 };
 
 useEffect(() => {
   loadVacatingRequest();
 }, []);
 useEffect(() => {
+
   if (!isHostel) {
     loadTransportCancellation();
   }
+
 }, []);
+
+useEffect(() => {
+
+  if (
+    cancelRequest?.status === "Rejected" &&
+    !cancelRequest?.studentReadRejected
+  ) {
+
+    setCancelRejectPopupOpen(true);
+
+  }
+
+}, [cancelRequest]);
   const [outpasses, setOutpasses] =
 useState<any[]>([]);
 const [outsideCounter, setOutsideCounter] = useState(0);
@@ -1785,6 +1859,15 @@ Late :
             {/* TRANSPORT VIEW */}
             {!isHostel && (
               <>
+              {cancelRequest?.status === "Pending" && (
+  <Card sx={{ borderRadius: 3 }}>
+    <CardContent>
+      <p className="text-orange-600 font-semibold">
+        Your transport cancellation request is pending approval.
+      </p>
+    </CardContent>
+  </Card>
+)}
                 <Card sx={{ borderRadius: 3 }}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between mb-2">
@@ -2743,6 +2826,152 @@ No Leave History
 
         </div>
       </Dialog>
+      <Dialog
+  open={rejectPopupOpen}
+  maxWidth="xs"
+  fullWidth
+  PaperProps={{
+    sx: {
+      borderRadius: 4,
+      overflow: "hidden"
+    }
+  }}
+>
+
+  {/* Header */}
+  <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 flex flex-col items-center">
+
+    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+
+      <AlertTriangle
+        size={42}
+        className="text-red-500"
+      />
+
+    </div>
+
+    <h2 className="text-white text-2xl font-bold mt-4">
+      Request Rejected
+    </h2>
+
+  </div>
+
+  {/* Body */}
+
+  <div className="p-6">
+
+    <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+
+      <p className="text-gray-700 text-center">
+
+        Your hostel vacating request has been rejected by the Hostel Administration.
+
+      </p>
+
+      <p className="text-red-600 font-semibold text-center mt-3">
+
+        Please meet the Hostel Warden for further clarification.
+
+      </p>
+
+    </div>
+
+    <button
+      onClick={acknowledgeReject}
+      className="
+      w-full
+      mt-6
+      bg-gradient-to-r
+      from-blue-500
+      to-blue-600
+      text-white
+      font-semibold
+      py-3
+      rounded-xl
+      shadow-lg
+      active:scale-95
+      transition-all"
+    >
+      OK
+    </button>
+
+  </div>
+
+</Dialog>
+
+  <Dialog
+   open={cancelRejectPopupOpen}
+  maxWidth="xs"
+  fullWidth
+  PaperProps={{
+    sx: {
+      borderRadius: 4,
+      overflow: "hidden"
+    }
+  }}
+>
+
+  {/* Header */}
+  <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 flex flex-col items-center">
+
+    <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+
+      <AlertTriangle
+        size={42}
+        className="text-red-500"
+      />
+
+    </div>
+
+    <h2 className="text-white text-1xl font-bold mt-4">
+      Transport Cancellation Rejected
+    </h2>
+
+  </div>
+
+  {/* Body */}
+
+  <div className="p-6">
+
+    <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+
+      <p className="text-gray-700 text-center">
+
+         Your transport cancellation request has been rejected.
+
+      </p>
+
+      <p className="text-red-600 font-semibold text-center mt-3">
+
+        Please contact the Transport Coordinator.
+
+      </p>
+
+    </div>
+
+    <button
+          onClick={acknowledgeTransportReject}
+      className="
+      w-full
+      mt-6
+      bg-gradient-to-r
+      from-blue-500
+      to-blue-600
+      text-white
+      font-semibold
+      py-3
+      rounded-xl
+      shadow-lg
+      active:scale-95
+      transition-all"
+    >
+      OK
+    </button>
+
+  </div>
+
+</Dialog>
+
     </DashboardLayout>
   );
 }

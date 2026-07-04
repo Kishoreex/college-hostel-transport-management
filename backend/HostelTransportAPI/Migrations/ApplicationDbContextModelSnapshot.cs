@@ -158,6 +158,10 @@ namespace HostelTransportAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ExitTime")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("FromDate")
                         .HasColumnType("datetime2");
 
@@ -178,6 +182,10 @@ namespace HostelTransportAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("RejectReason")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ReturnTime")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
@@ -809,6 +817,9 @@ namespace HostelTransportAPI.Migrations
 
                     b.Property<DateTime?>("RejectedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("RejectionSeen")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("RequestDate")
                         .HasColumnType("datetime2");

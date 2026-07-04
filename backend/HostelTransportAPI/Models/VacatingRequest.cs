@@ -18,7 +18,7 @@ public string Phone { get; set; } = "";
 
     public string Status { get; set; } = "Pending";
     public DateTime? ApprovedDate { get; set; }
-
+public bool StudentReadRejected { get; set; }
 public DateTime? RejectedDate { get; set; }
 
     public DateTime RequestDate { get; set; }

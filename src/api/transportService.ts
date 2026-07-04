@@ -201,3 +201,17 @@ export async function rejectTransportCancellation(id: number) {
 
   return await response.json();
 }
+export async function acknowledgeTransportRejectNotification(id: number) {
+  const response = await fetch(
+    `${API_URL}/TransportCancellation/acknowledge/${id}`,
+    {
+      method: "PUT",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to acknowledge notification");
+  }
+
+  return await response.text();
+}

@@ -2,19 +2,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.Models;
-
+using Microsoft.AspNetCore.SignalR;
+using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class VacatingController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+  private readonly ApplicationDbContext _context;
+private readonly IHubContext<NotificationHub> _hub;
 
-    public VacatingController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+  public VacatingController(
+    ApplicationDbContext context,
+    IHubContext<NotificationHub> hub)
+{
+    _context = context;
+    _hub = hub;
+}
 
    [HttpGet]
 public async Task<IActionResult> GetAll()
@@ -88,9 +93,14 @@ if (allocation != null)
 
     _context.VacatingRequests.Add(request);
 
-    await _context.SaveChangesAsync();
+await _context.SaveChangesAsync();
 
-    return Ok(request);
+await _hub.Clients.All.SendAsync(
+    "VacatingCreated"
+);
+
+return Ok(request);
+
 }
 
     [HttpPut("approve/{id}")]
@@ -105,9 +115,14 @@ if (allocation != null)
         request.Status = "Approved";
         request.ApprovedDate = DateTime.Now;
 
-        await _context.SaveChangesAsync();
+     await _context.SaveChangesAsync();
 
-        return Ok(request);
+await _hub.Clients.All.SendAsync(
+    "VacatingUpdated",
+    request.StudentId
+);
+
+return Ok(request);
     }
 
     [HttpPut("reject/{id}")]
@@ -125,9 +140,14 @@ request.RejectedDate = DateTime.Now;
 
 request.StudentReadRejected = false;
 
-        await _context.SaveChangesAsync();
+       await _context.SaveChangesAsync();
 
-        return Ok(request);
+await _hub.Clients.All.SendAsync(
+    "VacatingUpdated",
+    request.StudentId
+);
+
+return Ok(request);
     }
 
     [HttpGet("student/{studentId}")]
@@ -168,8 +188,13 @@ public async Task<IActionResult> Acknowledge(int id)
 
    request.StudentReadRejected = true;
 
-    await _context.SaveChangesAsync();
+  await _context.SaveChangesAsync();
 
-    return Ok();
+await _hub.Clients.All.SendAsync(
+    "VacatingUpdated",
+    request.StudentId
+);
+
+return Ok();
 }
 }

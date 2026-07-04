@@ -5,6 +5,9 @@ import {
   markReturn,
   expireOldOutpasses
 } from "../../services/outpassService";
+import * as signalR from "@microsoft/signalr";
+import API_URL from "../../../api/api";
+const HUB_URL = API_URL.replace("/api", "");
 import {
   getStudentTransport,
   submitTransportCancellation,
@@ -117,6 +120,8 @@ export default function StudentDashboard({ user, onLogout }: StudentDashboardPro
   const [vacateDialogOpen, setVacateDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [vacateReason, setVacateReason] = useState('');
+  const connectionRef =
+  useRef<signalR.HubConnection | null>(null);
   const [
   vacatingRequest,
   setVacatingRequest
@@ -154,6 +159,8 @@ catch (error: any) {
   );
 }
 };
+
+
   const [outpassForm, setOutpassForm] = useState({
     reason: '',
     destination: '',
@@ -410,11 +417,90 @@ useEffect(() => {
 }, []);
 useEffect(() => {
 
+    if (!isHostel) return;
+
+    const connection =
+        new signalR.HubConnectionBuilder()
+            .withUrl(`${HUB_URL}/notificationHub`)
+            .withAutomaticReconnect()
+            .build();
+
+    connection.on(
+        "VacatingUpdated",
+        async (studentId: string) => {
+
+            if (studentId === user.studentId) {
+
+                await loadVacatingRequest();
+
+            }
+
+        }
+    );
+
+    connection.start().catch(console.error);
+
+    return () => {
+
+        connection.stop();
+
+    };
+
+}, [user.studentId, isHostel]);
+useEffect(() => {
+
   if (!isHostel) {
     loadTransportCancellation();
   }
 
 }, []);
+useEffect(() => {
+
+  if (isHostel) return;
+
+  const connection =
+    new signalR.HubConnectionBuilder()
+      .withUrl(`${HUB_URL}/notificationHub`)
+      .withAutomaticReconnect()
+      .build();
+
+  connectionRef.current = connection;
+
+  connection.on(
+    "TransportCancellationCreated",
+    async () => {
+
+      await loadTransportCancellation();
+
+    }
+  );
+
+  connection.on(
+    "TransportCancellationUpdated",
+    async () => {
+
+      await loadTransportCancellation();
+
+      const data = await getStudentTransport(
+        user.studentId || ""
+      );
+
+      setTransportInfo(data);
+
+    }
+  );
+
+  connection
+    .start()
+    .catch(console.error);
+
+  return () => {
+
+    connection.stop();
+
+  };
+
+}, [isHostel, user.studentId]);
 
 useEffect(() => {
 
@@ -602,7 +688,7 @@ catch {
   outpassNumber: `OP${Date.now()}`,
   studentId: user.studentId || "",
   studentName: user.name || "",
-  gender: user.gender || "",
+  gender: (user as any).gender || "",
 
   destination: outpassForm.destination,
   reason: outpassForm.reason,

@@ -24,7 +24,8 @@
     import {
     getStudentRegistrations
   } from "../../services/studentRegistrationService";
-    import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from "react";
+import * as signalR from "@microsoft/signalr";
     import { toast } from 'sonner';
     import {
       Card,
@@ -63,6 +64,7 @@
     import DashboardLayout from '../common/DashboardLayout';
     import type { User } from '../../types';
     import API_URL from "../../../api/api";
+    const HUB_URL = API_URL.replace("/api", "");
 
     interface HostelManagementProps {
       user: User;
@@ -242,6 +244,8 @@
     }
 
     export default function HostelManagement({ user, onLogout }: HostelManagementProps) {
+      const connectionRef =
+useRef<signalR.HubConnection | null>(null);
       const [activeScreen, setActiveScreen] = useState<string | null>(null);
     const defaultGender =
       user.canManageGirlsHostel
@@ -642,6 +646,92 @@ const loadLeaveHistory = async () => {
     loadApplicationHistory();
     loadVacatingHistory();
     }, []);
+    useEffect(() => {
+
+  const connection =
+    new signalR.HubConnectionBuilder()
+      .withUrl(`${HUB_URL}/notificationHub`)
+      .withAutomaticReconnect()
+      .build();
+
+  connectionRef.current = connection;
+
+  connection.on("HostelApplicationCreated", async () => {
+
+    await loadApplications();
+
+  });
+
+  connection.on("HostelApplicationUpdated", async () => {
+
+    await loadApplications();
+
+    await loadRooms();
+
+  });
+
+  connection.on("OutpassCreated", async () => {
+
+    await loadOutpasses();
+
+  });
+
+  connection.on("OutpassUpdated", async () => {
+
+    await loadOutpasses();
+
+  });
+
+  connection.on("LeaveCreated", async () => {
+
+    await loadLeaveRequests();
+
+  });
+
+  connection.on("LeaveUpdated", async () => {
+
+    await loadLeaveRequests();
+
+  });
+
+ connection.on("VacatingCreated", async () => {
+
+    await loadVacatingRequests();
+    await loadVacatingHistory();
+
+});
+
+connection.on("VacatingUpdated", async () => {
+
+    await loadVacatingRequests();
+    await loadVacatingHistory();
+    await loadRooms();
+
+});
+
+  connection.on("RoomCreated", async () => {
+
+    await loadRooms();
+
+  });
+
+  connection.on("RoomAllocationUpdated", async () => {
+
+    await loadRooms();
+
+  });
+
+  connection
+    .start()
+    .catch(console.error);
+
+  return () => {
+
+    connection.stop();
+
+  };
+
+}, []);
 
     useEffect(() => {
     loadHistory();

@@ -2,7 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
-
+using Microsoft.AspNetCore.SignalR;
+using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
@@ -10,11 +11,15 @@ namespace HostelTransportAPI.Controllers;
 public class LeaveRequestsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+private readonly IHubContext<NotificationHub> _hub;
 
-    public LeaveRequestsController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+  public LeaveRequestsController(
+    ApplicationDbContext context,
+    IHubContext<NotificationHub> hub)
+{
+    _context = context;
+    _hub = hub;
+}
 
     [HttpPost]
     public async Task<IActionResult> Create(
@@ -85,8 +90,11 @@ foreach (var admin in systemAdmins)
         });
 }
 
-        await _context.SaveChangesAsync();
+      await _context.SaveChangesAsync();
 
+await _hub.Clients.All.SendAsync(
+    "LeaveCreated"
+);
         return Ok(leaveRequest);
     }
 
@@ -191,8 +199,12 @@ ReturnTime = string.IsNullOrWhiteSpace(leave.ReturnTime)
         });
 }
 
-        await _context.SaveChangesAsync();
+       await _context.SaveChangesAsync();
 
+await _hub.Clients.All.SendAsync(
+    "LeaveUpdated",
+    leave.StudentId
+);
         return Ok(new
         {
             Message = "Leave Approved"
@@ -224,8 +236,12 @@ ReturnTime = string.IsNullOrWhiteSpace(leave.ReturnTime)
         CreatedAt = DateTime.Now
     });
 
-        await _context.SaveChangesAsync();
+      await _context.SaveChangesAsync();
 
+await _hub.Clients.All.SendAsync(
+    "LeaveUpdated",
+    leave.StudentId
+);
         return Ok(new
         {
             Message = "Leave Rejected"

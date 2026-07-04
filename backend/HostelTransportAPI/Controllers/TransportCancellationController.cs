@@ -3,7 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
-
+using Microsoft.AspNetCore.SignalR;
+using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
@@ -11,10 +12,12 @@ namespace HostelTransportAPI.Controllers;
 public class TransportCancellationController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+private readonly IHubContext<NotificationHub> _hub;
 
-    public TransportCancellationController(ApplicationDbContext context)
+    public TransportCancellationController(ApplicationDbContext context, IHubContext<NotificationHub> hub)
     {
         _context = context;
+        _hub = hub;
     }
 
     [HttpPost]
@@ -61,7 +64,9 @@ public class TransportCancellationController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return Ok(request);
+await _hub.Clients.All.SendAsync("TransportCancellationCreated");
+
+return Ok(request);
     }
 
     [HttpGet("{studentId}")]
@@ -123,13 +128,17 @@ public async Task<IActionResult> Approve(int id)
 
     if (user != null)
         _context.Users.Remove(user);
+await _context.SaveChangesAsync();
 
-    await _context.SaveChangesAsync();
+await _hub.Clients.All.SendAsync(
+    "TransportCancellationUpdated",
+    request.StudentId
+);
 
-    return Ok(new
-    {
-        message = "Transport cancelled successfully."
-    });
+return Ok(new
+{
+    message = "Transport cancelled successfully."
+});
 }
 [HttpPost("reject/{id}")]
 public async Task<IActionResult> Reject(int id)
@@ -144,12 +153,17 @@ public async Task<IActionResult> Reject(int id)
 
     request.StudentReadRejected = false;
 
-    await _context.SaveChangesAsync();
+   await _context.SaveChangesAsync();
 
-    return Ok(new
-    {
-        message = "Cancellation rejected."
-    });
+await _hub.Clients.All.SendAsync(
+    "TransportCancellationUpdated",
+    request.StudentId
+);
+
+return Ok(new
+{
+    message = "Cancellation rejected."
+});
 }
 [HttpPut("acknowledge/{id}")]
 public async Task<IActionResult> Acknowledge(int id)
@@ -162,8 +176,13 @@ public async Task<IActionResult> Acknowledge(int id)
 
     request.StudentReadRejected = true;
 
-    await _context.SaveChangesAsync();
+   await _context.SaveChangesAsync();
 
-    return Ok();
+await _hub.Clients.All.SendAsync(
+    "TransportCancellationUpdated",
+    request.StudentId
+);
+
+return Ok();
 }
 }

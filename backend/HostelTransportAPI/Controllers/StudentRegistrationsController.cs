@@ -3,7 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
-
+using Microsoft.AspNetCore.SignalR;
+using HostelTransportAPI.Hubs;
 
 namespace HostelTransportAPI.Controllers;
 
@@ -12,11 +13,15 @@ namespace HostelTransportAPI.Controllers;
 public class StudentRegistrationsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+private readonly IHubContext<NotificationHub> _hub;
 
-    public StudentRegistrationsController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
+   public StudentRegistrationsController(
+    ApplicationDbContext context,
+    IHubContext<NotificationHub> hub)
+{
+    _context = context;
+    _hub = hub;
+}
 
     [HttpPost]
     public async Task<IActionResult> Create(
@@ -47,9 +52,13 @@ public class StudentRegistrationsController : ControllerBase
 
         _context.StudentRegistrations.Add(registration);
 
-        await _context.SaveChangesAsync();
+      await _context.SaveChangesAsync();
 
-        return Ok(registration);
+await _hub.Clients.All.SendAsync(
+    "HostelApplicationCreated"
+);
+
+return Ok(registration);
     }
 
    [HttpGet]
@@ -126,7 +135,10 @@ registration.ApprovedDate = DateTime.Now;
 registration.StudentId = userId;
 
 await _context.SaveChangesAsync();
-
+await _hub.Clients.All.SendAsync(
+    "HostelApplicationUpdated",
+    registration.StudentId
+);
 // // SEND EMAIL
 var emailService = new EmailService();
 
@@ -195,7 +207,12 @@ public async Task<IActionResult> RejectStudent(int id)
 
     await _context.SaveChangesAsync();
 
-    return Ok(new
+await _hub.Clients.All.SendAsync(
+    "HostelApplicationUpdated",
+    registration.StudentId
+);
+
+return Ok(new
     {
         Message = "Student Rejected Successfully"
     });

@@ -2,19 +2,24 @@ using Microsoft.AspNetCore.Mvc;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.Models;
 using HostelTransportAPI.DTOs;
+using Microsoft.AspNetCore.SignalR;
+using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class OutpassesController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+   private readonly ApplicationDbContext _context;
+private readonly IHubContext<NotificationHub> _hub;
 
-    public OutpassesController(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
+ public OutpassesController(
+    ApplicationDbContext context,
+    IHubContext<NotificationHub> hub)
+{
+    _context = context;
+    _hub = hub;
+}
    [HttpGet]
 public IActionResult GetAll()
 {
@@ -81,6 +86,9 @@ if (hasActiveOutpass)
     _context.Outpasses.Add(outpass);
 
     await _context.SaveChangesAsync();
+await _hub.Clients.All.SendAsync(
+    "OutpassCreated"
+);
 
     return Ok(outpass);
 }
@@ -96,8 +104,12 @@ public async Task<IActionResult> Approve(int id)
 outpass.Status = "Approved";
 outpass.OutpassState = "Active";
 
-    await _context.SaveChangesAsync();
+  await _context.SaveChangesAsync();
 
+await _hub.Clients.All.SendAsync(
+    "OutpassUpdated",
+    outpass.StudentId
+);
     return Ok(outpass);
 }
 
@@ -112,7 +124,14 @@ public async Task<IActionResult> Reject(int id)
 
     outpass.Status = "Rejected";
 
-    await _context.SaveChangesAsync();
+
+
+  await _context.SaveChangesAsync();
+
+await _hub.Clients.All.SendAsync(
+    "OutpassUpdated",
+    outpass.StudentId
+);
 
     return Ok(outpass);
 }
@@ -175,7 +194,10 @@ outpass.EarlyExitMinutes =
     }
 
     await _context.SaveChangesAsync();
-
+await _hub.Clients.All.SendAsync(
+    "OutpassUpdated",
+    outpass.StudentId
+);
     return Ok(outpass);
 }
 [HttpPut("return/{id}")]
@@ -213,7 +235,10 @@ if (outpass.LeaveRequestId > 0)
     }
 }
     await _context.SaveChangesAsync();
-
+await _hub.Clients.All.SendAsync(
+    "OutpassUpdated",
+    outpass.StudentId
+);
     return Ok(outpass);
 }[HttpGet("active/{studentId}")]
 public IActionResult HasActiveOutpass(string studentId)

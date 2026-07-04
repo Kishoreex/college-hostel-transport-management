@@ -11,8 +11,11 @@ import {
   approveTransportCancellation,
   rejectTransportCancellation
 } from "../../../api/transportService";
+import * as signalR from "@microsoft/signalr";
+import { useState, useEffect, useRef } from "react";
+import API_URL from "../../../api/api";
 
-import { useState, useEffect } from 'react'
+const HUB_URL = API_URL.replace("/api", "");
 import { toast } from 'sonner';
 import {
   Card,
@@ -105,7 +108,7 @@ export default function TransportManagement({ user, onLogout }: TransportManagem
   const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
   const [selectedStudent, setSelectedStudent] = useState<TransportStudent | null>(null);
   const [applicationMonths, setApplicationMonths] = useState(12);
-
+const connectionRef = useRef<signalR.HubConnection | null>(null);
 const [cancellationMonths, setCancellationMonths] = useState(12);
 const handleApprove = async (id: number) => {
   await approveTransportStudent(id);
@@ -169,6 +172,42 @@ useEffect(() => {
   loadRoutes();
   loadStudents();
   loadCancellationRequests();
+}, []);
+useEffect(() => {
+
+  const connection = new signalR.HubConnectionBuilder()
+    .withUrl(`${HUB_URL}/notificationHub`)
+    .withAutomaticReconnect()
+    .build();
+
+  connectionRef.current = connection;
+
+  connection.on("TransportCancellationCreated", async () => {
+
+    await loadCancellationRequests();
+
+    toast.info("New transport cancellation request received.");
+
+  });
+
+  connection.on("TransportCancellationUpdated", async () => {
+
+    await loadCancellationRequests();
+
+    await loadStudents();
+
+  });
+
+  connection
+    .start()
+    .catch(err => console.error(err));
+
+  return () => {
+
+    connection.stop();
+
+  };
+
 }, []);
 const loadCancellationRequests = async () => {
   try {

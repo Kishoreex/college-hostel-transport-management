@@ -20,3 +20,6 @@ publish/
 # Environment
 .env
 .env.*
+# IDE
+.idea/
+android/.idea/

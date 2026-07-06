@@ -766,16 +766,18 @@ connection.on("RoomUpdated", async () => {
     studentId: "",
     currentRoom: ""
   });
+  const [removeDialog, setRemoveDialog] = useState({
+  open: false,
+  studentId: "",
+  studentName: ""
+});
 const [selectedNewRoom, setSelectedNewRoom] = useState("");
       const loadApplications = async () => {
       try {
-      const response = await fetch(
-    `${API_URL}/StudentRegistrations`
-  );
+   const data = await getStudentRegistrations();
 
-        const data = await response.json();
-
-        setApplications(data);
+setApplications(data);
+        console.log("APPLICATIONS", data);
       } catch (error) {
         console.error(error);
       }
@@ -818,18 +820,58 @@ const [selectedNewRoom, setSelectedNewRoom] = useState("");
     );
   });
       const filteredRooms = rooms.filter(r => r.gender === roomGender);
-      const allStudentsFlat = rooms.flatMap(r => r.students);
-      const filteredStudents = allStudentsFlat.filter(student => {
-      if (user.isSystemAdmin) return true;
+const allocatedStudents = rooms.flatMap(r => r.students);
 
-      if (user.canManageBoysHostel)
-        return student.gender === "boys";
+const allStudentsFlat = applications
+  .filter(
+    (a: any) =>
+      a.status?.toLowerCase() === "approved"
+  )
+  .map((a: any) => {
 
-      if (user.canManageGirlsHostel)
-        return student.gender === "girls";
+    const allocated =
+      allocatedStudents.find(
+        s =>
+          String(s.id).trim() ===
+          String(a.studentId).trim()  
+      );
 
-      return false;
-    });
+    return {
+     id: a.studentId,
+      name: a.studentName,
+      phone: a.phone,
+      college: a.collegeName,
+      department: a.department,
+      year: a.year,
+      batch: a.batch,
+      parentName: a.parentName,
+      parentPhone: a.parentPhone,
+      address: a.address,
+
+      gender:
+        a.gender?.toLowerCase() === "male"
+          ? "boys"
+          : "girls",
+
+      roomNumber:
+        allocated?.roomNumber || "Not Allocated",
+
+      roommates:
+        allocated?.roommates || []
+    };
+  });
+
+const filteredStudents = allStudentsFlat.filter(student => {
+  if (user.isSystemAdmin) return true;
+
+  if (user.canManageBoysHostel)
+    return student.gender === "boys";
+
+  if (user.canManageGirlsHostel)
+    return student.gender === "girls";
+
+  return false;
+});
     const dashboardStudents =
   filteredStudents;
 
@@ -1114,7 +1156,10 @@ const reportTypes = [
               {[
                 { title: 'Academic Details', bg: 'bg-blue-50', titleColor: 'text-blue-700', rows: [['College', selectedStudent.college], ['Department', selectedStudent.department], ['Year', selectedStudent.year], ['Batch', selectedStudent.batch]] },
                 { title: 'Parent Details', bg: 'bg-green-50', titleColor: 'text-green-700', rows: [['Parent Name', selectedStudent.parentName], ['Phone', selectedStudent.parentPhone], ['Address', selectedStudent.address]] },
-                { title: 'Room Details', bg: 'bg-purple-50', titleColor: 'text-purple-700', rows: [['Room Number', selectedStudent.roomNumber]] },
+                { title: 'Room Details', bg: 'bg-purple-50', titleColor: 'text-purple-700', rows: [[
+  'Room Number',
+  selectedStudent.roomNumber || 'Not Allocated'
+]] },
               ].map(section => (
                 <div key={section.title} className={`${section.bg} rounded-2xl p-4`}>
                   <h3 className={`font-bold text-sm mb-3 ${section.titleColor}`}>{section.title}</h3>
@@ -1331,22 +1376,13 @@ const reportTypes = [
     </button>
 
     <button
-      onClick={() => {
-        if (
-          !window.confirm(
-            "Remove this student from room?"
-          )
-        )
-          return;
-
-        removeStudentFromRoom(s.id).then(() => {
-          toast.success(
-            "Student Removed"
-          );
-
-          loadRooms();
-        });
-      }}
+     onClick={() =>
+  setRemoveDialog({
+    open: true,
+    studentId: s.id,
+    studentName: s.name
+  })
+}
       className="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm"
     >
       Remove
@@ -3329,6 +3365,67 @@ Choose report start and end dates
 >
   Cancel
 </button>
+  </div>
+</BottomSheet>
+<BottomSheet
+  open={removeDialog.open}
+  onClose={() =>
+    setRemoveDialog({
+      open: false,
+      studentId: "",
+      studentName: ""
+    })
+  }
+  title="Remove Student"
+>
+  <div className="space-y-4">
+
+    <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+      <p className="font-semibold text-red-700">
+        Remove {removeDialog.studentName} from this room?
+      </p>
+
+      <p className="text-sm text-gray-600 mt-2">
+        The student will become unallocated and can be assigned to another room later.
+      </p>
+    </div>
+
+    <div className="flex gap-3">
+
+      <button
+        onClick={() =>
+          setRemoveDialog({
+            open: false,
+            studentId: "",
+            studentName: ""
+          })
+        }
+        className="flex-1 py-3 rounded-xl border"
+      >
+        Cancel
+      </button>
+
+      <button
+        onClick={async () => {
+          await removeStudentFromRoom(removeDialog.studentId);
+
+          toast.success("Student Removed");
+
+          setRemoveDialog({
+            open: false,
+            studentId: "",
+            studentName: ""
+          });
+
+          loadRooms();
+        }}
+        className="flex-1 py-3 rounded-xl bg-red-600 text-white"
+      >
+        Remove
+      </button>
+
+    </div>
+
   </div>
 </BottomSheet>
   

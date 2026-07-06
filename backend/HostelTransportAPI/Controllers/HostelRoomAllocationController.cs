@@ -3,20 +3,24 @@ using Microsoft.EntityFrameworkCore;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.Models;
 using HostelTransportAPI.DTOs;
-
+using Microsoft.AspNetCore.SignalR;
+using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
 public class HostelRoomAllocationController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+   private readonly ApplicationDbContext _context;
+private readonly IHubContext<NotificationHub> _hub;
 
-    public HostelRoomAllocationController(
-        ApplicationDbContext context)
-    {
-        _context = context;
-    }
+public HostelRoomAllocationController(
+    ApplicationDbContext context,
+    IHubContext<NotificationHub> hub)
+{
+    _context = context;
+    _hub = hub;
+}
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -80,9 +84,13 @@ public class HostelRoomAllocationController : ControllerBase
 
         _context.HostelRoomAllocations.Add(allocation);
 
-        await _context.SaveChangesAsync();
+       await _context.SaveChangesAsync();
 
-        return Ok(allocation);
+await _hub.Clients.All.SendAsync(
+    "RoomAllocationUpdated"
+);
+
+return Ok(allocation);
     }
 
     [HttpDelete("{id}")]
@@ -132,6 +140,56 @@ public async Task<IActionResult> GetAvailableStudents(
         })
         .ToListAsync();
 
-    return Ok(students);
+ return Ok(students);
+}
+
+[HttpDelete("student/{studentId}")]
+public async Task<IActionResult> RemoveStudent(string studentId)
+{
+    var allocation = await _context.HostelRoomAllocations
+        .FirstOrDefaultAsync(x =>
+            x.StudentId == studentId &&
+            x.Status == "Allocated");
+
+    if (allocation == null)
+        return NotFound();
+
+    _context.HostelRoomAllocations.Remove(allocation);
+
+    await _context.SaveChangesAsync();
+
+    await _hub.Clients.All.SendAsync(
+        "RoomAllocationUpdated"
+    );
+
+    return Ok();
+}
+
+public class ChangeRoomDto
+{
+    public string StudentId { get; set; } = "";
+    public string RoomNumber { get; set; } = "";
+}
+
+[HttpPut("change-room")]
+public async Task<IActionResult> ChangeRoom(ChangeRoomDto dto)
+{
+    var allocation = await _context.HostelRoomAllocations
+        .FirstOrDefaultAsync(x =>
+            x.StudentId == dto.StudentId &&
+            x.Status == "Allocated");
+
+    if (allocation == null)
+        return NotFound();
+
+    allocation.RoomNumber = dto.RoomNumber;
+
+    await _context.SaveChangesAsync();
+
+    await _hub.Clients.All.SendAsync(
+        "RoomAllocationUpdated"
+    );
+
+    return Ok(allocation);
 }
 }

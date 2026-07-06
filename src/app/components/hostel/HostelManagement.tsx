@@ -13,14 +13,17 @@
       approveVacatingRequest,
       rejectVacatingRequest
     } from "../../services/vacatingService";
-    import {
-      getAllRooms,
-      createRoom
-    } from "../../services/hostelRoomService";
-    import {
-      getAllRoomAllocations,
-      getAvailableStudents
-    } from "../../services/hostelRoomAllocationService";
+import {
+  getAllRooms,
+  createRoom,
+  updateRoom
+} from "../../services/hostelRoomService";
+import {
+  getAllRoomAllocations,
+  getAvailableStudents,
+  changeStudentRoom,
+  removeStudentFromRoom
+} from "../../services/hostelRoomAllocationService";
     import {
     getStudentRegistrations
   } from "../../services/studentRegistrationService";
@@ -709,11 +712,11 @@ connection.on("VacatingUpdated", async () => {
 
 });
 
-  connection.on("RoomCreated", async () => {
+connection.on("RoomUpdated", async () => {
 
     await loadRooms();
 
-  });
+});
 
   connection.on("RoomAllocationUpdated", async () => {
 
@@ -757,7 +760,13 @@ connection.on("VacatingUpdated", async () => {
       const [addStudentId, setAddStudentId] = useState('');
       const [addStudentName, setAddStudentName] = useState('');
       const [addStudentPhone, setAddStudentPhone] = useState('');
-
+      const [moveStudentSheet, setMoveStudentSheet] =
+  useState({
+    open: false,
+    studentId: "",
+    currentRoom: ""
+  });
+const [selectedNewRoom, setSelectedNewRoom] = useState("");
       const loadApplications = async () => {
       try {
       const response = await fetch(
@@ -905,14 +914,41 @@ const girlsCount =
       }
     };
 
-      const handleEditRoom = () => {
-        if (!editRoomSheet.room) return;
-        setRooms(prev => prev.map(r => r.roomNumber === editRoomSheet.room!.roomNumber
-          ? { ...r, roomNumber: editRoomNum || r.roomNumber, capacity: parseInt(editRoomCap) || r.capacity }
-          : r
-        ));
-        setEditRoomSheet({ open: false, room: null });
-      };
+     const handleEditRoom = async () => {
+  if (!editRoomSheet.room) return;
+
+  try {
+    const response = await fetch(
+      `${API_URL}/HostelRooms/${editRoomSheet.room.roomNumber}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          roomNumber: editRoomNum,
+          capacity: Number(editRoomCap),
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed");
+    }
+
+    await loadRooms();
+
+    toast.success("Room Updated Successfully");
+
+    setEditRoomSheet({
+      open: false,
+      room: null,
+    });
+
+  } catch {
+    toast.error("Failed To Update Room");
+  }
+};
 
       const handleAddStudent = () => {
         if (!addStudentId || !addStudentName) return;
@@ -1231,21 +1267,93 @@ const reportTypes = [
                           {room.students.length > 0 && (
                             <div className="space-y-1.5 mb-3">
                               {room.students.map(s => (
-                                <button key={s.id}onClick={() => {
-    setSelectedStudent(s);
-    setStudentSheetOpen(true);
-  }}  className="w-full flex items-center justify-between bg-gray-50 hover:bg-blue-50 active:bg-blue-100 p-2.5 rounded-xl transition-colors">
-                                  <div className="flex items-center space-x-2.5">
-                                    <div className={`${s.gender === 'boys' ? 'bg-indigo-100' : 'bg-pink-100'} p-1.5 rounded-lg`}>
-                                      <UserCircle size={16} className={s.gender === 'boys' ? 'text-indigo-500' : 'text-pink-500'} />
-                                    </div>
-                                    <div className="text-left">
-                                      <p className="text-sm font-semibold text-blue-700">{s.name}</p>
-                                      <p className="text-xs text-gray-500"> {s.year}• {s.college}• {s.phone}</p>
-                                    </div>
-                                  </div>
-                                  <ChevronRight size={14} className="text-gray-300" />
-                                </button>
+                               <div
+  key={s.id}
+  className="bg-gray-50 rounded-xl p-2 mb-2"
+>
+  <button
+    onClick={() => {
+      setSelectedStudent(s);
+      setStudentSheetOpen(true);
+    }}
+    className="w-full flex items-center justify-between"
+  >
+    <div className="flex items-center space-x-2.5">
+      <div
+        className={`${
+          s.gender === "boys"
+            ? "bg-indigo-100"
+            : "bg-pink-100"
+        } p-1.5 rounded-lg`}
+      >
+        <UserCircle
+          size={16}
+          className={
+            s.gender === "boys"
+              ? "text-indigo-500"
+              : "text-pink-500"
+          }
+        />
+      </div>
+
+      <div className="text-left">
+        <p className="text-sm font-semibold text-blue-700">
+          {s.name}
+        </p>
+
+        <p className="text-xs text-gray-500">
+          {s.year} • {s.college}
+        </p>
+      </div>
+    </div>
+
+    <ChevronRight
+      size={14}
+      className="text-gray-300"
+    />
+  </button>
+
+  <div className="flex gap-2 mt-3">
+
+    <button
+    onClick={() => {
+  setMoveStudentSheet({
+    open: true,
+    studentId: s.id,
+    currentRoom: room.roomNumber
+  });
+
+  setSelectedNewRoom("");
+}}
+      className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm"
+    >
+      Move
+    </button>
+
+    <button
+      onClick={() => {
+        if (
+          !window.confirm(
+            "Remove this student from room?"
+          )
+        )
+          return;
+
+        removeStudentFromRoom(s.id).then(() => {
+          toast.success(
+            "Student Removed"
+          );
+
+          loadRooms();
+        });
+      }}
+      className="flex-1 bg-red-600 text-white rounded-lg py-2 text-sm"
+    >
+      Remove
+    </button>
+
+  </div>
+</div>
                               ))}
                             </div>
                           )}
@@ -3113,7 +3221,116 @@ Choose report start and end dates
         )}
       </div>
     </BottomSheet>
+<BottomSheet
+  open={moveStudentSheet.open}
+  onClose={() =>
+    setMoveStudentSheet({
+      open: false,
+      studentId: "",
+      currentRoom: ""
+    })
+  }
+  title="Move Student"
+>
+  <div className="space-y-3">
 
+   {rooms.filter(
+  r =>
+    r.gender === roomGender &&
+    r.roomNumber !== moveStudentSheet.currentRoom &&
+    r.students.length < r.capacity
+).length === 0 ? (
+
+  <div className="text-center py-8">
+
+    <DoorOpen
+      size={48}
+      className="mx-auto text-gray-300 mb-3"
+    />
+
+    <p className="font-semibold text-gray-600">
+      No Rooms Available
+    </p>
+
+    <p className="text-sm text-gray-400">
+      Every room is already full.
+    </p>
+
+  </div>
+
+) : (
+
+ rooms
+  .filter(
+    r =>
+      r.gender === roomGender &&
+      r.roomNumber !== moveStudentSheet.currentRoom &&
+      r.students.length < r.capacity
+  )
+  .map(room => (
+
+      <button
+        key={room.roomNumber}
+        onClick={() =>
+          setSelectedNewRoom(room.roomNumber)
+        }
+        className={`w-full border rounded-xl p-4 text-left ${
+          selectedNewRoom === room.roomNumber
+            ? "border-blue-600 bg-blue-50"
+            : "border-gray-200"
+        }`}
+      >
+        <div className="font-semibold">
+          Room {room.roomNumber}
+        </div>
+
+        <div className="text-sm text-gray-500">
+          {room.students.length}/{room.capacity} Occupied
+        </div>
+      </button>
+
+    ))
+
+)}
+
+    <button
+      disabled={!selectedNewRoom}
+      onClick={async () => {
+
+        await changeStudentRoom(
+          moveStudentSheet.studentId,
+          selectedNewRoom
+        );
+
+        toast.success("Student Moved");
+
+        setMoveStudentSheet({
+          open: false,
+          studentId: "",
+          currentRoom: ""
+        });
+
+        loadRooms();
+
+      }}
+      className="w-full bg-blue-600 text-white rounded-xl py-3 disabled:bg-gray-300"
+    >
+      Move Student
+    </button>
+<button
+  onClick={() =>
+    setRejectSheet({
+      open: false,
+      id: "",
+      type: ""
+    })
+  }
+  className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform"
+>
+  Cancel
+</button>
+  </div>
+</BottomSheet>
   
         </DashboardLayout>
       );

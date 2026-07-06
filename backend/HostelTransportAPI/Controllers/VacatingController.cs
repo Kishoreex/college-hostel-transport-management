@@ -102,28 +102,44 @@ await _hub.Clients.All.SendAsync(
 return Ok(request);
 
 }
+[HttpPut("approve/{id}")]
+public async Task<IActionResult> Approve(int id)
+{
+    var request =
+        await _context.VacatingRequests.FindAsync(id);
 
-    [HttpPut("approve/{id}")]
-    public async Task<IActionResult> Approve(int id)
+    if (request == null)
+        return NotFound();
+
+    request.Status = "Approved";
+    request.ApprovedDate = DateTime.Now;
+    
+
+    // Remove room allocation
+    var allocation = await _context.HostelRoomAllocations
+        .FirstOrDefaultAsync(x =>
+            x.StudentId == request.StudentId &&
+            x.Status == "Allocated");
+
+    if (allocation != null)
     {
-        var request =
-            await _context.VacatingRequests.FindAsync(id);
-
-        if (request == null)
-            return NotFound();
-
-        request.Status = "Approved";
-        request.ApprovedDate = DateTime.Now;
-
-     await _context.SaveChangesAsync();
-
-await _hub.Clients.All.SendAsync(
-    "VacatingUpdated",
-    request.StudentId
-);
-
-return Ok(request);
+        _context.HostelRoomAllocations.Remove(allocation);
     }
+
+    await _context.SaveChangesAsync();
+
+    // Refresh all hostel pages
+    await _hub.Clients.All.SendAsync(
+        "VacatingUpdated",
+        request.StudentId
+    );
+
+    await _hub.Clients.All.SendAsync(
+        "RoomAllocationUpdated"
+    );
+
+    return Ok(request);
+}
 
     [HttpPut("reject/{id}")]
     public async Task<IActionResult> Reject(int id)

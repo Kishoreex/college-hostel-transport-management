@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.Models;
+using Microsoft.AspNetCore.SignalR;
+using HostelTransportAPI.Hubs;
 
 namespace HostelTransportAPI.Controllers;
 
@@ -9,13 +11,16 @@ namespace HostelTransportAPI.Controllers;
 [Route("api/[controller]")]
 public class HostelRoomsController : ControllerBase
 {
-    private readonly ApplicationDbContext _context;
+private readonly ApplicationDbContext _context;
+private readonly IHubContext<NotificationHub> _hub;
 
-    public HostelRoomsController(
-        ApplicationDbContext context)
-    {
-        _context = context;
-    }
+public HostelRoomsController(
+    ApplicationDbContext context,
+    IHubContext<NotificationHub> hub)
+{
+    _context = context;
+    _hub = hub;
+}
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
@@ -35,30 +40,44 @@ public class HostelRoomsController : ControllerBase
 
         await _context.SaveChangesAsync();
 
-        return Ok(room);
+await _hub.Clients.All.SendAsync(
+    "RoomCreated"
+);
+
+return Ok(room);
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(
-        int id,
-        HostelRoom room)
-    {
-        var existing =
-            await _context.HostelRooms.FindAsync(id);
+   [HttpPut("{roomNumber}")]
+public async Task<IActionResult> Update(
+    string roomNumber,
+    HostelRoom room)
+{
+    var existing = await _context.HostelRooms
+        .FirstOrDefaultAsync(x =>
+            x.RoomNumber == roomNumber);
 
-        if (existing == null)
-            return NotFound();
+    if (existing == null)
+        return NotFound();
 
-        existing.Gender = room.Gender;
-        existing.Block = room.Block;
-        existing.RoomNumber = room.RoomNumber;
-        existing.Capacity = room.Capacity;
-        existing.Status = room.Status;
+    existing.RoomNumber = room.RoomNumber;
+    var allocations = await _context.HostelRoomAllocations
+    .Where(x => x.RoomNumber == roomNumber)
+    .ToListAsync();
 
-        await _context.SaveChangesAsync();
+foreach (var allocation in allocations)
+{
+    allocation.RoomNumber = room.RoomNumber;
+}
+    existing.Capacity = room.Capacity;
 
-        return Ok(existing);
-    }
+    await _context.SaveChangesAsync();
+
+    await _hub.Clients.All.SendAsync(
+        "RoomUpdated"
+    );
+
+    return Ok(existing);
+}
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(
@@ -72,11 +91,16 @@ public class HostelRoomsController : ControllerBase
 
         _context.HostelRooms.Remove(room);
 
-        await _context.SaveChangesAsync();
+      await _context.SaveChangesAsync();
 
-        return Ok(new
-        {
-            Message = "Room deleted successfully"
-        });
+await _hub.Clients.All.SendAsync(
+    "RoomUpdated"
+);
+
+return Ok(new
+{
+    Message = "Room deleted successfully"
+});
     }
+    
 }

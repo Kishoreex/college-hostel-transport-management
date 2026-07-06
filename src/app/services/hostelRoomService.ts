@@ -31,3 +31,24 @@ export const deleteRoom = async (id: number) => {
     }
   );
 };
+export const updateRoom = async (
+  roomNumber: string,
+  room: any
+) => {
+  const response = await fetch(
+    `${API_URL}/HostelRooms/${roomNumber}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(room),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to update room");
+  }
+
+  return await response.json();
+};

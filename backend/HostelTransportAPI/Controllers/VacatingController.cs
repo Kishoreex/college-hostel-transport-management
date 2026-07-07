@@ -121,14 +121,11 @@ public async Task<IActionResult> Approve(int id)
         return BadRequest($"StudentRegistration NOT FOUND : {request.StudentId}");
     }
 
+    var oldStatus = registration.Status;
+
     registration.Status = "Vacated";
 
-    // Verify the value changed before saving
-    if (registration.Status != "Vacated")
-    {
-        return BadRequest("Status was not changed.");
-    }
-
+    // Remove room allocation
     var allocation = await _context.HostelRoomAllocations
         .FirstOrDefaultAsync(x =>
             x.StudentId == request.StudentId &&
@@ -141,7 +138,18 @@ public async Task<IActionResult> Approve(int id)
 
     await _context.SaveChangesAsync();
 
-    return Ok("SUCCESS");
+    // Read the row again from the database
+    var check = await _context.StudentRegistrations
+        .AsNoTracking()
+        .FirstOrDefaultAsync(x => x.StudentId == request.StudentId);
+
+    return Ok(new
+    {
+        StudentId = request.StudentId,
+        OldStatus = oldStatus,
+        NewStatus = registration.Status,
+        DatabaseStatus = check?.Status
+    });
 }
     [HttpPut("reject/{id}")]
     public async Task<IActionResult> Reject(int id)

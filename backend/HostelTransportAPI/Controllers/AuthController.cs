@@ -164,7 +164,13 @@ public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
 {
     var user = await _context.Users
         .FirstOrDefaultAsync(x => x.UserId == request.UserId);
-
+if (user != null && !user.IsActive)
+{
+    return Unauthorized(new
+    {
+        message = "Your hostel account has been closed. Please contact the hostel administration."
+    });
+}
     if (user == null)
         return NotFound("User not found");
 

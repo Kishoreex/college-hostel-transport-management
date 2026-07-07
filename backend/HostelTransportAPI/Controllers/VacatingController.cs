@@ -113,17 +113,24 @@ public async Task<IActionResult> Approve(int id)
     request.Status = "Approved";
     request.ApprovedDate = DateTime.Now;
 
-    var registration = await _context.StudentRegistrations
-        .FirstOrDefaultAsync(x => x.StudentId == request.StudentId);
+  var registration = await _context.StudentRegistrations
+    .FirstOrDefaultAsync(x => x.StudentId == request.StudentId);
 
-    if (registration == null)
-    {
-        return BadRequest($"StudentRegistration NOT FOUND : {request.StudentId}");
-    }
+if (registration == null)
+{
+    return BadRequest($"StudentRegistration NOT FOUND : {request.StudentId}");
+}
 
-    var oldStatus = registration.Status;
+registration.Status = "Vacated";
 
-    registration.Status = "Vacated";
+// Disable student login
+var user = await _context.Users
+    .FirstOrDefaultAsync(x => x.UserId == request.StudentId);
+
+if (user != null)
+{
+    user.IsActive = false;
+}
 
     // Remove room allocation
     var allocation = await _context.HostelRoomAllocations
@@ -144,12 +151,12 @@ public async Task<IActionResult> Approve(int id)
         .FirstOrDefaultAsync(x => x.StudentId == request.StudentId);
 
     return Ok(new
-    {
-        StudentId = request.StudentId,
-        OldStatus = oldStatus,
-        NewStatus = registration.Status,
-        DatabaseStatus = check?.Status
-    });
+    
+{
+    StudentId = request.StudentId,
+    NewStatus = registration.Status,
+    DatabaseStatus = check?.Status
+});
 }
     [HttpPut("reject/{id}")]
     public async Task<IActionResult> Reject(int id)

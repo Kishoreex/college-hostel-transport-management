@@ -125,7 +125,8 @@ public IActionResult GetApprovedStudents()
     Email = registration.Email,
     PasswordHash = passwordHash,
     RoleId = studentRole.Id,
-    Module = "Hostel"
+    Module = "Hostel",
+    IsActive = true
 };
 _context.Users.Add(user);
 

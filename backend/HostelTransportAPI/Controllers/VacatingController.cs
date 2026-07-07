@@ -105,17 +105,30 @@ return Ok(request);
 [HttpPut("approve/{id}")]
 public async Task<IActionResult> Approve(int id)
 {
-    var request =
-        await _context.VacatingRequests.FindAsync(id);
+    var request = await _context.VacatingRequests.FindAsync(id);
 
     if (request == null)
-        return NotFound();
+        return NotFound("Vacating request not found");
 
     request.Status = "Approved";
     request.ApprovedDate = DateTime.Now;
-    
 
-    // Remove room allocation
+    var registration = await _context.StudentRegistrations
+        .FirstOrDefaultAsync(x => x.StudentId == request.StudentId);
+
+    if (registration == null)
+    {
+        return BadRequest($"StudentRegistration NOT FOUND : {request.StudentId}");
+    }
+
+    registration.Status = "Vacated";
+
+    // Verify the value changed before saving
+    if (registration.Status != "Vacated")
+    {
+        return BadRequest("Status was not changed.");
+    }
+
     var allocation = await _context.HostelRoomAllocations
         .FirstOrDefaultAsync(x =>
             x.StudentId == request.StudentId &&
@@ -128,19 +141,8 @@ public async Task<IActionResult> Approve(int id)
 
     await _context.SaveChangesAsync();
 
-    // Refresh all hostel pages
-    await _hub.Clients.All.SendAsync(
-        "VacatingUpdated",
-        request.StudentId
-    );
-
-    await _hub.Clients.All.SendAsync(
-        "RoomAllocationUpdated"
-    );
-
-    return Ok(request);
+    return Ok("SUCCESS");
 }
-
     [HttpPut("reject/{id}")]
     public async Task<IActionResult> Reject(int id)
     {

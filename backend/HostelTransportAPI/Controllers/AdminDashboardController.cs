@@ -14,17 +14,17 @@ public class AdminDashboardController : ControllerBase
         _context = context;
     }
 
-   [HttpGet("summary")]
+  [HttpGet("summary")]
 public IActionResult Summary()
 {
-    var hostelStudents = _context.StudentRegistrations
+    var hostelStudents = _context.Users
         .Count(x =>
-            x.Status == "Approved" &&
-            x.RegistrationType.ToLower() == "hostel");
+            x.RoleId == 2 &&          // Student
+            x.Module == "Hostel" &&
+            x.IsActive);
 
     var transportStudents = _context.TransportRegistrations
-        .Count(x =>
-            x.Status == "Approved");
+        .Count(x => x.Status == "Approved");
 
     var totalStudents = hostelStudents + transportStudents;
 

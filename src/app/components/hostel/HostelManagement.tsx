@@ -909,7 +909,10 @@ const girlsCount =
 
     loadLeaveRequests();
   } else {
-    await rejectOutpass(Number(rejectSheet.id));
+await rejectOutpass(
+    Number(rejectSheet.id),
+    rejectRemark
+);
 
     toast.success("Outpass Rejected");
 

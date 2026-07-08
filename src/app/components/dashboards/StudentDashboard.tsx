@@ -966,6 +966,12 @@ outpass.outpassState==="Outside Hostel"
                            icon={getStatusIcon(outpass.status?.toLowerCase())}
                             sx={{ height: 20, fontSize: '0.7rem' }}
                           />
+                          {outpass.status === "Rejected" &&
+ outpass.rejectReason && (
+  <p className="text-xs text-red-600 mt-2">
+    Reject Reason: {outpass.rejectReason}
+  </p>
+)}
                         </div>
                       </div>
                     {(
@@ -1621,6 +1627,12 @@ outpass.outpassState==="Outside Hostel"
             )}
             sx={{ height: 20, fontSize: "0.7rem" }}
           />
+          {outpass.status === "Rejected" &&
+ outpass.rejectReason && (
+  <p className="text-xs text-red-600 mt-2">
+    Reject Reason: {outpass.rejectReason}
+  </p>
+)}
         </div>
       </div>
 {(
@@ -2522,7 +2534,12 @@ label={op.status}
 color={getStatusColor(op.status?.toLowerCase())}
 size="small"
 />
-
+{op.status === "Rejected" &&
+ op.rejectReason && (
+  <p className="text-xs text-red-600 mt-2">
+    Reject Reason: {op.rejectReason}
+  </p>
+)}
 </div>
 
 <p className="text-xs text-gray-500 mt-1">

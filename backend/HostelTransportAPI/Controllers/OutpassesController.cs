@@ -113,9 +113,10 @@ await _hub.Clients.All.SendAsync(
     return Ok(outpass);
 }
 
-
 [HttpPut("reject/{id}")]
-public async Task<IActionResult> Reject(int id)
+public async Task<IActionResult> Reject(
+    int id,
+    [FromBody] RejectOutpassDto dto)
 {
     var outpass = await _context.Outpasses.FindAsync(id);
 
@@ -123,15 +124,14 @@ public async Task<IActionResult> Reject(int id)
         return NotFound();
 
     outpass.Status = "Rejected";
+    outpass.RejectReason = dto.RejectReason;
 
+    await _context.SaveChangesAsync();
 
-
-  await _context.SaveChangesAsync();
-
-await _hub.Clients.All.SendAsync(
-    "OutpassUpdated",
-    outpass.StudentId
-);
+    await _hub.Clients.All.SendAsync(
+        "OutpassUpdated",
+        outpass.StudentId
+    );
 
     return Ok(outpass);
 }

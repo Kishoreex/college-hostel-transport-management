@@ -51,4 +51,5 @@ public double? ReturnLongitude { get; set; }
 public bool ExitRecorded { get; set; } = false;
 
 public bool ReturnRecorded { get; set; } = false;
+public string? RejectReason { get; set; }
 }

@@ -61,12 +61,19 @@ export const approveOutpass = async (
 };
 
 export const rejectOutpass = async (
-  id: number
+  id: number,
+  rejectReason: string
 ) => {
   const response = await fetch(
-   `${API_URL}/Outpasses/reject/${id}`,
+    `${API_URL}/Outpasses/reject/${id}`,
     {
       method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        rejectReason,
+      }),
     }
   );
 

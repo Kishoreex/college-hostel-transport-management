@@ -34,8 +34,16 @@ Console.WriteLine(user == null
     ? "User NOT FOUND"
     : $"User FOUND : {user.UserId}");
 
-        if (user == null)
-            return Unauthorized("Invalid Email");
+       
+if (user == null)
+{
+    return Unauthorized("Invalid User ID or Email");
+}
+
+if (!user.IsActive)
+{
+    return Unauthorized("Your hostel account has been closed. Please contact the hostel administration.");
+}
             bool validPassword =
     BCrypt.Net.BCrypt.Verify(
         request.Password,

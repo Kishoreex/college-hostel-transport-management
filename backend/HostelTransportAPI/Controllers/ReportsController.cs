@@ -157,13 +157,17 @@ if (createdDate < startDate ||
 {
     continue;
 }
-if (
-    gender != "All" &&
-    student.Gender.ToLower()
-        != gender.ToLower()
-)
+if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
 {
-    continue;
+    string dbGender = gender.ToLower() switch
+    {
+        "boys" => "male",
+        "girls" => "female",
+        _ => gender.ToLower()
+    };
+
+    if (student.Gender.ToLower() != dbGender)
+        continue;
 }
 
         sheet.Cell(row, 1).Value =
@@ -240,12 +244,17 @@ public async Task<IActionResult> ExportApplications(
     var data = await _context.StudentRegistrations
         .OrderByDescending(x => x.CreatedAt)
         .ToListAsync();
-        if (gender != "All")
+if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
 {
+    string dbGender = gender.ToLower() switch
+    {
+        "boys" => "male",
+        "girls" => "female",
+        _ => gender.ToLower()
+    };
+
     data = data
-        .Where(x =>
-            x.Gender.ToLower() ==
-            gender.ToLower())
+        .Where(x => x.Gender.ToLower() == dbGender)
         .ToList();
 }
 
@@ -255,30 +264,36 @@ public async Task<IActionResult> ExportApplications(
         workbook.Worksheets.Add("Applications");
 
     sheet.Cell(1,1).Value = "Student ID";
-    sheet.Cell(1,2).Value = "Student Name";
-    sheet.Cell(1,3).Value = "College";
-    sheet.Cell(1,4).Value = "Department";
-    sheet.Cell(1,5).Value = "Year";
-    sheet.Cell(1,6).Value = "Batch";
-    sheet.Cell(1,7).Value = "Phone";
-    sheet.Cell(1,8).Value = "Status";
-    sheet.Cell(1,9).Value = "Approved Date";
-    sheet.Cell(1,10).Value = "Rejected Date";
+sheet.Cell(1,2).Value = "Student Name";
+sheet.Cell(1,3).Value = "College";
+sheet.Cell(1,4).Value = "Department";
+sheet.Cell(1,5).Value = "Year";
+sheet.Cell(1,6).Value = "Batch";
+sheet.Cell(1,7).Value = "Phone";
+sheet.Cell(1,8).Value = "Parent Name";
+sheet.Cell(1,9).Value = "Parent Phone";
+sheet.Cell(1,10).Value = "Address";
+sheet.Cell(1,11).Value = "Status";
+sheet.Cell(1,12).Value = "Approved Date";
+sheet.Cell(1,13).Value = "Rejected Date";
 
     int row = 2;
 
     foreach(var item in data)
     {
-        sheet.Cell(row,1).Value = item.StudentId;
-        sheet.Cell(row,2).Value = item.StudentName;
-        sheet.Cell(row,3).Value = item.CollegeName;
-        sheet.Cell(row,4).Value = item.Department;
-        sheet.Cell(row,5).Value = item.Year;
-        sheet.Cell(row,6).Value = item.Batch;
-        sheet.Cell(row,7).Value = item.Phone;
-        sheet.Cell(row,8).Value = item.Status;
-        sheet.Cell(row,9).Value = item.ApprovedDate;
-        sheet.Cell(row,10).Value = item.RejectedDate;
+       sheet.Cell(row,1).Value = item.StudentId;
+sheet.Cell(row,2).Value = item.StudentName;
+sheet.Cell(row,3).Value = item.CollegeName;
+sheet.Cell(row,4).Value = item.Department;
+sheet.Cell(row,5).Value = item.Year;
+sheet.Cell(row,6).Value = item.Batch;
+sheet.Cell(row,7).Value = item.Phone;
+sheet.Cell(row,8).Value = item.ParentName;
+sheet.Cell(row,9).Value = item.ParentPhone;
+sheet.Cell(row,10).Value = item.Address;
+sheet.Cell(row,11).Value = item.Status;
+sheet.Cell(row,12).Value = item.ApprovedDate;
+sheet.Cell(row,13).Value = item.RejectedDate;
 
         row++;
     }
@@ -306,49 +321,77 @@ public async Task<IActionResult> ExportOutpasses(
     var data = await _context.Outpasses
         .OrderByDescending(x => x.CreatedAt)
         .ToListAsync();
-
-        if (gender != "All")
+Console.WriteLine("==================================");
+Console.WriteLine($"Gender received = [{gender}]");
+Console.WriteLine($"Period received = [{period}]");
+Console.WriteLine($"Before filter = {data.Count}");
+if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
 {
+    string dbGender = gender.ToLower() switch
+    {
+        "boys" => "male",
+        "girls" => "female",
+        _ => gender.ToLower()
+    };
+
     data = data
-        .Where(x =>
-            x.Gender.ToLower() ==
-            gender.ToLower())
+        .Where(x => x.Gender.ToLower() == dbGender)
         .ToList();
 }
+Console.WriteLine($"After filter = {data.Count}");
 
+foreach (var x in data)
+{
+    Console.WriteLine($"{x.StudentId} | {x.Gender}");
+}
     using var workbook = new XLWorkbook();
 
     var sheet =
         workbook.Worksheets.Add("Outpasses");
 
-    sheet.Cell(1,1).Value = "Student ID";
-    sheet.Cell(1,2).Value = "Student Name";
-    sheet.Cell(1,3).Value = "Destination";
-    sheet.Cell(1,4).Value = "Reason";
-    sheet.Cell(1,5).Value = "Valid From";
-    sheet.Cell(1,6).Value = "Valid To";
-    sheet.Cell(1,7).Value = "Exit Time";
-    sheet.Cell(1,8).Value = "Return Time";
-    sheet.Cell(1,9).Value = "Late Minutes";
-    sheet.Cell(1,10).Value = "Status";
+  sheet.Cell(1,1).Value = "College Name";
+sheet.Cell(1,2).Value = "Department";
+sheet.Cell(1,3).Value = "Year";
+sheet.Cell(1,4).Value = "Student ID";
+sheet.Cell(1,5).Value = "Student Name";
+sheet.Cell(1,6).Value = "Destination";
+sheet.Cell(1,7).Value = "Reason";
+sheet.Cell(1,8).Value = "Valid From";
+sheet.Cell(1,9).Value = "Valid To";
+sheet.Cell(1,10).Value = "Exit Time";
+sheet.Cell(1,11).Value = "Return Time";
+sheet.Cell(1,12).Value = "Late Minutes";
+sheet.Cell(1,13).Value = "Status";
 
     int row = 2;
 
-    foreach(var item in data)
-    {
-        sheet.Cell(row,1).Value = item.StudentId;
-        sheet.Cell(row,2).Value = item.StudentName;
-        sheet.Cell(row,3).Value = item.Destination;
-        sheet.Cell(row,4).Value = item.Reason;
-        sheet.Cell(row,5).Value = item.ValidFrom;
-        sheet.Cell(row,6).Value = item.ValidTo;
-        sheet.Cell(row,7).Value = item.ActualExitTime;
-        sheet.Cell(row,8).Value = item.ActualReturnTime;
-        sheet.Cell(row,9).Value = item.LateMinutes;
-        sheet.Cell(row,10).Value = item.Status;
+foreach (var item in data)
+{
+    Console.WriteLine($"Student = {item.StudentId}");
 
-        row++;
-    }
+    var student = await _context.StudentRegistrations
+        .FirstOrDefaultAsync(x => x.StudentId == item.StudentId);
+
+    Console.WriteLine(student == null
+        ? "Student NOT FOUND"
+        : $"Found {student.StudentName}");
+
+ sheet.Cell(row,1).Value = student?.CollegeName ?? "";
+sheet.Cell(row,2).Value = student?.Department ?? "";
+sheet.Cell(row,3).Value = student?.Year ?? "";
+sheet.Cell(row,4).Value = item.StudentId;
+sheet.Cell(row,5).Value = item.StudentName;
+    sheet.Cell(row,6).Value = item.Destination;
+    sheet.Cell(row,7).Value = item.Reason;
+    sheet.Cell(row,8).Value = item.ValidFrom;
+    sheet.Cell(row,9).Value = item.ValidTo;
+    sheet.Cell(row,10).Value = item.ActualExitTime;
+    sheet.Cell(row,11).Value = item.ActualReturnTime;
+    sheet.Cell(row,12).Value = item.LateMinutes;
+    sheet.Cell(row,13).Value = item.Status;
+
+    row++;
+}
 
     sheet.Columns().AdjustToContents();
 
@@ -379,30 +422,41 @@ public async Task<IActionResult> ExportLeaves(
     var sheet =
         workbook.Worksheets.Add("Leaves");
 
-    sheet.Cell(1,1).Value = "Student ID";
-    sheet.Cell(1,2).Value = "Leave Type";
-    sheet.Cell(1,3).Value = "Campus";
-    sheet.Cell(1,4).Value = "From";
-    sheet.Cell(1,5).Value = "To";
-    sheet.Cell(1,6).Value = "Reason";
-    sheet.Cell(1,7).Value = "Status";
-    sheet.Cell(1,8).Value = "Approved Date";
+    sheet.Cell(1,1).Value = "College Name";
+sheet.Cell(1,2).Value = "Department";
+sheet.Cell(1,3).Value = "Year";
+sheet.Cell(1,4).Value = "Student ID";
+sheet.Cell(1,5).Value = "Student Name";
+sheet.Cell(1,6).Value = "Leave Type";
+sheet.Cell(1,7).Value = "Campus";
+sheet.Cell(1,8).Value = "From";
+sheet.Cell(1,9).Value = "To";
+sheet.Cell(1,10).Value = "Reason";
+sheet.Cell(1,11).Value = "Status";
+sheet.Cell(1,12).Value = "Approved Date";
 
     int row = 2;
 
-    foreach(var item in data)
-    {
-        sheet.Cell(row,1).Value = item.StudentId;
-        sheet.Cell(row,2).Value = item.LeaveType;
-        sheet.Cell(row,3).Value = item.Campus;
-        sheet.Cell(row,4).Value = item.FromDate;
-        sheet.Cell(row,5).Value = item.ToDate;
-        sheet.Cell(row,6).Value = item.Reason;
-        sheet.Cell(row,7).Value = item.Status;
-        sheet.Cell(row,8).Value = item.ApprovedDate;
+   foreach (var item in data)
+{
+    var student = await _context.StudentRegistrations
+        .FirstOrDefaultAsync(x => x.StudentId == item.StudentId);
 
-        row++;
-    }
+    sheet.Cell(row,1).Value = student?.CollegeName;
+    sheet.Cell(row,2).Value = student?.Department;
+    sheet.Cell(row,3).Value = student?.Year;
+    sheet.Cell(row,4).Value = item.StudentId;
+    sheet.Cell(row,5).Value = item.StudentName;
+    sheet.Cell(row,6).Value = item.LeaveType;
+    sheet.Cell(row,7).Value = item.Campus;
+    sheet.Cell(row,8).Value = item.FromDate;
+    sheet.Cell(row,9).Value = item.ToDate;
+    sheet.Cell(row,10).Value = item.Reason;
+    sheet.Cell(row,11).Value = item.Status;
+    sheet.Cell(row,12).Value = item.ApprovedDate;
+
+    row++;
+}
 
     sheet.Columns().AdjustToContents();
 
@@ -415,7 +469,17 @@ public async Task<IActionResult> ExportLeaves(
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         "Leaves.xlsx");
 }
-
+[HttpGet("test")]
+public IActionResult Test()
+{
+    return Ok(new
+    {
+        Students = _context.StudentRegistrations.Count(),
+        Outpasses = _context.Outpasses.Count(),
+        Leaves = _context.LeaveRequests.Count(),
+        Vacating = _context.VacatingRequests.Count()
+    });
+}
 [HttpGet("vacating")]
 public async Task<IActionResult> ExportVacating(
     string gender = "All",
@@ -427,12 +491,17 @@ public async Task<IActionResult> ExportVacating(
     var data = await _context.VacatingRequests
         .OrderByDescending(x => x.RequestDate)
         .ToListAsync();
-if (gender != "All")
+if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
 {
+    string dbGender = gender.ToLower() switch
+    {
+        "boys" => "male",
+        "girls" => "female",
+        _ => gender.ToLower()
+    };
+
     data = data
-        .Where(x =>
-            x.Gender.ToLower() ==
-            gender.ToLower())
+        .Where(x => x.Gender.ToLower() == dbGender)
         .ToList();
 }
     using var workbook = new XLWorkbook();

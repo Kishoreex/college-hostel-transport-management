@@ -214,7 +214,7 @@ catch (error: any) {
   // Default Demo Hostel Student
   setCredentials({
     id: "2111222104010",
-    password: "Stu@337849"
+    password: "Stu@245930"
   });
 
   setScreen("studentLogin");
@@ -326,7 +326,7 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
     // Demo Credentials
     setCredentials({
       id: "2111222104010",
-      password: "Stu@337849"
+      password: "Stu@245930"
     });
   }}
                   className={`p-4 rounded-xl border-2 transition-all ${

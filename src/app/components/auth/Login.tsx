@@ -6,11 +6,17 @@ import type { User, UserRole, ServiceType } from '../../types';
 import Registration from './Registration';
 import { Dialog } from '@mui/material';
 import logo from '../../../assets/logo.png';
+import ParentLogin from "./ParentLogin";
 interface LoginProps {
   onLogin: (user: User) => void;
 }
 
-type AuthScreen = 'main' | 'studentLogin' | 'adminLogin' | 'registration';
+type AuthScreen =
+'main'
+| 'studentLogin'
+| 'parentLogin'
+| 'adminLogin'
+| 'registration';
 
 export default function Login({ onLogin }: LoginProps) {
   const [screen, setScreen] = useState<AuthScreen>('main');
@@ -206,7 +212,7 @@ catch (error: any) {
 </p>
           </div>
 
-          <div className="space-y-4 max-w-lg mx-auto w-full">
+        <div className="space-y-3 max-w-lg mx-auto w-full">
             <button
               onClick={() => {
   setServiceType("hostel");
@@ -228,6 +234,7 @@ catch (error: any) {
                  <h3 className="text-xl md:text-2xl font-bold text-blue-700">
   Student Portal
 </h3>
+
                   <p className="text-base text-gray-600 mt-1">
   Hostel • Transport • Outpass • Leave
 </p>
@@ -238,7 +245,40 @@ catch (error: any) {
 />
               </div>
             </button>
+<button
+  onClick={() => {
+    setServiceType("hostel");
 
+    setCredentials({
+      id: "",
+      password: ""
+    });
+
+    setScreen("parentLogin");
+  }}
+ className="w-full bg-white rounded-3xl border border-green-100 shadow-lg hover:shadow-xl transition-all duration-300 p-5 md:p-7"
+>
+  <div className="flex items-center space-x-4">
+    <div className="bg-green-50 border-2 border-green-200 p-3 md:p-5 rounded-2xl">
+      <Users size={28} className="text-green-600" />
+    </div>
+
+    <div className="flex-1 text-left">
+      <h3 className="text-xl md:text-2xl font-bold text-green-700">
+        Parent Portal
+      </h3>
+
+      <p className="text-base text-gray-600 mt-1">
+        Hostel Information • Leave • Outpass
+      </p>
+    </div>
+
+    <ChevronRight
+      size={27}
+      className="text-green-600"
+    />
+  </div>
+</button>
             <button
              onClick={() => {
   setSelectedAdminRole("admin");
@@ -423,7 +463,14 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
       </div>
     );
   }
-
+if (screen === "parentLogin") {
+    return (
+        <ParentLogin
+            onBack={resetToMain}
+            onLogin={onLogin}
+        />
+    );
+}
   // Admin Login Form
   if (screen === 'adminLogin' && selectedAdminRole) {
     return (

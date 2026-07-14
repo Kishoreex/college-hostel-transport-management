@@ -18,7 +18,9 @@
   }
 
 
-  export default function OutpassQRCard({ open, onClose, outpass, student }: OutpassQRCardProps) {
+  export default function OutpassQRCard({ open, onClose, outpass, student }: OutpassQRCardProps) {if (!open || !outpass || !student) {
+    return null;
+}
   const qrCodeData = JSON.stringify({
 
 outpassId: outpass.id,

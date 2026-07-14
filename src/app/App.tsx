@@ -15,6 +15,7 @@ import Settings from './components/settings/Settings';
 import type { User } from './types';
 import { logout } from "../api/authService";
 import { hasActiveOutpass } from "./services/outpassService";
+import ParentDashboard from "./components/dashboards/ParentDashboard";
 export default function App() {
 const [user, setUser] = useState<User | null>(null);
 
@@ -62,6 +63,7 @@ console.log("Student ID =", user.studentId);
 
        await logout(user.studentId ?? user.userId);
     }
+
     else {
 console.log("=== BEFORE LOGOUT ===");
 console.log(user);
@@ -101,7 +103,15 @@ await logout(logoutId);
 
         {/* Student Routes */}
         <Route path="/student" element={<StudentDashboard user={user} onLogout={handleLogout} />} />
-
+<Route
+    path="/parent"
+    element={
+        <ParentDashboard
+            user={user}
+            onLogout={handleLogout}
+        />
+    }
+/>
         {/* Admin Routes */}
       {/* Admin Routes */}
 

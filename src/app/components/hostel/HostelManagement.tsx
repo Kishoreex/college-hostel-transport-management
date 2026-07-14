@@ -772,16 +772,18 @@ connection.on("RoomUpdated", async () => {
   studentName: ""
 });
 const [selectedNewRoom, setSelectedNewRoom] = useState("");
-      const loadApplications = async () => {
-      try {
-   const data = await getStudentRegistrations();
+const loadApplications = async () => {
+  try {
+    const data = await getStudentRegistrations();
 
-setApplications(data);
-        console.log("APPLICATIONS", data);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+    console.log("APPLICATIONS API", data);
+
+    setApplications(data);
+
+  } catch (error) {
+    console.error(error);
+  }
+};
     const loadHistory = async () => {
     try {
       const appResponse = await fetch(
@@ -872,6 +874,7 @@ const filteredStudents = allStudentsFlat.filter(student => {
 
   return false;
 });
+console.log("FILTERED STUDENTS", filteredStudents);
     const dashboardStudents =
   filteredStudents;
 

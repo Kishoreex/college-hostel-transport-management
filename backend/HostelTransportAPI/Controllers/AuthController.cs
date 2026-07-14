@@ -56,7 +56,8 @@ if (!validPassword)
 
 // ================= MODULE VALIDATION =================
 
-if (user.RoleId == 2) // Student
+// Student
+if (user.Role?.Name == "Student")
 {
     if (!string.Equals(
             user.Module,
@@ -68,7 +69,21 @@ if (user.RoleId == 2) // Student
     }
 }
 
-if (user.RoleId == 1) // Admin
+// Parent
+if (user.Role?.Name == "Parent")
+{
+    if (!string.Equals(
+            request.Module,
+            "Hostel",
+            StringComparison.OrdinalIgnoreCase))
+    {
+        return BadRequest(
+            "Parents can login only through Hostel Portal.");
+    }
+}
+
+// Admin
+if (user.Role?.Name == "Admin")
 {
     if (!string.Equals(
             request.Module,
@@ -80,6 +95,7 @@ if (user.RoleId == 1) // Admin
     }
 }
 
+
 // =====================================================
 
 Console.WriteLine($"Database DeviceId : {user.DeviceId}");
@@ -88,7 +104,7 @@ Console.WriteLine($"Request DeviceId  : {request.DeviceId}");
 // Check if student has an active outpass
 bool hasActiveOutpass = false;
 
-if (user.RoleId == 2) // Student
+if (user.Role?.Name == "Student")
 {
     hasActiveOutpass = _context.Outpasses.Any(x =>
         x.StudentId == user.UserId &&
@@ -137,7 +153,12 @@ return Ok(new
     user.FullName,
     user.Email,
     user.PhoneNumber,
+
     Role = user.Role?.Name,
+
+    user.Module,
+
+    user.StudentId,
 
     user.IsSystemAdmin,
     user.CanManageTransport,

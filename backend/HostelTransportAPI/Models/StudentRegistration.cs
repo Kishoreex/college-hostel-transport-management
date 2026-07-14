@@ -41,4 +41,7 @@ public DateTime? RejectedDate { get; set; }
     public string? ProfilePhoto { get; set; }
 
 public DateTime? LastProfileUpdate { get; set; }
+public string? ParentLoginId { get; set; }
+
+public string? ParentTemporaryPassword { get; set; }
 }

@@ -89,6 +89,7 @@ public IActionResult GetApprovedStudents()
 {
     var data = _context.StudentRegistrations
         .Where(x => x.Status == "Approved")
+        .OrderBy(x => x.StudentName)
         .ToList();
 
     return Ok(data);
@@ -129,6 +130,38 @@ public IActionResult GetApprovedStudents()
     IsActive = true
 };
 _context.Users.Add(user);
+var parentRole = _context.Roles
+    .FirstOrDefault(x => x.Name == "Parent");
+    if (parentRole == null)
+    return BadRequest("Parent Role Not Found");
+
+string parentUserId = "P" + registration.RegisterNumber;
+
+string parentPassword =
+    $"Par@{Random.Shared.Next(100000,999999)}";
+
+var parentUser = new User
+{
+    UserId = parentUserId,
+    FullName = registration.ParentName,
+    Email = registration.Email,
+    PasswordHash = BCrypt.Net.BCrypt.HashPassword(parentPassword),
+
+    RoleId = parentRole!.Id,
+
+   Module = "Parent",
+
+    IsActive = true,
+
+    StudentId = userId
+};
+
+_context.Users.Add(parentUser);
+registration.ParentLoginId = parentUserId;
+
+registration.ParentTemporaryPassword = parentPassword;
+
+
 
 registration.IsApproved = true;
 registration.Status = "Approved";
@@ -153,23 +186,23 @@ Congratulations!
 
 Your hostel registration has been successfully approved by the Hostel Administration.
 
-----------------------------------------------------
-LOGIN DETAILS
-----------------------------------------------------
+LOGIN DETAILS :-
 
-User ID : {userId}
+    STUDENT LOGIN :
 
-Temporary Password : {password}
+        User ID : {userId}
+        Password : {password}
 
-----------------------------------------------------
-IMPORTANT
-----------------------------------------------------
+    PARENT LOGIN:
 
+        User ID : {parentUserId}
+        Password : {parentPassword}
+
+IMPORTANT:
 • Please log in using the credentials above.
-
 • Keep your login credentials confidential and do not share them with anyone.
 
-You can now access the Hostel Management Portal to:
+ You can now access the Hostel Management Portal to:
 
     • Apply for Outpasses
     • Submit Leave Requests
@@ -189,8 +222,12 @@ Madha College of Nursing
 return Ok(new
 {
     Message = "Student Approved Successfully",
-    UserId = userId,
-    TemporaryPassword = password
+
+    StudentUserId = userId,
+    StudentPassword = password,
+
+    ParentUserId = parentUserId,
+    ParentPassword = parentPassword
 });
     }
 

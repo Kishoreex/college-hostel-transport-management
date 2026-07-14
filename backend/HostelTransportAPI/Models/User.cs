@@ -21,7 +21,7 @@ public class User
     public string Module { get; set; } = string.Empty;
 
     // NEW PERMISSIONS
-
+public string? StudentId { get; set; }
     public bool IsSystemAdmin { get; set; }
 
     public bool CanManageTransport { get; set; }

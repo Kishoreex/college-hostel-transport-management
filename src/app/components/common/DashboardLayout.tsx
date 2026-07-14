@@ -117,30 +117,29 @@ useState(0);
   const [notifications,
 setNotifications] =
 useState<any[]>([]);
-  useEffect(() => {
+useEffect(() => {
+
+  if (!user || !user.id) return;
 
   loadNotificationCount();
-     loadNotifications();
-}, []);
+  loadNotifications();
 
-const loadNotificationCount =
-async () => {
+}, [user]);
 
-  const count =
-    await getNotificationCount(
-      Number(user.id)
-    );
+const loadNotificationCount = async () => {
+
+  if (!user?.id) return;
+
+  const count = await getNotificationCount(Number(user.id));
 
   setNotificationCount(count);
 
 };
-const loadNotifications =
-async () => {
+const loadNotifications = async () => {
 
-  const data =
-    await getNotifications(
-      Number(user.id)
-    );
+  if (!user?.id) return;
+
+  const data = await getNotifications(Number(user.id));
 
   setNotifications(data);
 
@@ -201,26 +200,7 @@ const markAllRead = async () => {
             <h1 className="text-white font-bold text-lg truncate">{title}</h1>
           </div>
 
-         <IconButton
-  color="inherit"
-  sx={{ mr: 0.5 }}
-  onClick={() => setNotificationsOpen(true)}
->
-            <Badge badgeContent={unreadCount} color="error">
-              <Bell size={22} />
-            </Badge>
-          </IconButton>
-
-     <Avatar
-  src={
-    user.profilePhoto
-      ? `https://202.61.121.102:8443${user.profilePhoto}`
-      : user.avatar
-  }
-  alt={user.name}
-  sx={{ width: 36, height: 36, cursor: 'pointer' }}
-/>
-        </Toolbar>
+     </Toolbar>
       </AppBar>
       
       {/* Side Drawer */}

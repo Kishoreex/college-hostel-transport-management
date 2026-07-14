@@ -305,5 +305,23 @@ Destination = leave.Destination,
 
     return Ok(history);
 }
+[HttpGet("parent/{parentUserId}")]
+public IActionResult GetParentLeaves(string parentUserId)
+{
+    var parent = _context.Users
+        .FirstOrDefault(x => x.UserId == parentUserId);
 
+    if (parent == null)
+        return NotFound("Parent not found");
+
+    if (string.IsNullOrWhiteSpace(parent.StudentId))
+        return BadRequest("No student linked.");
+
+    var leaves = _context.LeaveRequests
+        .Where(x => x.StudentId == parent.StudentId)
+        .OrderByDescending(x => x.CreatedDate)
+        .ToList();
+
+    return Ok(leaves);
+}
 }

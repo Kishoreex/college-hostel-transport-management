@@ -2493,6 +2493,9 @@ onChange={(e) => setVacateReason(e.target.value)}
                     ['Student ID', user.studentId || '—'],
                     ['Email', user.email || '—'],
                     ['Service', isHostel ? 'Hostel' : 'Transport'],
+
+                      ['Parent Login ID', studentProfile?.parentLoginId || '—'],
+  ['Temporary Password', studentProfile?.parentTemporaryPassword || '—'],
                   ].map(([k, v]) => (
                     <div key={k} className="flex justify-between py-1.5 border-b border-gray-100 last:border-0 text-sm">
                       <span className="text-gray-400">{k}</span>
@@ -2501,6 +2504,7 @@ onChange={(e) => setVacateReason(e.target.value)}
                   ))}
                 </CardContent>
               </Card>
+              
             </>
           )}
 

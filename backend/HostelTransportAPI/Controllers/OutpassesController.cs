@@ -321,4 +321,23 @@ public async Task<IActionResult> ExpireOldOutpasses()
 
     return Ok();
 }
+[HttpGet("parent/{parentUserId}")]
+public IActionResult GetParentOutpasses(string parentUserId)
+{
+    var parent = _context.Users
+        .FirstOrDefault(x => x.UserId == parentUserId);
+
+    if (parent == null)
+        return NotFound("Parent not found");
+
+    if (string.IsNullOrEmpty(parent.StudentId))
+        return NotFound("Student not linked");
+
+    var outpasses = _context.Outpasses
+        .Where(x => x.StudentId == parent.StudentId)
+        .OrderByDescending(x => x.Id)
+        .ToList();
+
+    return Ok(outpasses);
+}
 }

@@ -131,7 +131,14 @@ if (user != null)
 {
     user.IsActive = false;
 }
+var parentUser = await _context.Users
+    .FirstOrDefaultAsync(x =>
+        x.StudentId == request.StudentId);
 
+if (parentUser != null)
+{
+    parentUser.IsActive = false;
+}
     // Remove room allocation
     var allocation = await _context.HostelRoomAllocations
         .FirstOrDefaultAsync(x =>

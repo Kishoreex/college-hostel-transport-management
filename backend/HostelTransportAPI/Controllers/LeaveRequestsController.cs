@@ -98,11 +98,48 @@ await _hub.Clients.All.SendAsync(
         return Ok(leaveRequest);
     }
 
-    [HttpGet]
-    public IActionResult GetAll()
+[HttpGet]
+public async Task<IActionResult> GetAll()
+{
+    var now = DateTime.Now;
+
+    var approvedLeaves = _context.LeaveRequests
+        .Where(x => x.Status == "Approved")
+        .ToList();
+
+    foreach (var leave in approvedLeaves)
     {
-        return Ok(_context.LeaveRequests.ToList());
+        DateTime leaveEnd;
+
+        if (leave.FromDate.Date == leave.ToDate.Date &&
+            !string.IsNullOrWhiteSpace(leave.ReturnTime))
+        {
+            // Same-day leave
+            leaveEnd = leave.ToDate.Date + TimeSpan.Parse(leave.ReturnTime);
+        }
+        else
+        {
+            // Multi-day leave
+            leaveEnd = leave.ToDate.Date
+                .AddHours(23)
+                .AddMinutes(59)
+                .AddSeconds(59);
+        }
+
+        if (now > leaveEnd)
+        {
+            leave.Status = "Completed";
+        }
     }
+
+    await _context.SaveChangesAsync();
+
+    return Ok(
+        _context.LeaveRequests
+            .OrderByDescending(x => x.CreatedDate)
+            .ToList()
+    );
+}
 
     [HttpPost("approve/{id}")]
     public async Task<IActionResult> Approve(int id)

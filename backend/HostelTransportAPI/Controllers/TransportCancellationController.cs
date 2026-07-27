@@ -129,7 +129,15 @@ public async Task<IActionResult> Approve(int id)
     if (user != null)
         _context.Users.Remove(user);
 await _context.SaveChangesAsync();
+await _hub.Clients.All.SendAsync(
+    "TransportCancellationUpdated",
+    request.StudentId
+);
 
+await _hub.Clients.All.SendAsync(
+    "ForceLogout",
+    request.StudentId
+);
 await _hub.Clients.All.SendAsync(
     "TransportCancellationUpdated",
     request.StudentId

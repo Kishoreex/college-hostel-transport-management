@@ -22,3 +22,18 @@ export async function getActivities() {
 
     return await response.json();
 }
+export async function getHostelStudents(college: string) {
+    const res = await fetch(
+        `${API_URL}/AdminDashboard/hostelStudents?college=${encodeURIComponent(college)}`
+    );
+
+    return await res.json();
+}
+
+export async function getTransportStudents(college: string) {
+    const res = await fetch(
+        `${API_URL}/AdminDashboard/transportStudents?college=${encodeURIComponent(college)}`
+    );
+
+    return await res.json();
+}

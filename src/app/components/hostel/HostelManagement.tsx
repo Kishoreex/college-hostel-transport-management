@@ -24,9 +24,10 @@ import {
   changeStudentRoom,
   removeStudentFromRoom
 } from "../../services/hostelRoomAllocationService";
-    import {
-    getStudentRegistrations
-  } from "../../services/studentRegistrationService";
+import {
+  getStudentRegistrations,
+  getAllStudentRegistrations
+} from "../../services/studentRegistrationService";
 import { useState, useEffect, useRef } from "react";
 import * as signalR from "@microsoft/signalr";
     import { toast } from 'sonner';
@@ -271,6 +272,8 @@ useState<'boys' | 'girls'>(defaultGender);
 
 const [reportType, setReportType] =
 useState("students");
+const [reportCollege, setReportCollege] =
+useState("All");
 const [reportPeriod, setReportPeriod] =
 useState("3years");
 
@@ -283,13 +286,14 @@ useState("");
 const downloadReport = async () => {
   try {
 
-    let url =
-      `${API_URL}/Reports/export` +
-      `?type=${reportType}` +
-      `&gender=${reportGender}` +
-      `&period=${reportPeriod}` +
-      `&fromDate=${fromDate}` +
-      `&toDate=${toDate}`;
+   let url =
+  `${API_URL}/Reports/export` +
+  `?type=${reportType}` +
+  `&gender=${reportGender}` +
+  `&college=${encodeURIComponent(reportCollege)}` +
+  `&period=${reportPeriod}` +
+  `&fromDate=${fromDate}` +
+  `&toDate=${toDate}`;
 
     const response = await fetch(url);
 
@@ -774,7 +778,7 @@ connection.on("RoomUpdated", async () => {
 const [selectedNewRoom, setSelectedNewRoom] = useState("");
 const loadApplications = async () => {
   try {
-    const data = await getStudentRegistrations();
+       const data = await getAllStudentRegistrations();
 
     console.log("APPLICATIONS API", data);
 
@@ -2717,7 +2721,44 @@ h.campus === "In Campus"
 
         </div>
       </div>
+{/* College */}
 
+<div>
+
+  <p className="text-sm font-semibold mb-3 text-gray-700">
+    Select College
+  </p>
+
+  <TextField
+    select
+    fullWidth
+    value={reportCollege}
+    onChange={(e) =>
+      setReportCollege(e.target.value)
+    }
+    SelectProps={{
+      native: true
+    }}
+  >
+    <option value="All">All Colleges</option>
+
+    <option value="Madha Dental College & Hospital">
+      Madha Dental College & Hospital
+    </option>
+
+    <option value="Madha College of Nursing">
+      Madha College of Nursing
+    </option>
+
+    <option value="Madha College of Physiotherapy">
+      Madha College of Physiotherapy
+    </option>
+
+
+
+  </TextField>
+
+</div>
       {/* Report Type */}
 
       <div>

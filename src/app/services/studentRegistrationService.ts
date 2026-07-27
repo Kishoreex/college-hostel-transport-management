@@ -11,3 +11,14 @@ export const getStudentRegistrations = async () => {
 
     return await response.json();
 };
+export const getAllStudentRegistrations = async () => {
+    const response = await fetch(
+        `${API_URL}/StudentRegistrations`
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to load registrations");
+    }
+
+    return await response.json();
+};

@@ -33,15 +33,7 @@ const departmentsByCollege: Record<string, string[]> = {
 
 const years = ['1st Year', '2nd Year', '3rd Year', 'Final Year', 'Internship'];
 
-const batches = [
-  '2020-2024',
-  '2021-2025',
-  '2022-2026',
-  '2023-2027',
-  '2024-2028',
-  '2025-2029',
-  '2026-2030',
-];
+
 
 
 export default function Registration({ serviceType, onBack, onSuccess }: RegistrationProps) {
@@ -127,7 +119,7 @@ const [tokenNumber, setTokenNumber] = useState("");
   batch: formData.batch,
 
   studentName: formData.fullName,
-  registerNumber: formData.studentId,
+registerNumber: "",
 
   gender: formData.gender,
 
@@ -190,7 +182,7 @@ setSuccessOpen(true);
     if (activeStep === 0) return formData.college && formData.department && formData.year && formData.batch;
     if (activeStep === 1)
 return formData.fullName &&
-       formData.studentId &&
+      
        formData.gender &&
        formData.email &&
        formData.mobile;
@@ -295,18 +287,34 @@ return formData.fullName &&
                 </div>
 
                 <div className="bg-white/95 rounded-2xl p-4 shadow-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Batch</label>
-                  <select
-                    value={formData.batch}
-                    onChange={(e) => setFormData({ ...formData, batch: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    required
-                  >
-                    <option value="">Select Batch</option>
-                    {batches.map((batch) => (
-                      <option key={batch} value={batch}>{batch}</option>
-                    ))}
-                  </select>
+             <label className="block text-sm font-medium text-gray-700 mb-2">
+  Batch
+</label>
+
+<input
+  type="text"
+  value={formData.batch}
+  onChange={(e) => {
+    let value = e.target.value.replace(/\D/g, "");
+
+    if (value.length > 8) {
+      value = value.substring(0, 8);
+    }
+
+    if (value.length > 4) {
+      value = value.substring(0, 4) + " - " + value.substring(4);
+    }
+
+    setFormData({
+      ...formData,
+      batch: value,
+    });
+  }}
+  maxLength={11}
+  placeholder="2020 - 2021"
+  className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
+  required
+/>
                 </div>
               </>
             )}
@@ -326,17 +334,7 @@ return formData.fullName &&
                   />
                 </div>
 
-                <div className="bg-white/95 rounded-2xl p-4 shadow-lg">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Student ID</label>
-                  <input
-                    type="text"
-                    value={formData.studentId}
-                    onChange={(e) => setFormData({ ...formData, studentId: e.target.value })}
-                    className="w-full px-4 py-3 bg-gray-50 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400"
-                    placeholder="e.g., 2111222104001"
-                    required
-                  />
-                </div>
+           
                 <div className="bg-white/95 rounded-2xl p-4 shadow-lg">
   <label className="block text-sm font-medium text-gray-700 mb-2">
     Gender

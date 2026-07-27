@@ -44,25 +44,35 @@ const handleLogin = (userData: User) => {
 
     setUser(userData);
 };
-const handleLogout = async () => {
+const handleLogout = async (force = false) => {
 console.log("LOGOUT USER");
 console.log(JSON.stringify(user, null, 2));
-    if (user?.role === "student") {
-console.log("Student ID =", user.studentId);
-     const active =
-    await hasActiveOutpass(user.studentId ?? user.userId);
+if (user?.role === "student") {
+
+    console.log("Student ID =", user.studentId);
+
+    if (!force) {
+
+        const active =
+            await hasActiveOutpass(
+                user.studentId ?? user.userId
+            );
 
         console.log("Active Outpass:", active);
 
         if (active) {
 
-            alert("You have an active outpass. Logout is not allowed.");
+            alert(
+                "You have an active outpass. Logout is not allowed."
+            );
 
             return;
         }
 
-       await logout(user.studentId ?? user.userId);
     }
+
+    await logout(user.studentId ?? user.userId);
+}
 
     else {
 console.log("=== BEFORE LOGOUT ===");

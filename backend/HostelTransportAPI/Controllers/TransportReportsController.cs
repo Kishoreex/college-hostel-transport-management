@@ -17,34 +17,50 @@ public class TransportReportsController : ControllerBase
         _context = context;
     }
 [HttpGet("export")]
-public IActionResult Export(string type, int months = 12)
+public IActionResult Export(
+    string type,
+    string college = "All",
+    int months = 12)
 {
-    switch (type.ToLower())
-    {
-        case "students":
-            return Redirect("/api/TransportReports/students");
+   switch (type.ToLower())
+{
+    case "students":
+        return Redirect(
+            $"/api/TransportReports/students?college={Uri.EscapeDataString(college)}");
 
-        case "buses":
-            return Redirect("/api/TransportReports/buses");
+    case "buses":
+        return Redirect("/api/TransportReports/buses");
 
-        case "applications":
-            return Redirect($"/api/TransportReports/applications?months={months}");
+    case "applications":
+        return Redirect(
+            $"/api/TransportReports/applications?college={Uri.EscapeDataString(college)}&months={months}");
 
-        case "cancellations":
-            return Redirect($"/api/TransportReports/cancellations?months={months}");
+    case "cancellations":
+        return Redirect(
+            $"/api/TransportReports/cancellations?college={Uri.EscapeDataString(college)}&months={months}");
 
-        default:
-            return BadRequest("Invalid Report");
-    }
+    default:
+        return BadRequest("Invalid Report");
+}
 }
     [HttpGet("students")]
-public IActionResult ExportStudents()
+public IActionResult ExportStudents(string college = "All")
 {
     var students = _context.TransportRegistrations
         .Include(x => x.Route)
         .Include(x => x.Stop)
         .Where(x => x.IsApproved)
         .ToList();
+        if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    students = students
+        .Where(x =>
+            x.CollegeName.Trim().Equals(
+                college.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
 
     using var workbook = new XLWorkbook();
 
@@ -148,13 +164,24 @@ public IActionResult ExportBuses()
         "BusDetails.xlsx");
 }
 [HttpGet("applications")]
-public IActionResult ExportApplications(int months = 12)
+public IActionResult ExportApplications(
+    string college = "All",
+    int months = 12)
 {
     var applications = _context.TransportRegistrations
         .Include(x => x.Route)
         .Include(x => x.Stop)
         .ToList();
-
+if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    applications = applications
+        .Where(x =>
+            x.CollegeName.Trim().Equals(
+                college.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
     using var workbook = new XLWorkbook();
 
     CreateApplicationSheet(
@@ -172,14 +199,25 @@ public IActionResult ExportApplications(int months = 12)
         "TransportApplications.xlsx");
 }
 [HttpGet("cancellations")]
-public IActionResult ExportCancellations(int months = 12)
+public IActionResult ExportCancellations(
+    string college = "All",
+    int months = 12)
 {
     var fromDate = DateTime.Now.AddMonths(-months);
 
     var data = _context.TransportCancellations
         .Where(x => x.RequestedAt >= fromDate)
         .ToList();
-
+if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    data = data
+        .Where(x =>
+            x.CollegeName.Trim().Equals(
+                college.Trim(),
+                StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
     using var workbook = new XLWorkbook();
 
     CreateCancellationSheet(

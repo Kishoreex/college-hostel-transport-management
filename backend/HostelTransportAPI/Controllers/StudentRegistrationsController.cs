@@ -105,7 +105,11 @@ public IActionResult GetApprovedStudents()
         if (registration.IsApproved)
             return BadRequest("Already Approved");
 
-        string userId = registration.RegisterNumber;
+       string userId =
+    StudentIdGenerator.GenerateStudentId(
+        _context,
+        registration.CollegeName
+    );
 
       string password =
     $"Stu@{Random.Shared.Next(100000,999999)}";
@@ -135,7 +139,7 @@ var parentRole = _context.Roles
     if (parentRole == null)
     return BadRequest("Parent Role Not Found");
 
-string parentUserId = "P" + registration.RegisterNumber;
+string parentUserId = "P" + userId;
 
 string parentPassword =
     $"Par@{Random.Shared.Next(100000,999999)}";

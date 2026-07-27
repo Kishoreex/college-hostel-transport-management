@@ -64,9 +64,7 @@ state: outpass.outpassState
       ✓ Approved by Warden
     </p>
 
-    <p className="text-sm text-green-600">
-Status : {outpass.outpassState}
-</p>
+   
   </div>
     
 
@@ -193,87 +191,11 @@ Validity
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-
-<div className="flex items-start space-x-3">
-
-<Clock size={18} className="text-blue-600 mt-0.5"/>
-
-<div>
-
-<p className="text-xs text-gray-500">
-
-Exit Time
-
-</p>
-
-<p className="text-sm font-medium">
-
-{outpass.actualExitTime
-? new Date(outpass.actualExitTime).toLocaleString([],{
-day:"2-digit",
-month:"2-digit",
-year:"numeric",
-hour:"numeric",
-minute:"2-digit",
-hour12:true
-})
-: "Not Exited"}
-
-</p>
-
-</div>
-
-</div>
-
-<div className="flex items-start space-x-3">
-
-<Clock size={18} className="text-green-600 mt-0.5"/>
-
-<div>
-
-<p className="text-xs text-gray-500">
-
-Return Time
-
-</p>
-
-<p className="text-sm font-medium">
-
-{outpass.actualReturnTime
-? new Date(outpass.actualReturnTime).toLocaleString([],{
-day:"2-digit",
-month:"2-digit",
-year:"numeric",
-hour:"numeric",
-minute:"2-digit",
-hour12:true
-})
-: "Not Returned"}
-
-</p>
-
-</div>
-
-</div>
-
-</div>
+   
               </div>
               
             </div>
-{outpass.lateMinutes > 0 && (
 
-<div className="mt-3">
-
-<p className="text-red-600 font-semibold">
-
-Late : {outpass.lateMinutes} minutes
-
-</p>
-
-</div>
-
-)}
 <div className="mt-2">
 
 <p className="text-sm">

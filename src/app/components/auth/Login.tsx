@@ -217,11 +217,7 @@ catch (error: any) {
               onClick={() => {
   setServiceType("hostel");
 
-  // Default Demo Hostel Student
-  setCredentials({
-    id: "2111222104010",
-    password: "Stu@245930"
-  });
+  
 
   setScreen("studentLogin");
 }}
@@ -363,11 +359,7 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
   onClick={() => {
     setServiceType('hostel');
 
-    // Demo Credentials
-    setCredentials({
-      id: "2111222104010",
-      password: "Stu@245930"
-    });
+
   }}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     serviceType === 'hostel' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'

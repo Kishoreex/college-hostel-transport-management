@@ -103,10 +103,11 @@ export async function getTransportStudents() {
 }
 export function downloadTransportReport(
     type: string,
+    college: string = "All",
     months: number = 12
 ) {
     window.open(
-        `${API_URL}/TransportReports/export?type=${type}&months=${months}`,
+        `${API_URL}/TransportReports/export?type=${type}&college=${encodeURIComponent(college)}&months=${months}`,
         "_blank"
     );
 }

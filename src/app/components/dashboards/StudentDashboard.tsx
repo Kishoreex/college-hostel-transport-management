@@ -437,7 +437,23 @@ useEffect(() => {
 
         }
     );
+connection.on(
+  "ForceLogout",
+  (studentId: string) => {
 
+    if (studentId !== user.studentId) return;
+
+    toast.error(
+      "Your account has been deactivated."
+    );
+
+    localStorage.clear();
+
+    setTimeout(() => {
+      onLogout();
+    }, 1500);
+  }
+);
     connection.start().catch(console.error);
 
     return () => {
@@ -489,7 +505,23 @@ useEffect(() => {
 
     }
   );
+connection.on(
+  "ForceLogout",
+  (studentId: string) => {
 
+    if (studentId !== user.studentId) return;
+
+    toast.error(
+      "Your account has been deactivated."
+    );
+
+    localStorage.clear();
+
+    setTimeout(() => {
+      onLogout();
+    }, 1500);
+  }
+);
   connection
     .start()
     .catch(console.error);
@@ -640,9 +672,8 @@ if (submittingOutpass) return;
 
 setSubmittingOutpass(true);
 if (activeOutpass) {
-  toast.error(
-    "You already have an active outpass."
-  );
+  toast.error("You already have an active outpass.");
+  setSubmittingOutpass(false);
   return;
 }
 
@@ -1021,63 +1052,12 @@ outpass.outpassState==="Outside Hostel"
     <MapPin size={12} className="mr-1" />
     {outpass.destination}
   </span>
-{outpass.outpassState==="Expired" &&
-!outpass.actualExitTime && (
 
-<p className="w-full text-red-600 text-xs font-semibold">
 
-Not Exited
 
-</p>
 
-)}
-  {outpass.actualExitTime && (
-    <p className="w-full text-green-600 text-xs">
-      Exit Time :
-      {" "}
-      {new Date(outpass.actualExitTime).toLocaleString([], {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true
-      })}
-    </p>
-  )}
-{outpass.outpassState==="Outside Hostel" &&
-!outpass.actualReturnTime && (
 
-<p className="w-full text-orange-600 text-xs font-semibold">
 
-Not Returned Yet
-
-</p>
-
-)}
-  {outpass.actualReturnTime && (
-    <p className="w-full text-blue-600 text-xs">
-      Return Time :
-      {" "}
-      {new Date(outpass.actualReturnTime).toLocaleString([], {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true
-      })}
-    </p>
-  )}
-
-  {outpass.lateMinutes > 0 && (
-    <p className="w-full text-red-600 text-xs">
-      Late :
-      {outpass.lateMinutes} minutes
-    </p>
-  )}
 
 </div>
                   </div>
@@ -1383,26 +1363,26 @@ outpasses.filter(x => x.leaveRequestId === 0).length
                 </Card>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <button
-disabled={!!activeOutpass || activeLeave}
-  onClick={() => setOutpassDialogOpen(true)}
-  className={`bg-gradient-to-br from-blue-500 to-blue-600
-    text-white p-4 rounded-2xl shadow-lg
-   ${!!activeOutpass || activeLeave
-    ? "opacity-50 cursor-not-allowed"
-    : ""}
-  `}
+    <button
+disabled={!!activeOutpass}
+onClick={() => setOutpassDialogOpen(true)}
+className={`bg-gradient-to-br from-blue-500 to-blue-600
+text-white p-4 rounded-2xl shadow-lg
+${!!activeOutpass
+? "opacity-50 cursor-not-allowed"
+: ""}
+`}
 >
                     <FileText size={28} className="mb-2" />
                     <p className="font-semibold text-sm">Request Outpass</p>
                   </button>
-                  <button
-disabled={!!activeOutpass || activeLeave}
-  onClick={() => setLeaveDialogOpen(true)}
+<button
+disabled={activeLeave}
+onClick={() => setLeaveDialogOpen(true)}
 className={`bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg ${
-  !!activeOutpass || activeLeave
-    ? "opacity-50 cursor-not-allowed"
-    : ""
+activeLeave
+? "opacity-50 cursor-not-allowed"
+: ""
 }`}
 >
                     <Calendar size={28} className="mb-2" />
@@ -1472,73 +1452,9 @@ hour12:true
 
 </div>
 
-<p className="mt-3 text-sm">
 
-<b>State :</b>
 
-<span className="text-green-700 font-semibold ml-1">
-{activeOutpass.outpassState}
-</span>
 
-</p>
-
-{activeOutpass.actualExitTime && (
-
-<p className="mt-2 text-green-600 text-sm">
-
-Exit Time :
-
-{" "}
-
-{new Date(activeOutpass.actualExitTime)
-.toLocaleString([],{
-day:"2-digit",
-month:"2-digit",
-year:"numeric",
-hour:"numeric",
-minute:"2-digit",
-second:"2-digit",
-hour12:true
-})}
-
-</p>
-
-)}
-
-{activeOutpass.actualReturnTime && (
-
-<p className="mt-1 text-blue-600 text-sm">
-
-Return Time :
-
-{" "}
-
-{new Date(activeOutpass.actualReturnTime)
-.toLocaleString([],{
-day:"2-digit",
-month:"2-digit",
-year:"numeric",
-hour:"numeric",
-minute:"2-digit",
-second:"2-digit",
-hour12:true
-})}
-
-</p>
-
-)}
-
-{activeOutpass.lateMinutes>0 && (
-
-<p className="mt-1 text-red-600 text-sm">
-
-Late :
-
-{activeOutpass.lateMinutes} minutes
-
-</p>
-
-)}
 
 <div className="mt-4">
 
@@ -1687,46 +1603,7 @@ outpass.outpassState==="Outside Hostel"
         <MapPin size={12} className="mr-1" />
         {outpass.destination}
       </span>
-      {outpass.outpassState==="Expired" &&
-!outpass.actualExitTime && (
-
-<p className="w-full text-red-600 text-xs font-semibold">
-
-Not Exited
-
-</p>
-
-)}
-{outpass.actualExitTime && (
-  <p className="w-full text-green-600 text-xs">
-    Exit Time :
-    {new Date(outpass.actualExitTime).toLocaleString()}
-  </p>
-)}
-{outpass.outpassState==="Outside Hostel" &&
-!outpass.actualReturnTime && (
-
-<p className="w-full text-orange-600 text-xs font-semibold">
-
-Not Returned Yet
-
-</p>
-
-)}
-{outpass.actualReturnTime && (
-  <p className="w-full text-blue-600 text-xs">
-    Return Time :
-    {new Date(outpass.actualReturnTime).toLocaleString()}
-  </p>
-)}
-
-
-{outpass.lateMinutes > 0 && (
-  <p className="w-full text-red-600 text-xs">
-    Late :
-    {outpass.lateMinutes} minutes
-  </p>
-)}
+    
     </div>
   </div>
 ))}
@@ -1834,78 +1711,15 @@ Not Returned Yet
 <b>State :</b> {linkedOutpass.outpassState}
 </p>
 
-{linkedOutpass.outpassState === "Expired" &&
-!linkedOutpass.actualExitTime && (
 
-<p className="text-xs text-red-600 mt-1">
-Not Exited
-</p>
 
-)}
 
-{linkedOutpass.actualExitTime && (
 
-<p className="text-xs text-green-600 mt-1">
 
-Exit Time :
-{" "}
-{new Date(linkedOutpass.actualExitTime)
-.toLocaleString([],{
-day:"2-digit",
-month:"2-digit",
-year:"numeric",
-hour:"numeric",
-minute:"2-digit",
-second:"2-digit",
-hour12:true
-})}
 
-</p>
 
-)}
 
-{linkedOutpass.outpassState==="Outside Hostel" &&
-!linkedOutpass.actualReturnTime && (
 
-<p className="text-xs text-orange-600 mt-1">
-
-Not Returned Yet
-
-</p>
-
-)}
-
-{linkedOutpass.actualReturnTime && (
-
-<p className="text-xs text-blue-600 mt-1">
-
-Return Time :
-{" "}
-{new Date(linkedOutpass.actualReturnTime)
-.toLocaleString([],{
-day:"2-digit",
-month:"2-digit",
-year:"numeric",
-hour:"numeric",
-minute:"2-digit",
-second:"2-digit",
-hour12:true
-})}
-
-</p>
-
-)}
-
-{linkedOutpass.lateMinutes>0 && (
-
-<p className="text-xs text-red-600 mt-1">
-
-Late :
-{linkedOutpass.lateMinutes} minutes
-
-</p>
-
-)}
 
 </>
 
@@ -2562,62 +2376,14 @@ size="small"
 <b>State :</b> {op.outpassState}
 </p>
 
-{op.actualExitTime && (
 
-<p className="text-xs text-green-600">
 
-Exit :
-{" "}
-{new Date(op.actualExitTime).toLocaleString()}
 
-</p>
 
-)}
 
-{op.actualReturnTime && (
 
-<p className="text-xs text-blue-600">
 
-Return :
-{" "}
-{new Date(op.actualReturnTime).toLocaleString()}
 
-</p>
-
-)}
-
-{op.outpassState === "Expired" &&
-!op.actualExitTime && (
-
-<p className="text-xs text-red-600">
-
-Expired - Not Exited
-
-</p>
-
-)}
-
-{op.outpassState === "Outside Hostel" &&
-!op.actualReturnTime && (
-
-<p className="text-xs text-orange-600">
-
-Outside Hostel
-
-</p>
-
-)}
-
-{op.lateMinutes > 0 && (
-
-<p className="text-xs text-red-600">
-
-Late :
-{op.lateMinutes} minutes
-
-</p>
-
-)}
 
 <hr className="mt-3"/>
 
@@ -2737,68 +2503,11 @@ Reject Reason :
 
 </p>
 
-{linkedOutpass.outpassState==="Expired" &&
-!linkedOutpass.actualExitTime && (
 
-<p className="text-xs text-red-600">
 
-Not Exited
 
-</p>
 
-)}
 
-{linkedOutpass.actualExitTime && (
-
-<p className="text-xs text-green-600">
-
-Exit Time :
-
-{" "}
-
-{new Date(linkedOutpass.actualExitTime)
-.toLocaleString()}
-
-</p>
-
-)}
-
-{linkedOutpass.outpassState==="Outside Hostel" &&
-!linkedOutpass.actualReturnTime && (
-
-<p className="text-xs text-orange-600">
-
-Not Returned Yet
-
-</p>
-
-)}
-
-{linkedOutpass.actualReturnTime && (
-
-<p className="text-xs text-blue-600">
-
-Return Time :
-
-{" "}
-
-{new Date(linkedOutpass.actualReturnTime)
-.toLocaleString()}
-
-</p>
-
-)}
-
-{linkedOutpass.lateMinutes>0 && (
-
-<p className="text-xs text-red-600">
-
-Late :
-{linkedOutpass.lateMinutes} minutes
-
-</p>
-
-)}
 
 </>
 

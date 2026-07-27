@@ -113,7 +113,11 @@ public async Task<IActionResult> GetAll()
         if (registration.IsApproved)
             return BadRequest("Already Approved");
 
-        string userId = registration.RegisterNumber;
+       string userId =
+    StudentIdGenerator.GenerateStudentId(
+        _context,
+        registration.CollegeName
+    );
 
       string password =
     $"Tra@{Random.Shared.Next(100000,999999)}";

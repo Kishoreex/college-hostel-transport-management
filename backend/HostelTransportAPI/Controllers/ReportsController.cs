@@ -18,35 +18,56 @@ public class ReportsController : ControllerBase
 
 
     [HttpGet("export")]
-    public IActionResult Export(
-        string type,
-        string gender = "All",
-        string period = "all",
+   public IActionResult Export(
+    string type,
+    string gender = "All",
+    string college = "All",
+    string period = "all",
         DateTime? fromDate = null,
         DateTime? toDate = null)
     {
         switch (type.ToLower())
         {
-            case "students":
-                return Redirect(
-                    $"/api/reports/students?gender={gender}&period={period}&fromDate={fromDate:yyyy-MM-dd}&toDate={toDate:yyyy-MM-dd}");
-
-            case "applications":
-                return Redirect(
-                    $"/api/reports/applications?gender={gender}&period={period}&fromDate={fromDate:yyyy-MM-dd}&toDate={toDate:yyyy-MM-dd}");
-
-            case "outpasses":
-                return Redirect(
-                    $"/api/reports/outpasses?gender={gender}&period={period}&fromDate={fromDate:yyyy-MM-dd}&toDate={toDate:yyyy-MM-dd}");
-
-            case "leaves":
-                return Redirect(
-                    $"/api/reports/leaves?gender={gender}&period={period}&fromDate={fromDate:yyyy-MM-dd}&toDate={toDate:yyyy-MM-dd}");
-
-            case "vacating":
-                return Redirect(
-                    $"/api/reports/vacating?gender={gender}&period={period}&fromDate={fromDate:yyyy-MM-dd}&toDate={toDate:yyyy-MM-dd}");
-
+           case "students":
+    return Redirect(
+        $"/api/reports/students" +
+        $"?gender={Uri.EscapeDataString(gender)}" +
+        $"&college={Uri.EscapeDataString(college)}" +
+        $"&period={Uri.EscapeDataString(period)}" +
+        $"&fromDate={fromDate:yyyy-MM-dd}" +
+        $"&toDate={toDate:yyyy-MM-dd}");
+           case "applications":
+    return Redirect(
+        $"/api/reports/applications" +
+        $"?gender={Uri.EscapeDataString(gender)}" +
+        $"&college={Uri.EscapeDataString(college)}" +
+        $"&period={Uri.EscapeDataString(period)}" +
+        $"&fromDate={fromDate:yyyy-MM-dd}" +
+        $"&toDate={toDate:yyyy-MM-dd}");
+case "outpasses":
+    return Redirect(
+        $"/api/reports/outpasses" +
+        $"?gender={Uri.EscapeDataString(gender)}" +
+        $"&college={Uri.EscapeDataString(college)}" +
+        $"&period={Uri.EscapeDataString(period)}" +
+        $"&fromDate={fromDate:yyyy-MM-dd}" +
+        $"&toDate={toDate:yyyy-MM-dd}");
+          case "leaves":
+    return Redirect(
+        $"/api/reports/leaves" +
+        $"?gender={Uri.EscapeDataString(gender)}" +
+        $"&college={Uri.EscapeDataString(college)}" +
+        $"&period={Uri.EscapeDataString(period)}" +
+        $"&fromDate={fromDate:yyyy-MM-dd}" +
+        $"&toDate={toDate:yyyy-MM-dd}");
+        case "vacating":
+    return Redirect(
+        $"/api/reports/vacating" +
+        $"?gender={Uri.EscapeDataString(gender)}" +
+        $"&college={Uri.EscapeDataString(college)}" +
+        $"&period={Uri.EscapeDataString(period)}" +
+        $"&fromDate={fromDate:yyyy-MM-dd}" +
+        $"&toDate={toDate:yyyy-MM-dd}");
             default:
                 return BadRequest("Invalid Report Type");
         }
@@ -55,8 +76,10 @@ public class ReportsController : ControllerBase
     // YOUR EXISTING METHODS CONTINUE BELOW
 
  [HttpGet("students")]
-public async Task<IActionResult> ExportStudents(
+public async Task<IActionResult> 
+ExportStudents(
     string gender = "All",
+    string college = "All",
     string period = "all",
     DateTime? fromDate = null,
     DateTime? toDate = null
@@ -106,6 +129,10 @@ public async Task<IActionResult> ExportStudents(
 
       if (student == null)
     continue;
+    Console.WriteLine("--------------------------------");
+Console.WriteLine($"Student : {student.StudentName}");
+Console.WriteLine($"Gender(DB) : {student.Gender}");
+Console.WriteLine($"College(DB): {student.CollegeName}");
 DateTime createdDate = student.CreatedAt.Date;
 
 DateTime startDate = DateTime.MinValue;
@@ -168,6 +195,17 @@ if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
 
     if (student.Gender.ToLower() != dbGender)
         continue;
+}
+if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    if (!string.Equals(
+            student.CollegeName?.Trim(),
+            college.Trim(),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        continue;
+    }
 }
 
         sheet.Cell(row, 1).Value =
@@ -236,10 +274,10 @@ if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
 [HttpGet("applications")]
 public async Task<IActionResult> ExportApplications(
     string gender = "All",
+    string college = "All",
     string period = "all",
     DateTime? fromDate = null,
-    DateTime? toDate = null
-)
+    DateTime? toDate = null)
 {
     var data = await _context.StudentRegistrations
         .OrderByDescending(x => x.CreatedAt)
@@ -257,7 +295,15 @@ if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
         .Where(x => x.Gender.ToLower() == dbGender)
         .ToList();
 }
-
+if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    data = data
+        .Where(x => x.CollegeName.Trim().Equals(
+            college.Trim(),
+            StringComparison.OrdinalIgnoreCase))
+        .ToList();
+}
     using var workbook = new XLWorkbook();
 
     var sheet =
@@ -313,6 +359,7 @@ sheet.Cell(row,13).Value = item.RejectedDate;
 [HttpGet("outpasses")]
 public async Task<IActionResult> ExportOutpasses(
     string gender = "All",
+    string college = "All",
     string period = "all",
     DateTime? fromDate = null,
     DateTime? toDate = null
@@ -371,7 +418,17 @@ foreach (var item in data)
 
     var student = await _context.StudentRegistrations
         .FirstOrDefaultAsync(x => x.StudentId == item.StudentId);
-
+if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    if (student == null ||
+        !student.CollegeName.Trim().Equals(
+            college.Trim(),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        continue;
+    }
+}
     Console.WriteLine(student == null
         ? "Student NOT FOUND"
         : $"Found {student.StudentName}");
@@ -408,6 +465,7 @@ sheet.Cell(row,5).Value = item.StudentName;
 [HttpGet("leaves")]
 public async Task<IActionResult> ExportLeaves(
     string gender = "All",
+    string college = "All",
     string period = "all",
     DateTime? fromDate = null,
     DateTime? toDate = null
@@ -442,6 +500,17 @@ sheet.Cell(1,12).Value = "Approved Date";
     var student = await _context.StudentRegistrations
         .FirstOrDefaultAsync(x => x.StudentId == item.StudentId);
 
+if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    if (student == null ||
+        !student.CollegeName.Trim().Equals(
+            college.Trim(),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        continue;
+    }
+}
     sheet.Cell(row,1).Value = student?.CollegeName;
     sheet.Cell(row,2).Value = student?.Department;
     sheet.Cell(row,3).Value = student?.Year;
@@ -483,6 +552,7 @@ public IActionResult Test()
 [HttpGet("vacating")]
 public async Task<IActionResult> ExportVacating(
     string gender = "All",
+    string college = "All",
     string period = "all",
     DateTime? fromDate = null,
     DateTime? toDate = null
@@ -491,7 +561,9 @@ public async Task<IActionResult> ExportVacating(
     var data = await _context.VacatingRequests
         .OrderByDescending(x => x.RequestDate)
         .ToListAsync();
+      
 if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
+
 {
     string dbGender = gender.ToLower() switch
     {
@@ -504,32 +576,52 @@ if (!string.IsNullOrEmpty(gender) && gender.ToLower() != "all")
         .Where(x => x.Gender.ToLower() == dbGender)
         .ToList();
 }
+
     using var workbook = new XLWorkbook();
 
     var sheet =
         workbook.Worksheets.Add("Vacating");
 
-    sheet.Cell(1,1).Value = "Student ID";
-    sheet.Cell(1,2).Value = "Student Name";
-    sheet.Cell(1,3).Value = "Room Number";
-    sheet.Cell(1,4).Value = "Department";
-    sheet.Cell(1,5).Value = "Year";
-    sheet.Cell(1,6).Value = "Phone";
-    sheet.Cell(1,7).Value = "Reason";
-    sheet.Cell(1,8).Value = "Status";
+sheet.Cell(1,1).Value = "College Name";
+sheet.Cell(1,2).Value = "Student ID";
+sheet.Cell(1,3).Value = "Student Name";
+sheet.Cell(1,4).Value = "Room Number";
+sheet.Cell(1,5).Value = "Department";
+sheet.Cell(1,6).Value = "Year";
+sheet.Cell(1,7).Value = "Phone";
+sheet.Cell(1,8).Value = "Reason";
+sheet.Cell(1,9).Value = "Status";
 
     int row = 2;
 
     foreach(var item in data)
+
     {
-        sheet.Cell(row,1).Value = item.StudentId;
-        sheet.Cell(row,2).Value = item.StudentName;
-        sheet.Cell(row,3).Value = item.RoomNumber;
-        sheet.Cell(row,4).Value = item.Department;
-        sheet.Cell(row,5).Value = item.Year;
-        sheet.Cell(row,6).Value = item.Phone;
-        sheet.Cell(row,7).Value = item.Reason;
-        sheet.Cell(row,8).Value = item.Status;
+        var student = await _context.StudentRegistrations
+    .FirstOrDefaultAsync(x => x.StudentId == item.StudentId);
+
+    if (!string.IsNullOrWhiteSpace(college) &&
+    !college.Equals("All", StringComparison.OrdinalIgnoreCase))
+{
+    if (student == null ||
+        !student.CollegeName.Trim().Equals(
+            college.Trim(),
+            StringComparison.OrdinalIgnoreCase))
+    {
+        continue;
+    }
+}
+
+
+ sheet.Cell(row,1).Value = student?.CollegeName ?? "";
+sheet.Cell(row,2).Value = item.StudentId;
+sheet.Cell(row,3).Value = item.StudentName;
+sheet.Cell(row,4).Value = item.RoomNumber;
+sheet.Cell(row,5).Value = item.Department;
+sheet.Cell(row,6).Value = item.Year;
+sheet.Cell(row,7).Value = item.Phone;
+sheet.Cell(row,8).Value = item.Reason;
+sheet.Cell(row,9).Value = item.Status;
 
         row++;
     }

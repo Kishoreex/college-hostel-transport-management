@@ -150,12 +150,22 @@ if (parentUser != null)
         _context.HostelRoomAllocations.Remove(allocation);
     }
 
-    await _context.SaveChangesAsync();
+ await _context.SaveChangesAsync();
 
-    // Read the row again from the database
-    var check = await _context.StudentRegistrations
-        .AsNoTracking()
-        .FirstOrDefaultAsync(x => x.StudentId == request.StudentId);
+await _hub.Clients.All.SendAsync(
+    "VacatingUpdated",
+    request.StudentId
+);
+
+await _hub.Clients.All.SendAsync(
+    "ForceLogout",
+    request.StudentId
+);
+
+// Read the row again from the database
+var check = await _context.StudentRegistrations
+    .AsNoTracking()
+    .FirstOrDefaultAsync(x => x.StudentId == request.StudentId);
 
     return Ok(new
     

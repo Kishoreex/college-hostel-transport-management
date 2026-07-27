@@ -164,6 +164,7 @@ const handleRejectCancellation = async (id: number) => {
 
 
 const [routes, setRoutes] = useState<Route[]>([]);
+const [reportCollege, setReportCollege] = useState("All");
  const [students, setStudents] = useState<TransportStudent[]>([]);
   const [applications, setApplications] =
   useState([]);
@@ -831,7 +832,26 @@ const stats = [
                
               </div>
               <div className="space-y-4 mt-5">
+<select
+    value={reportCollege}
+    onChange={(e) => setReportCollege(e.target.value)}
+    className="border rounded-xl px-3 py-2"
+>
+      <option value="All">All Colleges</option>
 
+    <option value="Madha Dental College & Hospital">
+      Madha Dental College & Hospital
+    </option>
+
+    <option value="Madha College of Nursing">
+      Madha College of Nursing
+    </option>
+
+    <option value="Madha College of Physiotherapy">
+      Madha College of Physiotherapy
+    </option>
+
+</select>
   {/* Students */}
   <div className="bg-white border border-gray-100 rounded-2xl p-4">
     <div className="flex items-center justify-between">
@@ -840,7 +860,10 @@ const stats = [
       </span>
 
       <button
-        onClick={() => downloadTransportReport("students")}
+        onClick={() => downloadTransportReport(
+    "students",
+    reportCollege
+)}
         className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
         Download Excel
       </button>
@@ -888,8 +911,9 @@ className="border rounded-xl px-3 py-2">
       <button
         onClick={() =>
 downloadTransportReport(
-"applications",
-applicationMonths
+    "applications",
+    reportCollege,
+    applicationMonths
 )
 }
         className="bg-orange-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">
@@ -927,8 +951,9 @@ className="border rounded-xl px-3 py-2">
       <button
         onClick={() =>
 downloadTransportReport(
-"cancellations",
-cancellationMonths
+    "cancellations",
+    reportCollege,
+    cancellationMonths
 )
 }
         className="bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">

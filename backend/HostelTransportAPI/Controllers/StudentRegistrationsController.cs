@@ -61,35 +61,37 @@ await _hub.Clients.All.SendAsync(
 return Ok(registration);
     }
 
-   [HttpGet]
+ [HttpGet]
 public IActionResult GetAll()
 {
     var data = _context.StudentRegistrations
-        .Where(x =>
-            x.Status == "Pending"
-
-            ||
-
-            (x.Status == "Approved" &&
-             x.ApprovedDate != null &&
-             x.ApprovedDate >= DateTime.Now.AddHours(-72))
-
-            ||
-
-            (x.Status == "Rejected" &&
-             x.RejectedDate != null &&
-             x.RejectedDate >= DateTime.Now.AddHours(-72))
-        )
+        .Where(x => x.Status == "Pending")
+        .OrderByDescending(x => x.Id)
         .ToList();
 
     return Ok(data);
 }
-    [HttpGet("approved")]
+[HttpGet("approved")]
 public IActionResult GetApprovedStudents()
 {
     var data = _context.StudentRegistrations
         .Where(x => x.Status == "Approved")
         .OrderBy(x => x.StudentName)
+        .Select(x => new
+        {
+            x.Id,
+            x.StudentId,
+            x.StudentName,
+            x.Phone,
+            x.CollegeName,
+            x.Department,
+            x.Year,
+            x.Batch,
+            x.ParentName,
+            x.ParentPhone,
+            x.Address,
+            x.Gender
+        })
         .ToList();
 
     return Ok(data);

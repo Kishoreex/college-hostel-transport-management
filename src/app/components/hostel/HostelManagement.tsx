@@ -262,7 +262,8 @@ useRef<signalR.HubConnection | null>(null);
     const [outpassGender, setOutpassGender] =
       useState<'boys' | 'girls'>(defaultGender);
 
-
+const [applicationGender, setApplicationGender] =
+  useState<"boys" | "girls">(defaultGender);
       const [vacatingGender, setVacatingGender] =
       useState<'boys' | 'girls'>(defaultGender);
     const [historyGender, setHistoryGender] =
@@ -827,45 +828,9 @@ const loadApplications = async () => {
   });
       const filteredRooms = rooms.filter(r => r.gender === roomGender);
 const allocatedStudents = rooms.flatMap(r => r.students);
-
-const allStudentsFlat = applications
-  .filter(
-    (a: any) =>
-      a.status?.toLowerCase() === "approved"
-  )
-  .map((a: any) => {
-
-    const allocated =
-      allocatedStudents.find(
-        s =>
-          String(s.id).trim() ===
-          String(a.studentId).trim()  
-      );
-
-    return {
-     id: a.studentId,
-      name: a.studentName,
-      phone: a.phone,
-      college: a.collegeName,
-      department: a.department,
-      year: a.year,
-      batch: a.batch,
-      parentName: a.parentName,
-      parentPhone: a.parentPhone,
-      address: a.address,
-
-      gender:
-        a.gender?.toLowerCase() === "male"
-          ? "boys"
-          : "girls",
-
-      roomNumber:
-        allocated?.roomNumber || "Not Allocated",
-
-      roommates:
-        allocated?.roommates || []
-    };
-  });
+const allStudentsFlat = rooms.flatMap(
+  (room: any) => room.students
+);
 
 const filteredStudents = allStudentsFlat.filter(student => {
   if (user.isSystemAdmin) return true;
@@ -2993,13 +2958,58 @@ Choose report start and end dates
                   </button>
                   <h3 className="font-bold text-gray-800">Hostel Applications</h3>
                   <span className="ml-auto text-xs bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full font-semibold">
-    {applications.filter(
-      (a: any) => a.status === "Pending"
-    ).length} Pending
+   {
+applications.filter((a:any)=>{
+
+const gender=a.gender?.toLowerCase();
+
+const genderMatch=
+applicationGender==="boys"
+? gender==="male"
+: gender==="female";
+
+return genderMatch &&
+a.status?.toLowerCase()==="pending";
+
+}).length
+} Pending
   </span></div>
                 <CardContent className="p-4">
                   <div className="space-y-3">
-                    {applications.map((app: any) => (
+                    <div className="flex bg-gray-100 rounded-2xl p-1 mb-3">
+  {(
+    user.isSystemAdmin
+      ? ["boys", "girls"]
+      : user.canManageGirlsHostel
+      ? ["girls"]
+      : ["boys"]
+  ).map((g) => (
+    <button
+      key={g}
+      onClick={() => setApplicationGender(g as "boys" | "girls")}
+      className={`flex-1 py-2 rounded-xl text-sm font-semibold ${
+        applicationGender === g
+          ? g === "boys"
+            ? "bg-blue-600 text-white"
+            : "bg-pink-500 text-white"
+          : "text-gray-500"
+      }`}
+    >
+      {g === "boys" ? "👦 Boys" : "👧 Girls"}
+    </button>
+  ))}
+</div>
+                   {applications
+.filter((app:any)=>{
+
+const gender=app.gender?.toLowerCase();
+
+return applicationGender==="boys"
+? gender==="male"
+: gender==="female";
+
+})
+.map((app:any)=>(
                       <div key={app.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${app.status === 'approved' ? 'border-green-200 bg-green-50' : 'border-gray-100'}`}>
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center space-x-3">

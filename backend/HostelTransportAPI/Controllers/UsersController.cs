@@ -18,9 +18,9 @@
     [HttpGet]
     public IActionResult GetUsers()
     {
-        var users = _context.Users
-            .Where(x => x.RoleId != 2)
-            .ToList();
+       var users = _context.Users
+    .Where(x => x.RoleId == 1)
+    .ToList();
 
         return Ok(users);
     }

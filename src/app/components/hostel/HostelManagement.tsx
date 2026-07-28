@@ -1814,11 +1814,13 @@ const reportTypes = [
           ? gender === "male"
           : gender === "female";
 
-   return (
+return (
     matchesGender &&
     (
         h.status?.toLowerCase() === "approved" ||
-        h.status?.toLowerCase() === "completed"
+        h.status?.toLowerCase() === "completed" ||
+        h.status?.toLowerCase() === "cancelled" ||
+        h.status?.toLowerCase() === "not accepted by warden"
     ) &&
     !h.leaveRequestId
 );
@@ -1918,7 +1920,15 @@ stillOut
 }`}
 >
 {
-waitingForExit
+  h.status === "Cancelled"
+? "❌ Cancelled"
+
+: h.status === "Not Accepted By Warden"
+? "❌ Not Accepted By Warden"
+
+: h.status === "Rejected"
+? "❌ Rejected"
+:  waitingForExit
 ? "🟡 Waiting For Exit"
 
 : expiredWithoutExit
@@ -2023,17 +2033,30 @@ hour12:true
     </span>
   </div>
 )}
-   {waitingForExit && (
+{h.status !== "Cancelled" &&
+ h.status !== "Rejected" &&
+ h.status !== "Not Accepted By Warden" &&
+ waitingForExit && (
   <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
     <p className="text-blue-700 text-sm font-medium">
       ⏳ Waiting for Exit
     </p>
   </div>
 )}
-                                {expiredWithoutExit && (
+{h.status === "Not Accepted By Warden" ? (
+
+<div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3 text-red-700 text-sm font-semibold">
+❌ Outpass request was not approved by the warden.
+</div>
+
+) : (
+
+expiredWithoutExit && (
 <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3 text-red-700 text-sm font-semibold">
 ❌ Student did not exit before the outpass expired.
 </div>
+)
+
 )}
 
 {exitedEarly && (
@@ -2407,22 +2430,40 @@ className={`bg-white border rounded-2xl p-4 shadow-sm ${
                                   
                                  <span
 className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
-    overdueOutside
+    h.status === "Cancelled"
+        ? "bg-gray-100 text-gray-700"
+    : h.status === "Rejected"
         ? "bg-red-100 text-red-700"
-        : outsideCampus
+    : h.status === "Pending"
+        ? "bg-yellow-100 text-yellow-700"
+    : overdueOutside
+        ? "bg-red-100 text-red-700"
+    : outsideCampus
         ? "bg-blue-100 text-blue-700"
-        : returnedLate
+    : returnedLate
         ? "bg-amber-100 text-amber-700"
-        : waitingForExit
+    : waitingForExit
         ? "bg-yellow-100 text-yellow-700"
         : "bg-green-100 text-green-700"
 }`}
 >
-  {
-!isOutCampus
-    ? (now <= returnTime
-        ? "🟢 Active Leave"
-        : "✅ Leave Completed")
+ {
+h.status === "Not Accepted By Warden"
+? "❌ Not Accepted By Warden"
+
+: h.status === "Cancelled"
+? "❌ Cancelled"
+
+: h.status === "Rejected"
+? "❌ Rejected"
+
+: h.status === "Pending"
+? "🟡 Pending"
+
+: h.status === "Approved" && !isOutCampus
+? (now <= returnTime
+    ? "🟢 Active Leave"
+    : "✅ Leave Completed")
 
 : waitingForExit
 ? "🟡 Waiting For Exit"
@@ -2435,7 +2476,6 @@ className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
 
 : outsideCampus
 ? "🟢 Outside Campus"
-
 
 : overdueOutside
 ? "🔴 Outside Beyond Return Time"
@@ -2579,13 +2619,25 @@ h.campus === "In Campus"
     </p>
 </div>
 )}
-                              {isOutCampus && expiredWithoutExit && (
-  <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
-    <p className="text-sm font-semibold text-red-700">
-      ❌ Leave expired before the student exited.
-    </p>
-  </div>
-)}
+   {isOutCampus &&
+  (h.status === "Not Accepted By Warden" ? (
+    <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
+      <p className="text-sm font-semibold text-red-700">
+        ❌ Leave was not accepted by the warden.
+      </p>
+    </div>
+  ) : (
+       h.status !== "Cancelled" &&
+    h.status !== "Rejected" &&
+    h.status !== "Not Accepted By Warden" &&
+    expiredWithoutExit && (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
+        <p className="text-sm font-semibold text-red-700">
+          ❌ Leave expired before the student exited.
+        </p>
+      </div>
+    )
+  ))}
 {isOutCampus && exitedEarly && h.actualExitTime && (
   <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
     <p className="text-sm font-semibold text-red-700">

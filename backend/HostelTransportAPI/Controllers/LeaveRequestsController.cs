@@ -103,32 +103,69 @@ public async Task<IActionResult> GetAll()
 {
     var now = DateTime.Now;
 
-    var approvedLeaves = _context.LeaveRequests
-        .Where(x => x.Status == "Approved")
-        .ToList();
+    var leaves = _context.LeaveRequests.ToList();
 
-    foreach (var leave in approvedLeaves)
+    foreach (var leave in leaves)
     {
-        DateTime leaveEnd;
+        // Pending -> Not Accepted By Warden
+        if (leave.Status == "Pending")
+        {
+            DateTime lastApprovalTime;
 
-        if (leave.FromDate.Date == leave.ToDate.Date &&
-            !string.IsNullOrWhiteSpace(leave.ReturnTime))
-        {
-            // Same-day leave
-            leaveEnd = leave.ToDate.Date + TimeSpan.Parse(leave.ReturnTime);
-        }
-        else
-        {
-            // Multi-day leave
-            leaveEnd = leave.ToDate.Date
-                .AddHours(23)
-                .AddMinutes(59)
-                .AddSeconds(59);
+            if (
+                leave.Campus == "Out Campus" &&
+                leave.FromDate.Date == leave.ToDate.Date &&
+                !string.IsNullOrWhiteSpace(leave.ReturnTime)
+            )
+            {
+                // Same-day out campus
+                lastApprovalTime =
+                    leave.ToDate.Date +
+                    TimeSpan.Parse(leave.ReturnTime);
+            }
+            else
+            {
+                // In campus + multi-day out campus
+                lastApprovalTime =
+                    leave.ToDate.Date
+                        .AddHours(23)
+                        .AddMinutes(59)
+                        .AddSeconds(59);
+            }
+
+            if (now > lastApprovalTime)
+            {
+                leave.Status = "Not Accepted By Warden";
+            }
         }
 
-        if (now > leaveEnd)
+        // Approved -> Completed
+        if (leave.Status == "Approved")
         {
-            leave.Status = "Completed";
+            DateTime leaveEnd;
+
+            if (
+                leave.FromDate.Date == leave.ToDate.Date &&
+                !string.IsNullOrWhiteSpace(leave.ReturnTime)
+            )
+            {
+                leaveEnd =
+                    leave.ToDate.Date +
+                    TimeSpan.Parse(leave.ReturnTime);
+            }
+            else
+            {
+                leaveEnd =
+                    leave.ToDate.Date
+                        .AddHours(23)
+                        .AddMinutes(59)
+                        .AddSeconds(59);
+            }
+
+            if (now > leaveEnd)
+            {
+                leave.Status = "Completed";
+            }
         }
     }
 
@@ -140,7 +177,6 @@ public async Task<IActionResult> GetAll()
             .ToList()
     );
 }
-
     [HttpPost("approve/{id}")]
     public async Task<IActionResult> Approve(int id)
     {
@@ -287,6 +323,42 @@ await _hub.Clients.All.SendAsync(
 [HttpGet("history")]
 public IActionResult GetHistory()
 {
+    var now = DateTime.Now;
+
+var pendingLeaves = _context.LeaveRequests
+    .Where(x => x.Status == "Pending")
+    .ToList();
+
+foreach (var leave in pendingLeaves)
+{
+    DateTime expiryTime;
+
+    if (
+        leave.Campus == "Out Campus" &&
+        leave.FromDate.Date == leave.ToDate.Date &&
+        !string.IsNullOrWhiteSpace(leave.ReturnTime)
+    )
+    {
+        expiryTime =
+            leave.ToDate.Date +
+            TimeSpan.Parse(leave.ReturnTime);
+    }
+    else
+    {
+        expiryTime =
+            leave.ToDate.Date
+                .AddHours(23)
+                .AddMinutes(59)
+                .AddSeconds(59);
+    }
+
+    if (now > expiryTime)
+    {
+        leave.Status = "Not Accepted By Warden";
+    }
+}
+
+_context.SaveChanges();
     var history =
         (from leave in _context.LeaveRequests
 
@@ -299,7 +371,8 @@ public IActionResult GetHistory()
         where leave.Status == "Approved"
    || leave.Status == "Completed"
    || leave.Status == "Expired"
-
+      || leave.Status == "Cancelled"
+   || leave.Status == "Not Accepted By Warden"
          orderby leave.CreatedDate descending
 
          select new
@@ -360,5 +433,30 @@ public IActionResult GetParentLeaves(string parentUserId)
         .ToList();
 
     return Ok(leaves);
+}
+[HttpPost("cancel/{id}")]
+public async Task<IActionResult> Cancel(int id)
+{
+    var leave = await _context.LeaveRequests.FindAsync(id);
+
+    if (leave == null)
+        return NotFound();
+
+    if (leave.Status != "Pending")
+        return BadRequest("Only pending requests can be cancelled.");
+
+    leave.Status = "Cancelled";
+
+    await _context.SaveChangesAsync();
+
+    await _hub.Clients.All.SendAsync(
+        "LeaveUpdated",
+        leave.StudentId
+    );
+
+    return Ok(new
+    {
+        Message = "Leave Cancelled"
+    });
 }
 }

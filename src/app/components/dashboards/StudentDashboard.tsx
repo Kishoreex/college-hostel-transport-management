@@ -3,7 +3,8 @@ import {
   getStudentOutpasses,
   markExit,
   markReturn,
-  expireOldOutpasses
+  expireOldOutpasses,
+  cancelOutpass
 } from "../../services/outpassService";
 import * as signalR from "@microsoft/signalr";
 import API_URL from "../../../api/api";
@@ -25,7 +26,8 @@ import {
 } from "../../../api/vacatingService";
 import {
   createLeaveRequest,
-  getLeaveRequests
+  getLeaveRequests,
+  cancelLeave
 } from "../../../api/leaveService";
 import {
   changePassword
@@ -565,6 +567,7 @@ const activeOutpass = outpasses.find(x =>
     )
 
 );
+
 const activeLeave = leaveRequests.some(
   (x: any) =>
     x.status === "Pending" ||
@@ -856,14 +859,17 @@ setLeaveForm({
 
 };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'success';
-      case 'pending': return 'warning';
-      case 'rejected': return 'error';
-      default: return 'default';
-    }
-  };
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'approved': return 'success';
+    case 'pending': return 'warning';
+    case 'rejected': return 'error';
+    case 'expired': return 'error';
+    case 'cancelled': return 'default';
+    case 'completed': return 'success';
+    default: return 'default';
+  }
+};
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -997,6 +1003,7 @@ outpass.outpassState==="Outside Hostel"
                            icon={getStatusIcon(outpass.status?.toLowerCase())}
                             sx={{ height: 20, fontSize: '0.7rem' }}
                           />
+                          
                           {outpass.status === "Rejected" &&
  outpass.rejectReason && (
   <p className="text-xs text-red-600 mt-2">
@@ -1060,6 +1067,7 @@ outpass.outpassState==="Outside Hostel"
 
 
 </div>
+
                   </div>
                   );
                 })}
@@ -1364,13 +1372,35 @@ outpasses.filter(x => x.leaveRequestId === 0).length
 
                 <div className="grid grid-cols-2 gap-3">
     <button
-disabled={!!activeOutpass}
+disabled={
+  outpasses.some(
+    x =>
+      ![
+        "Cancelled",
+        "Completed",
+        "Rejected",
+        "Expired",
+        "Not Accepted By Warden"
+      ].includes(x.status)
+  )
+}
 onClick={() => setOutpassDialogOpen(true)}
 className={`bg-gradient-to-br from-blue-500 to-blue-600
 text-white p-4 rounded-2xl shadow-lg
-${!!activeOutpass
+${
+outpasses.some(
+  x =>
+    ![
+      "Cancelled",
+      "Completed",
+      "Rejected",
+      "Expired",
+      "Not Accepted By Warden"
+    ].includes(x.status)
+)
 ? "opacity-50 cursor-not-allowed"
-: ""}
+: ""
+}
 `}
 >
                     <FileText size={28} className="mb-2" />
@@ -1605,6 +1635,22 @@ outpass.outpassState==="Outside Hostel"
       </span>
     
     </div>
+ {outpass.status?.toLowerCase() === "pending" && (
+  <div className="mt-3">
+    <button
+      onClick={async () => {
+        await cancelOutpass(outpass.id);
+
+        toast.success("Outpass Cancelled");
+
+        await loadOutpasses();
+      }}
+      className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium"
+    >
+      Cancel Request
+    </button>
+  </div>
+)}
   </div>
 ))}
                     </div>
@@ -1692,7 +1738,20 @@ outpass.outpassState==="Outside Hostel"
 <p className="text-xs text-gray-700 mt-2">
   <span className="font-medium">Reason :</span> {leave.reason}
 </p>
-
+{leave.status?.toLowerCase() === "pending" && (
+  <div className="mt-3">
+    <button
+      onClick={async () => {
+        await cancelLeave(leave.id);
+        toast.success("Leave Cancelled");
+        await loadLeaveRequests();
+      }}
+      className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg text-sm font-medium"
+    >
+      Cancel Request
+    </button>
+  </div>
+)}
               {leave.status==="Rejected" &&
                 leave.rejectReason && (
 

@@ -20,16 +20,33 @@ private readonly IHubContext<NotificationHub> _hub;
     _context = context;
     _hub = hub;
 }
-   [HttpGet]
+[HttpGet]
 public IActionResult GetAll()
 {
     try
     {
-        var data = _context.Outpasses.ToList();
+        var now = DateTime.Now;
 
-        Console.WriteLine($"OUTPASSES COUNT: {data.Count}");
+        var outpasses = _context.Outpasses.ToList();
 
-        return Ok(data);
+        foreach (var outpass in outpasses)
+        {
+            if (outpass.Status == "Pending")
+            {
+                if (now > outpass.ValidTo)
+                {
+                    outpass.Status = "Not Accepted By Warden";
+                }
+            }
+        }
+
+        _context.SaveChanges();
+
+        return Ok(
+            _context.Outpasses
+                .OrderByDescending(x => x.Id)
+                .ToList()
+        );
     }
     catch (Exception ex)
     {
@@ -50,13 +67,17 @@ public IActionResult GetAll()
 [HttpPost]
 public async Task<IActionResult> Create(Outpass outpass)
 {
-    var hasActiveOutpass = _context.Outpasses.Any(x =>
+var hasActiveOutpass = _context.Outpasses.Any(x =>
     x.StudentId == outpass.StudentId &&
     (
         x.Status == "Pending" ||
-        x.OutpassState == "Waiting For Exit" ||
-        x.OutpassState == "Active" ||
-        x.OutpassState == "Outside Hostel"
+
+        (x.Status == "Approved" &&
+        (
+            x.OutpassState == "Waiting For Exit" ||
+            x.OutpassState == "Active" ||
+            x.OutpassState == "Outside Hostel"
+        ))
     )
 );
 
@@ -102,7 +123,7 @@ public async Task<IActionResult> Approve(int id)
         return NotFound();
 
 outpass.Status = "Approved";
-outpass.OutpassState = "Active";
+outpass.OutpassState = "Waiting For Exit";
 
   await _context.SaveChangesAsync();
 
@@ -339,5 +360,31 @@ public IActionResult GetParentOutpasses(string parentUserId)
         .ToList();
 
     return Ok(outpasses);
+}
+[HttpPut("cancel/{id}")]
+public async Task<IActionResult> Cancel(int id)
+{
+    var outpass = await _context.Outpasses.FindAsync(id);
+
+    if (outpass == null)
+        return NotFound();
+
+    if (outpass.Status != "Pending")
+        return BadRequest("Only pending outpasses can be cancelled.");
+
+    outpass.Status = "Cancelled";
+outpass.OutpassState = "Cancelled";
+
+    await _context.SaveChangesAsync();
+
+    await _hub.Clients.All.SendAsync(
+        "OutpassUpdated",
+        outpass.StudentId
+    );
+
+    return Ok(new
+    {
+        Message = "Outpass Cancelled"
+    });
 }
 }

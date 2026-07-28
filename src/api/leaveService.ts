@@ -49,3 +49,11 @@ export async function rejectLeave(
     }
   );
 }
+export async function cancelLeave(id: number) {
+  await fetch(
+    `${API_URL}/LeaveRequests/cancel/${id}`,
+    {
+      method: "POST"
+    }
+  );
+}

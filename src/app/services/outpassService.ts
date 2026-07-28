@@ -139,3 +139,13 @@ export async function expireOldOutpasses() {
         }
     );
 }
+export async function cancelOutpass(id: number) {
+    const response = await fetch(
+        `${API_URL}/Outpasses/cancel/${id}`,
+        {
+            method: "PUT",
+        }
+    );
+
+    return await response.json();
+}

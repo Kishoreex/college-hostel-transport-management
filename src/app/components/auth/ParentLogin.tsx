@@ -135,7 +135,62 @@ export default function ParentLogin({ onBack, onLogin }: Props) {
         >
           {loading ? "Logging in..." : "Login"}
         </button>
+<div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mt-5">
 
+  <h3 className="text-sm font-bold text-green-700 mb-3">
+    Demo Parent Accounts
+  </h3>
+
+  <div className="space-y-2">
+
+    <button
+      type="button"
+      onClick={() => {
+        setUserId("PARENT001");
+        setPassword("Parent@123");
+      }}
+      className="w-full text-left border rounded-xl p-3 hover:bg-green-50 transition"
+    >
+      <div className="font-semibold">PARENT001</div>
+      <div className="text-xs text-gray-500">
+        Password : Par@477246
+      </div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setUserId("PMDC0002");
+        setPassword("Par@901025");
+      }}
+      className="w-full text-left border rounded-xl p-3 hover:bg-green-50 transition"
+    >
+      <div className="font-semibold">PMDC0002</div>
+      <div className="text-xs text-gray-500">
+        Password : Par@901025
+      </div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setUserId("PMCP0002");
+        setPassword("Par@481088");
+      }}
+      className="w-full text-left border rounded-xl p-3 hover:bg-green-50 transition"
+    >
+      <div className="font-semibold">PMCP0002</div>
+      <div className="text-xs text-gray-500">
+        Password : Par@481088
+
+      </div>
+    </button>
+
+   
+
+  </div>
+
+</div>
       </form>
 
     </div>

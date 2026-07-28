@@ -279,11 +279,6 @@ catch (error: any) {
              onClick={() => {
   setSelectedAdminRole("admin");
 
-  // Demo Admin Credentials
-  setCredentials({
-    id: "MainAdmin@mdch",
-    password: "Admin@123"
-  });
 
   setScreen("adminLogin");
 }}
@@ -375,11 +370,7 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
   onClick={() => {
     setServiceType('transport');
 
-    // Demo Credentials
-    setCredentials({
-      id: "2111222104002",
-      password: "Tra@962313"
-    });
+
   }}
                   className={`p-4 rounded-xl border-2 transition-all ${
                     serviceType === 'transport' ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-white'
@@ -439,7 +430,79 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
+<div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mt-5">
+  <h3 className="text-sm font-bold text-blue-700 mb-3">
+    Demo Student Accounts
+  </h3>
 
+  <div className="space-y-2">
+
+    <button
+      type="button"
+      onClick={() =>
+        setCredentials({
+          id: "MDC0001",
+          password: "Stu@449576"
+        })
+      }
+      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
+    >
+      <div className="font-semibold">MDC0001</div>
+      <div className="text-xs text-gray-500">
+        Password: Stu@449576
+      </div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        setCredentials({
+          id: "MDC0002",
+          password: "Stu@607338"
+        })
+      }
+      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
+    >
+      <div className="font-semibold">MDC0002</div>
+      <div className="text-xs text-gray-500">
+        Password: Stu@607338
+      </div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        setCredentials({
+          id: "MCP0001",
+          password: "Tra@477873"
+        })
+      }
+      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
+    >
+      <div className="font-semibold">MCP0001</div>
+      <div className="text-xs text-gray-500">
+        Password: Tra@477873
+      </div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() =>
+        setCredentials({
+          id: "MCP0002",
+          password: "Stu@293144"
+        })
+      }
+      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
+    >
+      <div className="font-semibold">MCP0002</div>
+      <div className="text-xs text-gray-500">
+        Password: Stu@293144
+      </div>
+    </button>
+
+  </div>
+</div>
             <div className="flex justify-between items-center px-1 pt-1">
              
               <button
@@ -537,6 +600,7 @@ if (screen === "parentLogin") {
               disabled={loading}
               className="w-full bg-gradient-to-r from-slate-700 to-slate-800 text-white font-bold py-5 rounded-2xl shadow-xl active:scale-95 transition-transform text-base mt-6 disabled:opacity-50"
             >
+              
               {loading ? (
                 <span className="flex items-center justify-center">
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -547,6 +611,94 @@ if (screen === "parentLogin") {
                 </span>
               ) : 'Login to Dashboard'}
             </button>
+            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mt-6">
+
+  <h3 className="text-sm font-bold text-slate-700 mb-3">
+    Demo Staff Accounts
+  </h3>
+
+  <div className="space-y-2">
+
+    <button
+      type="button"
+      onClick={() => {
+        setCredentials({
+          id: "MainAdmin@mdch",
+          password: "Admin@123"
+        });
+      }}
+      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
+    >
+      <div className="font-semibold">System Admin</div>
+      <div className="text-xs text-gray-500">
+        MainAdmin@mdch
+      </div>
+      <div className="text-xs text-gray-500">
+        Password : Admin@123
+      </div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setCredentials({
+          id: "testuser002@gmail.com",
+          password: "963963963"
+        });
+      }}
+      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
+    >
+      <div className="font-semibold">Boys Warden</div>
+      <div className="text-xs text-gray-500">
+        testuser002@gmail.com
+      </div>
+      <div className="text-xs text-gray-500">
+        Password : 963963963
+      </div>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => {
+        setCredentials({
+          id: "testuser003@gmail.com",
+          password: "963963963"
+        });
+      }}
+      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
+    >
+      <div className="font-semibold">Girls Warden</div>
+      <div className="text-xs text-gray-500">
+        testuser003@gmail.com
+      </div>
+      <div className="text-xs text-gray-500">
+        Password : 963963963
+      </div>
+    </button>
+
+   
+    <button
+      type="button"
+      onClick={() => {
+        setCredentials({
+          id: "testuser001@gmail.com",
+          password: "963963963"
+        });
+      }}
+      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
+    >
+      <div className="font-semibold">Transport</div>
+      <div className="text-xs text-gray-500">
+        testuser001@gmail.com
+      </div>
+      <div className="text-xs text-gray-500">
+        Password : 963963963
+      </div>
+    </button>
+
+  </div>
+
+</div>
 
             {/* Forgot Password */}
            {/* <div className="text-center pt-2">

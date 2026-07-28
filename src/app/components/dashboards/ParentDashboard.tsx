@@ -127,37 +127,42 @@ const studentStatus =
     ? "Outpass Approved"
     : "In Hostel";
 
-
 const getStatusColor = (
   status: string
 ): "success" | "warning" | "error" | "default" => {
 
   switch (status?.toLowerCase()) {
+
     case "approved":
+    case "completed":
       return "success";
 
     case "pending":
       return "warning";
 
     case "rejected":
+    case "cancelled":
+    case "not accepted by warden":
       return "error";
 
     default:
       return "default";
   }
 };
-
 const getStatusIcon = (status: string) => {
 
   switch (status?.toLowerCase()) {
 
     case "approved":
+    case "completed":
       return <CheckIcon size={14} />;
 
     case "pending":
       return <Clock size={14} />;
 
     case "rejected":
+    case "cancelled":
+    case "not accepted by warden":
       return <XCircle size={14} />;
 
     default:

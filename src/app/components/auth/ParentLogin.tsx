@@ -146,12 +146,12 @@ export default function ParentLogin({ onBack, onLogin }: Props) {
     <button
       type="button"
       onClick={() => {
-        setUserId("PARENT001");
-        setPassword("Parent@123");
+        setUserId("PMDC0001");
+        setPassword("Par@477246");
       }}
       className="w-full text-left border rounded-xl p-3 hover:bg-green-50 transition"
     >
-      <div className="font-semibold">PARENT001</div>
+      <div className="font-semibold">PMDC0001</div>
       <div className="text-xs text-gray-500">
         Password : Par@477246
       </div>

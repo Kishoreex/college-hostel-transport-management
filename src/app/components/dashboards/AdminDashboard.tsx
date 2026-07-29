@@ -330,70 +330,78 @@ if (
                     </button>
                 </div>
 
-                <div className="p-4 space-y-3">
+                 <div className="p-4 space-y-3">
+              <Card sx={{ borderRadius: 3 }}>
+                <CardContent className="p-4">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <div className="bg-purple-100 p-3 rounded-xl">
+                      <UserCircle className="text-purple-600" size={32} />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-800 text-lg">{selectedStudent.studentName}</h3>
+                      <p className="text-sm text-gray-500">{selectedStudent.studentId}</p>
+                    </div>
+                  </div>
 
-                    <Card sx={{ borderRadius: 3 }}>
-                        <CardContent>
+                  <div className="space-y-3">
+                    <div className="bg-blue-50 p-3 rounded-xl">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Phone size={16} className="text-blue-600" />
+                        <span className="font-semibold text-gray-700 text-sm">Contact Information</span>
+                      </div>
+                      <div className="ml-6 space-y-1 text-sm">
+                        <p className="text-gray-600">Student: {selectedStudent.phone}</p>
+                      </div>
+                    </div>
 
-                            <div className="flex items-center space-x-3 mb-4">
+                    <div className="bg-green-50 p-3 rounded-xl">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Building2 size={16} className="text-green-600" />
+                        <span className="font-semibold text-gray-700 text-sm">Academic Information</span>
+                      </div>
+                      <div className="ml-6 space-y-1 text-sm">
+                        <p className="text-gray-600">College: {selectedStudent.collegeName}</p>
+                        <p className="text-gray-600">Department: {selectedStudent.department}</p>
+                        <p className="text-gray-600">Year: {selectedStudent.year}</p>
+                        <p className="text-gray-600">Batch: {selectedStudent.batch}</p>
+                      </div>
+                    </div>
 
-                                <div className="bg-purple-100 p-3 rounded-xl">
-                                    <UserCircle
-                                        className="text-purple-600"
-                                        size={32}
-                                    />
-                                </div>
+                    <div className="bg-orange-50 p-3 rounded-xl">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <UserCircle size={16} className="text-orange-600" />
+                        <span className="font-semibold text-gray-700 text-sm">Parent Information</span>
+                      </div>
+                      <div className="ml-6 space-y-1 text-sm">
+                        <p className="text-gray-600">Name: {selectedStudent.parentName}</p>
+                        <p className="text-gray-600">Phone: {selectedStudent.parentPhone}</p>
+                      </div>
+                    </div>
 
-                                <div>
+                    <div className="bg-purple-50 p-3 rounded-xl">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Home size={16} className="text-purple-600" />
+                        <span className="font-semibold text-gray-700 text-sm">Address</span>
+                      </div>
+                      <p className="ml-6 text-gray-600 text-sm">{selectedStudent.address}</p>
+                    </div>
 
-                                    <h3 className="font-bold text-lg">
-                                        {selectedStudent.studentName}
-                                    </h3>
-
-                                    <p className="text-sm text-gray-500">
-                                        {selectedStudent.studentId}
-                                    </p>
-
-                                </div>
-
-                            </div>
-
-                            <div className="space-y-3">
-
-                                <div className="bg-blue-50 p-3 rounded-xl">
-                                    <p><b>Phone:</b> {selectedStudent.phone}</p>
-                                </div>
-
-                                <div className="bg-green-50 p-3 rounded-xl">
-                                    <p><b>College:</b> {selectedStudent.collegeName}</p>
-                                    <p><b>Department:</b> {selectedStudent.department}</p>
-                                    <p><b>Year:</b> {selectedStudent.year}</p>
-                                    <p><b>Batch:</b> {selectedStudent.batch}</p>
-                                </div>
-
-                                <div className="bg-orange-50 p-3 rounded-xl">
-                                    <p><b>Parent:</b> {selectedStudent.parentName}</p>
-                                    <p><b>Parent Phone:</b> {selectedStudent.parentPhone}</p>
-                                </div>
-
-                                <div className="bg-purple-50 p-3 rounded-xl">
-                                    <p><b>Address:</b></p>
-                                    <p>{selectedStudent.address}</p>
-                                </div>
-
-                                <div className="bg-indigo-50 p-3 rounded-xl">
-                                    <p><b>Route:</b> {selectedStudent.busRoute}</p>
-                                    <p><b>Bus:</b> {selectedStudent.busNumber}</p>
-                                    <p><b>Pickup:</b> {selectedStudent.pickupPoint}</p>
-                                    <p><b>Pickup Time:</b> {selectedStudent.pickupTime}</p>
-                                </div>
-
-                            </div>
-
-                        </CardContent>
-                    </Card>
-
-                </div>
+                    <div className="bg-indigo-50 p-3 rounded-xl">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Bus size={16} className="text-indigo-600" />
+                        <span className="font-semibold text-gray-700 text-sm">Transport Details</span>
+                      </div>
+                      <div className="ml-6 space-y-1 text-sm">
+                        <p className="text-gray-600">Route: {selectedStudent.busRoute}</p>
+                        <p className="text-gray-600">Bus Number: {selectedStudent.busNumber}</p>
+                        <p className="text-gray-600">Pickup Point: {selectedStudent.pickupPoint}</p>
+                        <p className="text-gray-600 font-medium">Pickup Time: {selectedStudent.pickupTime}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
             </>
         </Dialog>
     );

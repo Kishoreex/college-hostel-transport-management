@@ -122,8 +122,22 @@ public IActionResult GetTransportStudents(string college)
             x.ParentPhone,
             x.Address,
             x.CollegeName,
-            Route = x.Route.RouteName,
-            Bus = x.Route.BusNumber
+
+            BusRoute = x.Route != null
+                ? x.Route.RouteName
+                : "",
+
+            BusNumber = x.Route != null
+                ? x.Route.BusNumber
+                : "",
+
+            PickupPoint = x.Stop != null
+                ? x.Stop.StopName
+                : "",
+
+            PickupTime = x.Stop != null
+                ? x.Stop.PickupTime.ToString(@"hh\:mm")
+                : ""
         })
         .OrderBy(x => x.StudentName)
         .ToList();

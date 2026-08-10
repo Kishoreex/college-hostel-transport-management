@@ -190,9 +190,17 @@ catch (error: any) {
   className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-blue-100 shadow-xl object-cover"
 />
 
-    <h1 className="mt-3 text-2xl md:text-4xl font-bold text-blue-700 text-center">
-      Madha Group of Institutions
-    </h1>
+<h1
+  className="mt-3 text-2xl md:text-4xl font-bold  text-center uppercase transition-all duration-500"
+  style={{
+    fontFamily: "'Cinzel', serif",
+    fontWeight: 700,
+    letterSpacing: "0.08em",
+    lineHeight: "1",
+  }}
+>
+  MADHA DENTAL COLLEGE
+</h1>
 
    <p className="text-sm md:text-lg text-gray-500 mt-1 text-center px-4">
       Campus Hostel & Transport Management System

@@ -610,7 +610,7 @@ if (
 
   await loadOutpasses();
 
-  toast.success("Exit Recorded");
+  
 
   setInsideCounter(0);
 }
@@ -636,7 +636,7 @@ if (
 
         await loadOutpasses();
 
-        toast.success("Return Recorded");
+        
 
       });
 
@@ -1074,134 +1074,7 @@ outpass.outpassState==="Outside Hostel"
                 {outpasses.length === 0 && (
                   <p className="text-center text-gray-400 py-6 text-sm">No outpass requests yet</p>
                 )}
-                <hr className="my-5" />
-
-<h3 className="font-bold text-gray-800 mb-3">
-Leave Requests
-</h3>
-
-<div className="space-y-3">
-
-{leaveRequests
-.sort(
-(a,b)=>
-new Date(b.createdDate).getTime()-
-new Date(a.createdDate).getTime()
-)
-.map((leave)=>{
-
-const linkedOutpass=
-outpasses.find(
-x=>x.leaveRequestId===leave.id
-);
-
-return(
-
-<div
-key={leave.id}
-className="border rounded-xl p-3"
->
-
-<div className="flex justify-between">
-
-<div>
-
-<p className="font-semibold">
-<span className="text-gray-500">Leave Type :</span> {leave.leaveType}
-</p>
-
-<p className="text-xs text-gray-500">
-{leave.campus}
-</p>
-
-</div>
-
-<Chip
-label={leave.status}
-color={getStatusColor(
-leave.status.toLowerCase()
-)}
-size="small"
-/>
-
-</div>
-
-<p className="text-xs mt-2">
-📅 {new Date(leave.fromDate).toLocaleDateString()}
-{" - "}
-{new Date(leave.toDate).toLocaleDateString()}
-</p>
-
-<div className="mt-2 space-y-1">
-
- <p className="text-xs text-gray-700">
-<span className="font-medium">Reason :</span> {leave.reason}
-</p>
-
-  {leave.destination && (
-    <p className="flex items-center text-xs text-gray-600">
-      <MapPin size={12} className="mr-1 text-red-500" />
-      {leave.destination}
-    </p>
-  )}
-
-</div>
-
-{leave.status==="Rejected" &&
-leave.rejectReason && (
-
-<p className="text-xs text-red-600 mt-2">
-
-Reject Reason :
-
-{" "}
-
-{leave.rejectReason}
-
-</p>
-
-)}
-
-{leave.campus==="Out Campus" &&
-linkedOutpass &&
-linkedOutpass.status==="Approved" &&
-(
-linkedOutpass.outpassState==="Active" ||
-linkedOutpass.outpassState==="Waiting For Exit" ||
-linkedOutpass.outpassState==="Outside Hostel"
-) && (
-
-<button
-onClick={()=>{
-setSelectedOutpass(linkedOutpass);
-setQrCardOpen(true);
-}}
-className="mt-3 bg-blue-600 text-white px-3 py-2 rounded-lg text-sm"
->
-
-Show Pass
-
-</button>
-
-)}
-
-</div>
-
-);
-
-})}
-
-{leaveRequests.length===0 && (
-
-<p className="text-center text-gray-400">
-
-No Leave Requests
-
-</p>
-
-)}
-
-</div>
+             
               </div>
             </CardContent>
           </Card>
@@ -2431,9 +2304,7 @@ size="small"
 📍 {op.destination}
 </p>
 
-<p className="text-xs mt-1">
-<b>State :</b> {op.outpassState}
-</p>
+
 
 
 
@@ -2461,158 +2332,7 @@ No Outpass History
 )}</div>
               </div>
 
-              {isHostel && (
-                <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                  <div className="p-3 bg-gray-50 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-800 text-sm">Leave Applications</h3>
-                  </div>
-                  <div className="divide-y divide-gray-100">
-                  {leaveRequests
-.sort(
-(a,b)=>
-new Date(b.createdDate).getTime()-
-new Date(a.createdDate).getTime()
-)
-.map((leave)=>{
-
-const linkedOutpass =
-outpasses.find(
-x=>x.leaveRequestId===leave.id
-);
-
-return(
-
-<div
-key={leave.id}
-className="p-3"
->
-
-<div className="flex items-start justify-between mb-1">
-
-<div>
-
-<p className="font-semibold">
-<span className="text-gray-500">Leave Type :</span> {leave.leaveType}
-</p>
-
-<p className="text-xs text-gray-500">
-
-{leave.campus}
-
-</p>
-
-</div>
-
-<Chip
-label={leave.status}
-color={getStatusColor(
-leave.status.toLowerCase()
-)}
-size="small"
-/>
-
-</div>
-
-<p className="text-xs text-gray-500">
-
-📅 {new Date(leave.fromDate).toLocaleDateString()}
-
-{" - "}
-
-{new Date(leave.toDate).toLocaleDateString()}
-
-</p>
-
-<p className="text-xs text-gray-500">
-
-Reason :
-{leave.reason}
-
-</p>
-{leave.destination && (
-
-<p className="text-xs text-gray-500">
-
-📍 {leave.destination}
-
-</p>
-
-)}
-{leave.status==="Rejected" &&
-leave.rejectReason && (
-
-<p className="text-xs text-red-600 mt-1">
-
-Reject Reason :
-
-{" "}
-
-{leave.rejectReason}
-
-</p>
-
-)}
-{linkedOutpass && (
-
-<>
-
-<p className="text-xs mt-2">
-
-<b>State :</b> {linkedOutpass.outpassState}
-
-</p>
-
-
-
-
-
-
-
-</>
-
-)}
-{leave.campus==="Out Campus" &&
-linkedOutpass &&
-linkedOutpass.status==="Approved" &&
-(
-linkedOutpass.outpassState==="Active" ||
-linkedOutpass.outpassState==="Waiting For Exit" ||
-linkedOutpass.outpassState==="Outside Hostel"
-) && (
-
-<button
-onClick={()=>{
-setSelectedOutpass(linkedOutpass);
-setQrCardOpen(true);
-}}
-className="mt-2 bg-blue-600 text-white px-3 py-2 rounded-lg text-xs"
->
-
-Show Pass
-
-</button>
-
-)}
-
-</div>
-
-);
-
-})}
-
-{leaveRequests.length===0 && (
-
-<p className="text-center text-gray-400 py-6">
-
-No Leave History
-
-</p>
-
-)}
-                  </div>
-                </div>
-              )}
-            </>
+             </>
           )}
 
           {/* ── PASSWORD TAB ── */}

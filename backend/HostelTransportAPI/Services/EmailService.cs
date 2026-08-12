@@ -13,7 +13,7 @@ public class EmailService
         var email = new MimeMessage();
 
         email.From.Add(
-            MailboxAddress.Parse("kishore1kumar4@gmail.com"));
+            MailboxAddress.Parse("it@mdch.in"));
 
         email.To.Add(
             MailboxAddress.Parse(toEmail));
@@ -28,13 +28,13 @@ public class EmailService
         using var smtp = new SmtpClient();
 
         await smtp.ConnectAsync(
-            "smtp.gmail.com",
+            "smtp.mdch.in",
             587,
             MailKit.Security.SecureSocketOptions.StartTls);
 
         await smtp.AuthenticateAsync(
-            "kishore1kumar4@gmail.com",
-            "tbmd jdlp jefo qoyo");
+            "it@mdch.in",
+            "pwti bszs iour cvek");
 
         await smtp.SendAsync(email);
 

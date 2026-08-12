@@ -74,7 +74,7 @@ state: outpass.outpassState
               <Avatar
     src={
       student.profilePhoto
-        ? `https://202.61.121.102:8443${student.profilePhoto}`
+        ? `https://api.madhapharma.in${student.profilePhoto}`
         : student.avatar
     }
     alt={student.name}

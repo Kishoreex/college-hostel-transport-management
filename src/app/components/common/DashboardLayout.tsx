@@ -217,7 +217,7 @@ const markAllRead = async () => {
               <Avatar
     src={
       user.profilePhoto
-        ? `https://202.61.121.102:8443${user.profilePhoto}`
+        ? `https://api.madhapharma.in${user.profilePhoto}`
         : user.avatar
     }
     alt={user.name}

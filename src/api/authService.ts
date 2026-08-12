@@ -6,7 +6,7 @@ export async function login(
   module: string
 ) {
 const response = await fetch(
-  "https://202.61.121.102:8443/api/Auth/login",
+  "https://api.madhapharma.in/api/Auth/login",
   {
     method: "POST",
     headers: {
@@ -33,7 +33,7 @@ if (!response.ok) {
 }
 export async function logout(userId: string) {
   const response = await fetch(
-    `https://202.61.121.102:8443/api/Auth/logout/${userId}`,
+    `https://api.madhapharma.in/api/Auth/logout/${userId}`,
     {
       method: "POST",
     }
@@ -48,7 +48,7 @@ export async function changePassword(
   newPassword: string
 ) {
   const response = await fetch(
-    "https://202.61.121.102:8443/api/Auth/change-password",
+    "https://api.madhapharma.in/api/Auth/change-password",
     {
       method: "POST",
       headers: {

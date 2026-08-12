@@ -1176,7 +1176,7 @@ outpass.outpassState==="Outside Hostel"
   src={
     profilePhoto ||
     (studentProfile?.profilePhoto
-      ? `https://202.61.121.102:8443${studentProfile.profilePhoto}`
+      ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
       : user.avatar)
   }
   alt={user.name}sx={{ width: 80, height: 80, border: '4px solid white' }} />
@@ -2215,7 +2215,7 @@ onChange={(e) => setVacateReason(e.target.value)}
   src={
     profilePhoto ||
     (studentProfile?.profilePhoto
-      ? `https://202.61.121.102:8443${studentProfile.profilePhoto}`
+      ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
       : user.avatar)
   } alt={user.name} sx={{ width: 72, height: 72, border: '3px solid rgba(255,255,255,0.5)' }} />
                     <button onClick={() => profileFileInputRef.current?.click()} className="absolute bottom-0 right-0 bg-white text-blue-600 rounded-full p-1 shadow-md active:scale-90 transition-transform">

@@ -62,7 +62,7 @@ export async function getStudentVacatingRequest(
 export async function acknowledgeVacatingReject(id: number) {
 
     const response = await fetch(
-        `https://202.61.121.102:8443/api/Vacating/acknowledge/${id}`,
+        `${API_URL}/Vacating/acknowledge/${id}`,
         {
             method: "PUT"
         }

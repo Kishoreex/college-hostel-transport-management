@@ -1,6 +1,6 @@
 export async function getStudentProfile(studentId: string) {
   const response = await fetch(
-    `https://202.61.121.102:8443/api/Student/${studentId}`
+    `https://api.madhapharma.in/api/Student/${studentId}`
   );
 
   if (!response.ok) {
@@ -18,7 +18,7 @@ export async function uploadStudentProfilePhoto(
   formData.append("file", file);
 
   const response = await fetch(
-    `https://202.61.121.102:8443/api/Student/${studentId}/profile-photo`,
+    `https://api.madhapharma.in/api/Student/${studentId}/profile-photo`,
     {
       method: "POST",
       body: formData,

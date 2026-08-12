@@ -1,6 +1,6 @@
 export async function getStudent(studentId: string) {
   const response = await fetch(
-    `https://202.61.121.102:8443/api/student/${studentId}`
+    `https://api.madhapharma.in/api/student/${studentId}`
   );
 
   if (!response.ok)

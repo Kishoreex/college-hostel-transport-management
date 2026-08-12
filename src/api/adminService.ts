@@ -1,4 +1,4 @@
-const API_URL = "https://202.61.121.102:8443";
+const API_URL = "https://api.madhapharma.in";
 
 export async function getRegistrations() {
   const response = await fetch(

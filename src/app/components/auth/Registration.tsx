@@ -48,7 +48,7 @@ useEffect(() => {
 
 const loadRoutes = async () => {
   try {
-    const response = await fetch("https://202.61.121.102:8443/api/transportroutes");
+    const response = await fetch("https://api.madhapharma.in/api/transportroutes");
 
     const data = await response.json();
 

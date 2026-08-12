@@ -60,7 +60,7 @@ onClick:()=>setCurrentView("history")
 const loadStudent = async () => {
   try {
     const response = await fetch(
-      `https://202.61.121.102:8443/api/Student/parent/${user.userId}`
+      `https://api.madhapharma.in/api/Student/parent/${user.userId}`
     );
 
     if (!response.ok) {
@@ -217,7 +217,7 @@ if (!studentData) {
       <img
         src={
           studentData.profilePhoto
-            ? `https://202.61.121.102:8443${studentData.profilePhoto}`
+            ? `https://api.madhapharma.in${studentData.profilePhoto}`
             : "/profile.png"
         }
         className="w-32 h-32 rounded-full border-4 border-white shadow-xl object-cover"

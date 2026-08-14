@@ -184,27 +184,46 @@ catch (error: any) {
 
   <div className="flex flex-col items-center">
 
-<img
-  src={logo}
-  alt="Madha Logo"
-  className="w-20 h-20 md:w-28 md:h-28 rounded-full border-4 border-blue-100 shadow-xl object-cover"
-/>
+<div className="relative w-20 h-20 md:w-28 md:h-28">
+  {/* Animated glowing ring */}
+  <div className="absolute inset-[-5px] rounded-full bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-600 animate-spin opacity-80 blur-[2px]" />
+
+  {/* Dark inner ring */}
+  <div className="absolute inset-[-2px] rounded-full bg-white" />
+
+  {/* Logo */}
+  <img
+    src={logo}
+    alt="Madha Logo"
+    className="relative w-full h-full rounded-full border-4 border-blue-100 shadow-2xl object-cover"
+  />
+</div>
 
 <h1
-  className="mt-3 text-2xl md:text-4xl font-bold  text-center uppercase transition-all duration-500"
+  className="mt-6 text-2xl md:text-4xl font-bold  text-center uppercase transition-all duration-500"
   style={{
     fontFamily: "'Cinzel', serif",
     fontWeight: 700,
     letterSpacing: "0.08em",
     lineHeight: "1",
+    
   }}
 >
-  MADHA DENTAL COLLEGE
+  MADHA CAMPUS
 </h1>
 
-   <p className="text-sm md:text-lg text-gray-500 mt-1 text-center px-4">
-      Campus Hostel & Transport Management System
-    </p>
+<p
+  className="mt-2 text-center px-4"
+  style={{
+    fontFamily: "'Cinzel', serif",
+    fontSize: "0.85rem",
+    fontWeight: 600,
+    letterSpacing: "0.08em",
+    color: "#64748B",
+  }}
+>
+  Campus Hostel & Transport Management System
+</p>
 
   </div>
 
@@ -212,10 +231,27 @@ catch (error: any) {
 
         <div className="flex-1 flex flex-col justify-center px-6 py-10">
           <div className="text-center mb-10">
-    <h2 className="text-3xl md:text-5xl font-extrabold text-slate-800 mb-2">
+<h2
+  className="text-3xl md:text-4xl mb-1"
+  style={{
+    fontFamily: "'Cinzel', serif",
+    fontWeight: 700,
+    letterSpacing: "0.06em",
+    color: "#020911",
+  }}
+>
   Welcome
 </h2>
-           <p className="text-gray-500 text-lg">
+
+<p
+  className="text-base md:text-lg"
+  style={{
+    fontFamily: "'Cinzel', serif",
+    fontWeight: 500,
+    letterSpacing: "0.04em",
+    color: "#3a424d",
+  }}
+>
   Choose your portal to continue
 </p>
           </div>
@@ -438,79 +474,7 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
             >
               {loading ? 'Logging in...' : 'Login'}
             </button>
-<div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-4 mt-5">
-  <h3 className="text-sm font-bold text-blue-700 mb-3">
-    Demo Student Accounts
-  </h3>
 
-  <div className="space-y-2">
-
-    <button
-      type="button"
-      onClick={() =>
-        setCredentials({
-          id: "MDC0001",
-          password: "Stu@449576"
-        })
-      }
-      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
-    >
-      <div className="font-semibold">MDC0001</div>
-      <div className="text-xs text-gray-500">
-        Password: Stu@449576
-      </div>
-    </button>
-
-    <button
-      type="button"
-      onClick={() =>
-        setCredentials({
-          id: "MDC0002",
-          password: "Stu@607338"
-        })
-      }
-      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
-    >
-      <div className="font-semibold">MDC0002</div>
-      <div className="text-xs text-gray-500">
-        Password: Stu@607338
-      </div>
-    </button>
-
-    <button
-      type="button"
-      onClick={() =>
-        setCredentials({
-          id: "MCP0001",
-          password: "Tra@477873"
-        })
-      }
-      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
-    >
-      <div className="font-semibold">MCP0001</div>
-      <div className="text-xs text-gray-500">
-        Password: Tra@477873
-      </div>
-    </button>
-
-    <button
-      type="button"
-      onClick={() =>
-        setCredentials({
-          id: "MCP0002",
-          password: "Stu@293144"
-        })
-      }
-      className="w-full text-left border rounded-xl p-3 hover:bg-blue-50"
-    >
-      <div className="font-semibold">MCP0002</div>
-      <div className="text-xs text-gray-500">
-        Password: Stu@293144
-      </div>
-    </button>
-
-  </div>
-</div>
             <div className="flex justify-between items-center px-1 pt-1">
              
               <button
@@ -619,94 +583,7 @@ if (screen === "parentLogin") {
                 </span>
               ) : 'Login to Dashboard'}
             </button>
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-4 mt-6">
-
-  <h3 className="text-sm font-bold text-slate-700 mb-3">
-    Demo Staff Accounts
-  </h3>
-
-  <div className="space-y-2">
-
-    <button
-      type="button"
-      onClick={() => {
-        setCredentials({
-          id: "MainAdmin@mdch",
-          password: "Admin@123"
-        });
-      }}
-      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
-    >
-      <div className="font-semibold">System Admin</div>
-      <div className="text-xs text-gray-500">
-        MainAdmin@mdch
-      </div>
-      <div className="text-xs text-gray-500">
-        Password : Admin@123
-      </div>
-    </button>
-
-    <button
-      type="button"
-      onClick={() => {
-        setCredentials({
-          id: "testuser002@gmail.com",
-          password: "963963963"
-        });
-      }}
-      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
-    >
-      <div className="font-semibold">Boys Warden</div>
-      <div className="text-xs text-gray-500">
-        testuser002@gmail.com
-      </div>
-      <div className="text-xs text-gray-500">
-        Password : 963963963
-      </div>
-    </button>
-
-    <button
-      type="button"
-      onClick={() => {
-        setCredentials({
-          id: "testuser003@gmail.com",
-          password: "963963963"
-        });
-      }}
-      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
-    >
-      <div className="font-semibold">Girls Warden</div>
-      <div className="text-xs text-gray-500">
-        testuser003@gmail.com
-      </div>
-      <div className="text-xs text-gray-500">
-        Password : 963963963
-      </div>
-    </button>
-
    
-    <button
-      type="button"
-      onClick={() => {
-        setCredentials({
-          id: "testuser001@gmail.com",
-          password: "963963963"
-        });
-      }}
-      className="w-full text-left border rounded-xl p-3 hover:bg-slate-50 transition"
-    >
-      <div className="font-semibold">Transport</div>
-      <div className="text-xs text-gray-500">
-        testuser001@gmail.com
-      </div>
-      <div className="text-xs text-gray-500">
-        Password : 963963963
-      </div>
-    </button>
-
-  </div>
-
-</div>
 
             {/* Forgot Password */}
            {/* <div className="text-center pt-2">

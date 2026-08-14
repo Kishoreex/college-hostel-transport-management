@@ -23,3 +23,7 @@ publish/
 # IDE
 .idea/
 android/.idea/
+
+android/app/*.jks
+android/app/*.keystore
+android/keystore.properties

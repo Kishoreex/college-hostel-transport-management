@@ -197,6 +197,16 @@ const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string | null>(null);
 const [photoZoom, setPhotoZoom] = useState(1);
 const [photoX, setPhotoX] = useState(0);
 const [photoY, setPhotoY] = useState(0);
+const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
+
+const photoCropRef = useRef<HTMLDivElement>(null);
+
+const photoDragStartRef = useRef({
+  x: 0,
+  y: 0,
+  photoX: 0,
+  photoY: 0,
+});
 const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
 const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -212,6 +222,7 @@ const [cancelRequest, setCancelRequest] =
   const [announcements, setAnnouncements] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
+  
 const handlePhotoChange = async (
   e: React.ChangeEvent<HTMLInputElement>
 ) => {
@@ -265,10 +276,10 @@ const confirmPhotoUpload = async () => {
 
     const canvas = document.createElement("canvas");
 
-    const size = 800;
+    const outputSize = 800;
 
-    canvas.width = size;
-    canvas.height = size;
+    canvas.width = outputSize;
+    canvas.height = outputSize;
 
     const ctx = canvas.getContext("2d");
 
@@ -276,23 +287,44 @@ const confirmPhotoUpload = async () => {
       throw new Error("Canvas not supported");
     }
 
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, size, size);
+    /*
+     * Get the actual visible crop size.
+     * This lets the uploaded image match
+     * exactly what the student positioned.
+     */
+    const cropSize =
+      photoCropRef.current?.getBoundingClientRect().width || 320;
 
-    const scale = Math.max(
-      size / image.width,
-      size / image.height
-    ) * photoZoom;
+    /*
+     * Scale image so it covers the square.
+     */
+    const scale =
+      Math.max(
+        outputSize / image.width,
+        outputSize / image.height
+      ) * photoZoom;
 
     const width = image.width * scale;
     const height = image.height * scale;
 
+    /*
+     * Convert screen drag distance into
+     * 800x800 canvas coordinates.
+     */
+    const positionScale =
+      outputSize / cropSize;
+
     const x =
-      (size - width) / 2 + photoX;
+      (outputSize - width) / 2 +
+      photoX * positionScale;
 
     const y =
-      (size - height) / 2 + photoY;
+      (outputSize - height) / 2 +
+      photoY * positionScale;
 
+    /*
+     * Draw exactly what the user positioned.
+     */
     ctx.drawImage(
       image,
       x,
@@ -301,61 +333,97 @@ const confirmPhotoUpload = async () => {
       height
     );
 
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvas.toBlob(
-        resolve,
-        "image/jpeg",
-        0.92
-      );
-    });
+    /*
+     * Convert to JPEG.
+     */
+    const blob = await new Promise<Blob | null>(
+      (resolve) => {
+        canvas.toBlob(
+          resolve,
+          "image/jpeg",
+          0.92
+        );
+      }
+    );
 
     if (!blob) {
-      throw new Error("Failed to process image");
+      throw new Error(
+        "Failed to process image"
+      );
     }
 
+    /*
+     * Create final upload file.
+     */
     const adjustedFile = new File(
       [blob],
       "profile-photo.jpg",
       {
-        type: "image/jpeg"
+        type: "image/jpeg",
       }
     );
 
-    // Show final image immediately
+    /*
+     * Show final image immediately.
+     */
     const finalPreviewUrl =
       URL.createObjectURL(blob);
 
     setProfilePhoto(finalPreviewUrl);
 
-    // Upload to backend
+    /*
+     * Upload adjusted image.
+     */
     const result =
       await uploadStudentProfilePhoto(
         user.studentId || "",
         adjustedFile
       );
 
-    setStudentProfile((prev: any) => ({
-      ...prev,
-      profilePhoto: result.profilePhoto
-    }));
+    /*
+     * Update profile state.
+     */
+    setStudentProfile(
+      (prev: any) => ({
+        ...prev,
+        profilePhoto:
+          result.profilePhoto,
+      })
+    );
 
+    /*
+     * Close adjustment screen.
+     */
     setPhotoAdjustOpen(false);
 
     setPendingPhoto(null);
 
     if (pendingPhotoUrl) {
-      URL.revokeObjectURL(pendingPhotoUrl);
+      URL.revokeObjectURL(
+        pendingPhotoUrl
+      );
     }
 
     setPendingPhotoUrl(null);
 
-    toast.success("Profile photo updated");
+    setPhotoZoom(1);
+    setPhotoX(0);
+    setPhotoY(0);
+
+    toast.success(
+      "Profile photo updated"
+    );
 
   } catch (error) {
 
-    console.error(error);
+    console.error(
+      "Profile photo upload error:",
+      error
+    );
 
-    toast.error("Photo upload failed");
+    toast.error(
+      "Photo upload failed"
+    );
 
   } finally {
 
@@ -378,6 +446,67 @@ const cancelPhotoAdjustment = () => {
   setPhotoZoom(1);
   setPhotoX(0);
   setPhotoY(0);
+};
+
+const handlePhotoPointerDown = (
+  e: React.PointerEvent<HTMLDivElement>
+) => {
+  e.preventDefault();
+
+  setIsDraggingPhoto(true);
+
+  photoDragStartRef.current = {
+    x: e.clientX,
+    y: e.clientY,
+    photoX,
+    photoY,
+  };
+
+  e.currentTarget.setPointerCapture(e.pointerId);
+};
+
+const handlePhotoPointerMove = (
+  e: React.PointerEvent<HTMLDivElement>
+) => {
+  if (!isDraggingPhoto) return;
+
+  e.preventDefault();
+
+  const start = photoDragStartRef.current;
+
+  const deltaX = e.clientX - start.x;
+  const deltaY = e.clientY - start.y;
+
+  const cropSize =
+    photoCropRef.current?.getBoundingClientRect().width || 320;
+
+  // Keep movement reasonable
+  const maxMove = cropSize * 0.5;
+
+  const newX = Math.max(
+    -maxMove,
+    Math.min(maxMove, start.photoX + deltaX)
+  );
+
+  const newY = Math.max(
+    -maxMove,
+    Math.min(maxMove, start.photoY + deltaY)
+  );
+
+  setPhotoX(newX);
+  setPhotoY(newY);
+};
+
+const handlePhotoPointerUp = (
+  e: React.PointerEvent<HTMLDivElement>
+) => {
+  setIsDraggingPhoto(false);
+
+  try {
+    e.currentTarget.releasePointerCapture(e.pointerId);
+  } catch {
+    // Ignore pointer release errors
+  }
 };
 const openProfilePhoto = () => {
   const photo =
@@ -2805,18 +2934,19 @@ No Outpass History
   fullScreen
   PaperProps={{
     sx: {
-      bgcolor: "#000"
-    }
+      bgcolor: "#000",
+    },
   }}
 >
   <div className="w-full h-full flex flex-col">
 
-    {/* Header */}
+    {/* HEADER */}
     <div className="flex items-center justify-between p-4 text-white">
 
       <button
+        type="button"
         onClick={cancelPhotoAdjustment}
-        className="text-white text-sm font-semibold"
+        className="text-white font-semibold px-2 py-2"
       >
         Cancel
       </button>
@@ -2826,64 +2956,104 @@ No Outpass History
       </h2>
 
       <button
+        type="button"
         onClick={confirmPhotoUpload}
         disabled={uploadingPhoto}
-        className="text-blue-400 font-bold text-sm disabled:opacity-50"
+        className="text-blue-400 font-bold px-2 py-2 disabled:opacity-50"
       >
-        {uploadingPhoto ? "Uploading..." : "Confirm"}
+        {uploadingPhoto
+          ? "Uploading..."
+          : "Confirm"}
       </button>
 
     </div>
 
-    {/* Photo area */}
+
+    {/* PHOTO AREA */}
     <div className="flex-1 flex items-center justify-center overflow-hidden">
 
       {pendingPhotoUrl && (
+
         <div
-          className="relative w-[min(90vw,420px)] aspect-square overflow-hidden rounded-full bg-gray-900 border-4 border-white/20"
+          ref={photoCropRef}
+          className="relative w-[min(88vw,420px)] aspect-square overflow-hidden rounded-full bg-gray-900 border-2 border-white/30 select-none touch-none"
+          onPointerDown={handlePhotoPointerDown}
+          onPointerMove={handlePhotoPointerMove}
+          onPointerUp={handlePhotoPointerUp}
+          onPointerCancel={handlePhotoPointerUp}
+          style={{
+            cursor: isDraggingPhoto
+              ? "grabbing"
+              : "grab",
+          }}
         >
 
+          {/* PHOTO */}
           <img
             src={pendingPhotoUrl}
-            alt="Adjust profile"
+            alt="Adjust profile photo"
             draggable={false}
-            className="absolute max-w-none select-none"
+            className="absolute max-w-none pointer-events-none select-none"
             style={{
               width: `${100 * photoZoom}%`,
               height: `${100 * photoZoom}%`,
+
+              left: "50%",
+              top: "50%",
+
+              transform: `
+                translate(
+                  calc(-50% + ${photoX}px),
+                  calc(-50% + ${photoY}px)
+                )
+              `,
+
               objectFit: "cover",
-              left: `${50 + photoX / 4}%`,
-              top: `${50 + photoY / 4}%`,
-              transform: "translate(-50%, -50%)"
             }}
           />
 
-          {/* Crop ring */}
-          <div className="absolute inset-0 rounded-full border-4 border-white/80 pointer-events-none" />
+          {/* CROP BORDER */}
+          <div
+            className="absolute inset-0 rounded-full border-4 border-white/80 pointer-events-none"
+          />
+
+          {/* CENTER GUIDE */}
+          <div
+            className="absolute left-1/2 top-1/2 w-2 h-2 rounded-full bg-white/70 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          />
 
         </div>
+
       )}
 
     </div>
 
-    {/* Controls */}
-    <div className="bg-black/90 p-6">
 
-      <p className="text-white text-center text-sm mb-3">
-        Adjust your profile photo
+    {/* CONTROLS */}
+    <div className="bg-black p-6">
+
+      <p className="text-white text-center font-medium mb-2">
+        Position your photo
       </p>
 
+      <p className="text-gray-400 text-center text-sm mb-5">
+        Drag the photo to move it
+      </p>
+
+
+      {/* ZOOM */}
       <div className="flex items-center gap-3">
 
-        <span className="text-white text-xs">
+        <span className="text-white text-lg">
           −
         </span>
 
         <input
+          aria-label="Photo zoom"
           type="range"
           min="1"
           max="3"
-          step="0.05"
+          step="0.01"
           value={photoZoom}
           onChange={(e) =>
             setPhotoZoom(Number(e.target.value))
@@ -2891,15 +3061,25 @@ No Outpass History
           className="flex-1"
         />
 
-        <span className="text-white text-xs">
+        <span className="text-white text-lg">
           +
         </span>
 
       </div>
 
-      <p className="text-gray-400 text-xs text-center mt-3">
-        Zoom in or out to fit your face properly
-      </p>
+
+      {/* RESET POSITION */}
+      <button
+        type="button"
+        onClick={() => {
+          setPhotoZoom(1);
+          setPhotoX(0);
+          setPhotoY(0);
+        }}
+        className="block mx-auto mt-5 text-gray-300 text-sm font-medium"
+      >
+        Reset position
+      </button>
 
     </div>
 

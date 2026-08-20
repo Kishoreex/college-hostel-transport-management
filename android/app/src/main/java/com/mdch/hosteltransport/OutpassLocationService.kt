@@ -10,6 +10,8 @@ import android.location.Location
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import android.os.Handler
+import android.os.Looper
 import com.google.android.gms.location.*
 
 class OutpassLocationService : Service() {

@@ -6,6 +6,11 @@ import {
   expireOldOutpasses,
   cancelOutpass
 } from "../../services/outpassService";
+import {
+  startBackgroundLocation,
+  stopBackgroundLocation,
+  addBackgroundLocationListener
+} from "../../services/backgroundLocationService";
 import * as signalR from "@microsoft/signalr";
 import API_URL from "../../../api/api";
 const HUB_URL = API_URL.replace("/api", "");
@@ -124,6 +129,55 @@ export default function StudentDashboard({ user, onLogout }: StudentDashboardPro
   const [vacateReason, setVacateReason] = useState('');
   const connectionRef =
   useRef<signalR.HubConnection | null>(null);
+  const testBackgroundLocation = async () => {
+  try {
+    await startBackgroundLocation();
+
+    await addBackgroundLocationListener(
+      (latitude, longitude) => {
+
+        console.log(
+          "🔥 BACKGROUND LOCATION:",
+          latitude,
+          longitude
+        );
+
+      }
+    );
+
+    console.log(
+      "✅ Background tracking test started"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Background tracking test failed:",
+      error
+    );
+
+  }
+};
+
+const stopTestBackgroundLocation = async () => {
+
+  try {
+
+    await stopBackgroundLocation();
+
+    console.log(
+      "🛑 Background tracking test stopped"
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Failed to stop background tracking:",
+      error
+    );
+
+  }
+};
   const [
   vacatingRequest,
   setVacatingRequest
@@ -1178,7 +1232,23 @@ const getStatusColor = (status: string) => {
       default: return null;
     }
   };
+<div className="flex gap-2 p-4">
 
+  <button
+    onClick={testBackgroundLocation}
+    className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold"
+  >
+    Test Background GPS
+  </button>
+
+  <button
+    onClick={stopTestBackgroundLocation}
+    className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold"
+  >
+    Stop GPS
+  </button>
+
+</div>
   const hostelMenuItems: MenuItemType[] = [
     { icon: <Building2 size={22} />, label: 'Dashboard', active: currentView === 'dashboard', onClick: () => setCurrentView('dashboard') },
     { icon: <History size={22} />, label: 'Request History', active: currentView === 'history', onClick: () => setCurrentView('history') },

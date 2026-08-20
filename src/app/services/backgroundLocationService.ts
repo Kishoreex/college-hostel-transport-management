@@ -1,4 +1,4 @@
-import { registerPlugin } from "@capacitor/core";
+import { registerPlugin, PluginListenerHandle } from "@capacitor/core";
 
 interface OutpassLocationPlugin {
   start(): Promise<void>;
@@ -9,35 +9,45 @@ const OutpassLocation =
   registerPlugin<OutpassLocationPlugin>("OutpassLocation");
 
 export async function startBackgroundLocation() {
-  try {
-    await OutpassLocation.start();
+  await OutpassLocation.start();
 
-    console.log(
-      "Background location tracking started"
-    );
-  } catch (error) {
-    console.error(
-      "Failed to start background location:",
-      error
-    );
-
-    throw error;
-  }
+  console.log(
+    "Background location tracking started"
+  );
 }
 
 export async function stopBackgroundLocation() {
-  try {
-    await OutpassLocation.stop();
+  await OutpassLocation.stop();
 
-    console.log(
-      "Background location tracking stopped"
-    );
-  } catch (error) {
-    console.error(
-      "Failed to stop background location:",
-      error
-    );
+  console.log(
+    "Background location tracking stopped"
+  );
+}
 
-    throw error;
-  }
+export async function addBackgroundLocationListener(
+  callback: (
+    latitude: number,
+    longitude: number
+  ) => void
+): Promise<PluginListenerHandle> {
+
+  return await OutpassLocation.addListener(
+    "locationUpdate",
+    (data: {
+      latitude: number;
+      longitude: number;
+    }) => {
+
+      console.log(
+        "Background GPS:",
+        data.latitude,
+        data.longitude
+      );
+
+      callback(
+        data.latitude,
+        data.longitude
+      );
+    }
+  );
 }

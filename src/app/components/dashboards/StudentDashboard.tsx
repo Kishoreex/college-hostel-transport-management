@@ -1232,23 +1232,7 @@ const getStatusColor = (status: string) => {
       default: return null;
     }
   };
-<div className="flex gap-2 p-4">
 
-  <button
-    onClick={testBackgroundLocation}
-    className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-semibold"
-  >
-    Test Background GPS
-  </button>
-
-  <button
-    onClick={stopTestBackgroundLocation}
-    className="flex-1 bg-red-600 text-white py-3 rounded-xl font-semibold"
-  >
-    Stop GPS
-  </button>
-
-</div>
   const hostelMenuItems: MenuItemType[] = [
     { icon: <Building2 size={22} />, label: 'Dashboard', active: currentView === 'dashboard', onClick: () => setCurrentView('dashboard') },
     { icon: <History size={22} />, label: 'Request History', active: currentView === 'history', onClick: () => setCurrentView('history') },

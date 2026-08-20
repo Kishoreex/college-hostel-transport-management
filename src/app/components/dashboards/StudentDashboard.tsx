@@ -188,7 +188,18 @@ const [leaveForm, setLeaveForm] = useState({
   const [changePwdForm, setChangePwdForm] = useState({ current: '', newPwd: '', confirm: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+
   const [studentProfile, setStudentProfile] = useState<any>(null);
+  const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
+const [photoAdjustOpen, setPhotoAdjustOpen] = useState(false);
+const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
+const [pendingPhotoUrl, setPendingPhotoUrl] = useState<string | null>(null);
+const [photoZoom, setPhotoZoom] = useState(1);
+const [photoX, setPhotoX] = useState(0);
+const [photoY, setPhotoY] = useState(0);
+const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [transportInfo, setTransportInfo] = useState<any>(null);
   const [cancelReason, setCancelReason] = useState("");
 
@@ -204,41 +215,200 @@ const [cancelRequest, setCancelRequest] =
 const handlePhotoChange = async (
   e: React.ChangeEvent<HTMLInputElement>
 ) => {
+  const file = e.target.files?.[0];
 
-    const file = e.target.files?.[0];
+  if (!file) return;
 
-    if (!file) return;
+  // Only allow images
+  if (!file.type.startsWith("image/")) {
+    toast.error("Please select an image");
+    return;
+  }
 
-    try {
+  // Limit size to 10 MB
+  if (file.size > 10 * 1024 * 1024) {
+    toast.error("Photo must be smaller than 10 MB");
+    return;
+  }
 
-        setProfilePhoto(
-            URL.createObjectURL(file)
-        );
+  const previewUrl = URL.createObjectURL(file);
 
-        const result =
-            await uploadStudentProfilePhoto(
-                user.studentId || "",
-                file
-            );
+  setPendingPhoto(file);
+  setPendingPhotoUrl(previewUrl);
 
-        setStudentProfile((prev:any)=>({
-            ...prev,
-            profilePhoto: result.profilePhoto
-        }));
+  // Reset adjustment
+  setPhotoZoom(1);
+  setPhotoX(0);
+  setPhotoY(0);
 
-        toast.success(
-            "Profile photo updated"
-        );
+  // Open adjustment screen
+  setPhotoAdjustOpen(true);
 
+  // Reset input so same photo can be selected again
+  e.target.value = "";
+};
+
+const confirmPhotoUpload = async () => {
+  if (!pendingPhoto || !pendingPhotoUrl) return;
+
+  try {
+    setUploadingPhoto(true);
+
+    const image = new Image();
+
+    image.src = pendingPhotoUrl;
+
+    await new Promise<void>((resolve, reject) => {
+      image.onload = () => resolve();
+      image.onerror = reject;
+    });
+
+    const canvas = document.createElement("canvas");
+
+    const size = 800;
+
+    canvas.width = size;
+    canvas.height = size;
+
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      throw new Error("Canvas not supported");
     }
-    catch{
 
-        toast.error(
-            "Photo upload failed"
-        );
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, size, size);
 
+    const scale = Math.max(
+      size / image.width,
+      size / image.height
+    ) * photoZoom;
+
+    const width = image.width * scale;
+    const height = image.height * scale;
+
+    const x =
+      (size - width) / 2 + photoX;
+
+    const y =
+      (size - height) / 2 + photoY;
+
+    ctx.drawImage(
+      image,
+      x,
+      y,
+      width,
+      height
+    );
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(
+        resolve,
+        "image/jpeg",
+        0.92
+      );
+    });
+
+    if (!blob) {
+      throw new Error("Failed to process image");
     }
 
+    const adjustedFile = new File(
+      [blob],
+      "profile-photo.jpg",
+      {
+        type: "image/jpeg"
+      }
+    );
+
+    // Show final image immediately
+    const finalPreviewUrl =
+      URL.createObjectURL(blob);
+
+    setProfilePhoto(finalPreviewUrl);
+
+    // Upload to backend
+    const result =
+      await uploadStudentProfilePhoto(
+        user.studentId || "",
+        adjustedFile
+      );
+
+    setStudentProfile((prev: any) => ({
+      ...prev,
+      profilePhoto: result.profilePhoto
+    }));
+
+    setPhotoAdjustOpen(false);
+
+    setPendingPhoto(null);
+
+    if (pendingPhotoUrl) {
+      URL.revokeObjectURL(pendingPhotoUrl);
+    }
+
+    setPendingPhotoUrl(null);
+
+    toast.success("Profile photo updated");
+
+  } catch (error) {
+
+    console.error(error);
+
+    toast.error("Photo upload failed");
+
+  } finally {
+
+    setUploadingPhoto(false);
+
+  }
+};
+
+const cancelPhotoAdjustment = () => {
+  setPhotoAdjustOpen(false);
+
+  setPendingPhoto(null);
+
+  if (pendingPhotoUrl) {
+    URL.revokeObjectURL(pendingPhotoUrl);
+  }
+
+  setPendingPhotoUrl(null);
+
+  setPhotoZoom(1);
+  setPhotoX(0);
+  setPhotoY(0);
+};
+const openProfilePhoto = () => {
+  const photo =
+    profilePhoto ||
+    (studentProfile?.profilePhoto
+      ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
+      : user.avatar);
+
+  if (!photo) {
+    toast.error("No profile photo available");
+    return;
+  }
+
+  setPhotoPreviewOpen(true);
+};
+
+const handlePhotoTouchStart = () => {
+  longPressTimerRef.current = setTimeout(() => {
+    openProfilePhoto();
+  }, 600);
+};
+
+const handlePhotoTouchEnd = () => {
+  if (longPressTimerRef.current) {
+    clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = null;
+  }
+};
+
+const handlePhotoDoubleClick = () => {
+  openProfilePhoto();
 };
  const loadOutpasses = async () => {
   try {
@@ -1172,14 +1342,28 @@ outpass.outpassState==="Outside Hostel"
               <CardContent className="px-4 pb-4 -mt-10">
                 <div className="flex items-start space-x-4">
                   <div className="relative">
-                <Avatar
-  src={
-    profilePhoto ||
-    (studentProfile?.profilePhoto
-      ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
-      : user.avatar)
-  }
-  alt={user.name}sx={{ width: 80, height: 80, border: '4px solid white' }} />
+       <div
+  onDoubleClick={handlePhotoDoubleClick}
+  onTouchStart={handlePhotoTouchStart}
+  onTouchEnd={handlePhotoTouchEnd}
+  onTouchCancel={handlePhotoTouchEnd}
+  className="cursor-pointer select-none"
+>
+  <Avatar
+    src={
+      profilePhoto ||
+      (studentProfile?.profilePhoto
+        ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
+        : user.avatar)
+    }
+    alt={user.name}
+    sx={{
+      width: 80,
+      height: 80,
+      border: "4px solid white"
+    }}
+  />
+</div>
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 shadow-md border-2 border-white active:scale-90 transition-transform"
@@ -2211,13 +2395,28 @@ onChange={(e) => setVacateReason(e.target.value)}
               <div className={`${isHostel ? 'bg-gradient-to-br from-blue-500 to-blue-700' : 'bg-gradient-to-br from-green-500 to-green-700'} rounded-3xl p-5 text-white`}>
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                   <Avatar
-  src={
-    profilePhoto ||
-    (studentProfile?.profilePhoto
-      ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
-      : user.avatar)
-  } alt={user.name} sx={{ width: 72, height: 72, border: '3px solid rgba(255,255,255,0.5)' }} />
+            <div
+  onDoubleClick={handlePhotoDoubleClick}
+  onTouchStart={handlePhotoTouchStart}
+  onTouchEnd={handlePhotoTouchEnd}
+  onTouchCancel={handlePhotoTouchEnd}
+  className="cursor-pointer select-none"
+>
+  <Avatar
+    src={
+      profilePhoto ||
+      (studentProfile?.profilePhoto
+        ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
+        : user.avatar)
+    }
+    alt={user.name}
+    sx={{
+      width: 72,
+      height: 72,
+      border: "3px solid rgba(255,255,255,0.5)"
+    }}
+  />
+</div>
                     <button onClick={() => profileFileInputRef.current?.click()} className="absolute bottom-0 right-0 bg-white text-blue-600 rounded-full p-1 shadow-md active:scale-90 transition-transform">
                       <Camera size={12} />
                     </button>
@@ -2566,7 +2765,146 @@ No Outpass History
   </div>
 
 </Dialog>
+{/* PROFILE PHOTO VIEWER */}
+<Dialog
+  open={photoPreviewOpen}
+  onClose={() => setPhotoPreviewOpen(false)}
+  fullScreen
+  PaperProps={{
+    sx: {
+      bgcolor: "black"
+    }
+  }}
+>
+  <div className="relative w-full h-full flex items-center justify-center">
 
+    <button
+      onClick={() => setPhotoPreviewOpen(false)}
+      className="absolute top-5 right-5 z-50 text-white bg-black/50 rounded-full p-2"
+    >
+      <X size={26} />
+    </button>
+
+    <img
+      src={
+        profilePhoto ||
+        (studentProfile?.profilePhoto
+          ? `https://api.madhapharma.in${studentProfile.profilePhoto}`
+          : user.avatar)
+      }
+      alt={user.name}
+      className="max-w-full max-h-full object-contain"
+    />
+
+  </div>
+</Dialog>
+{/* PROFILE PHOTO ADJUSTMENT */}
+<Dialog
+  open={photoAdjustOpen}
+  onClose={cancelPhotoAdjustment}
+  fullScreen
+  PaperProps={{
+    sx: {
+      bgcolor: "#000"
+    }
+  }}
+>
+  <div className="w-full h-full flex flex-col">
+
+    {/* Header */}
+    <div className="flex items-center justify-between p-4 text-white">
+
+      <button
+        onClick={cancelPhotoAdjustment}
+        className="text-white text-sm font-semibold"
+      >
+        Cancel
+      </button>
+
+      <h2 className="font-bold text-lg">
+        Adjust Photo
+      </h2>
+
+      <button
+        onClick={confirmPhotoUpload}
+        disabled={uploadingPhoto}
+        className="text-blue-400 font-bold text-sm disabled:opacity-50"
+      >
+        {uploadingPhoto ? "Uploading..." : "Confirm"}
+      </button>
+
+    </div>
+
+    {/* Photo area */}
+    <div className="flex-1 flex items-center justify-center overflow-hidden">
+
+      {pendingPhotoUrl && (
+        <div
+          className="relative w-[min(90vw,420px)] aspect-square overflow-hidden rounded-full bg-gray-900 border-4 border-white/20"
+        >
+
+          <img
+            src={pendingPhotoUrl}
+            alt="Adjust profile"
+            draggable={false}
+            className="absolute max-w-none select-none"
+            style={{
+              width: `${100 * photoZoom}%`,
+              height: `${100 * photoZoom}%`,
+              objectFit: "cover",
+              left: `${50 + photoX / 4}%`,
+              top: `${50 + photoY / 4}%`,
+              transform: "translate(-50%, -50%)"
+            }}
+          />
+
+          {/* Crop ring */}
+          <div className="absolute inset-0 rounded-full border-4 border-white/80 pointer-events-none" />
+
+        </div>
+      )}
+
+    </div>
+
+    {/* Controls */}
+    <div className="bg-black/90 p-6">
+
+      <p className="text-white text-center text-sm mb-3">
+        Adjust your profile photo
+      </p>
+
+      <div className="flex items-center gap-3">
+
+        <span className="text-white text-xs">
+          −
+        </span>
+
+        <input
+          type="range"
+          min="1"
+          max="3"
+          step="0.05"
+          value={photoZoom}
+          onChange={(e) =>
+            setPhotoZoom(Number(e.target.value))
+          }
+          className="flex-1"
+        />
+
+        <span className="text-white text-xs">
+          +
+        </span>
+
+      </div>
+
+      <p className="text-gray-400 text-xs text-center mt-3">
+        Zoom in or out to fit your face properly
+      </p>
+
+    </div>
+
+  </div>
+</Dialog>
     </DashboardLayout>
   );
 }

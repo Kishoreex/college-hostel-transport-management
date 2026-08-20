@@ -71,7 +71,15 @@ state: outpass.outpassState
             {/* Student Info */}
             <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
         <div className="flex flex-col items-center mb-4">
-              <Avatar
+ <div className="relative w-[122px] h-[122px] flex items-center justify-center">
+  {/* Running animated border */}
+  <div className="absolute inset-0 rounded-full animate-spin-slow bg-[conic-gradient(from_0deg,#2563eb,#60a5fa,#ffffff,#2563eb)]" />
+
+  {/* Inner white gap */}
+  <div className="absolute inset-[4px] rounded-full bg-white" />
+
+  {/* Profile */}
+  <Avatar
     src={
       student.profilePhoto
         ? `https://api.madhapharma.in${student.profilePhoto}`
@@ -79,11 +87,13 @@ state: outpass.outpassState
     }
     alt={student.name}
     sx={{
-    width: 110,
-    height: 110,
-    border: "4px solid #2563eb"
-  }}
+      width: 110,
+      height: 110,
+      position: "relative",
+      zIndex: 2,
+    }}
   />
+</div>
               
         <div className="text-center mt-3">
 

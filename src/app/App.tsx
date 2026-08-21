@@ -17,6 +17,7 @@ import { logout } from "../api/authService";
 import { hasActiveOutpass } from "./services/outpassService";
 import ParentDashboard from "./components/dashboards/ParentDashboard";
 import PrivacyPolicy from "../pages/PrivacyPolicy";
+import DeleteAccount from "../pages/DeleteAccount";
 export default function App() {
 const [user, setUser] = useState<User | null>(null);
 
@@ -117,7 +118,10 @@ await logout(logoutId);
             path="/privacy-policy"
             element={<PrivacyPolicy />}
           />
-
+<Route 
+  path="/delete-account" 
+  element={<DeleteAccount />} 
+/>
           {/* ============================= */}
           {/* LOGIN / AUTH ROUTES */}
           {/* ============================= */}

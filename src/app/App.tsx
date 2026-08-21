@@ -16,6 +16,7 @@ import type { User } from './types';
 import { logout } from "../api/authService";
 import { hasActiveOutpass } from "./services/outpassService";
 import ParentDashboard from "./components/dashboards/ParentDashboard";
+import PrivacyPolicy from "../pages/PrivacyPolicy";
 export default function App() {
 const [user, setUser] = useState<User | null>(null);
 
@@ -95,127 +96,243 @@ await logout(logoutId);
     setUser(null);
 };
 
-  if (!user) {
-    return (
-      <>
-        <Toaster position="top-center" richColors expand={false} closeButton />
-        <Login onLogin={handleLogin} />
-      </>
-    );
-  }
 
   return (
     <>
-    <Toaster position="top-center" richColors expand={false} closeButton />
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to={`/${user.role}`} replace />} />
+      <Toaster
+        position="top-center"
+        richColors
+        expand={false}
+        closeButton
+      />
 
-        {/* Student Routes */}
-        <Route path="/student" element={<StudentDashboard user={user} onLogout={handleLogout} />} />
-<Route
-    path="/parent"
-    element={
-        <ParentDashboard
-            user={user}
-            onLogout={handleLogout}
-        />
-    }
-/>
-        {/* Admin Routes */}
-      {/* Admin Routes */}
+      <BrowserRouter>
+        <Routes>
 
-<Route
-  path="/admin"
-  element={
-    <AdminDashboard
-      user={user}
-      onLogout={handleLogout}
-    />
-  }
-/>
+          {/* ============================= */}
+          {/* PUBLIC ROUTES - NO LOGIN NEEDED */}
+          {/* ============================= */}
 
-<Route
-  path="/admin/hostel"
-  element={
-    user.isSystemAdmin ||
-    user.canManageBoysHostel ||
-    user.canManageGirlsHostel
-      ? (
-          <HostelManagement
-            user={user}
-            onLogout={handleLogout}
+          <Route
+            path="/privacy-policy"
+            element={<PrivacyPolicy />}
           />
-        )
-      : <Navigate to="/admin" replace />
-  }
-/>
 
-<Route
-  path="/admin/transport"
-  element={
-    user.isSystemAdmin ||
-    user.canManageTransport
-      ? (
-          <TransportManagement
-            user={user}
-            onLogout={handleLogout}
-          />
-        )
-      : <Navigate to="/admin" replace />
-  }
-/>
+          {/* ============================= */}
+          {/* LOGIN / AUTH ROUTES */}
+          {/* ============================= */}
 
-<Route
-  path="/admin/outpass"
-  element={
-    user.isSystemAdmin
-      ? (
-          <OutpassManagement
-            user={user}
-            onLogout={handleLogout}
-          />
-        )
-      : <Navigate to="/admin" replace />
-  }
-/>
+          {!user ? (
+            <Route
+              path="*"
+              element={<Login onLogin={handleLogin} />}
+            />
+          ) : (
+            <>
 
-<Route
-  path="/admin/analytics"
-  element={
-    user.isSystemAdmin
-      ? (
-          <Analytics
-            user={user}
-            onLogout={handleLogout}
-          />
-        )
-      : <Navigate to="/admin" replace />
-  }
-/>
+              {/* ============================= */}
+              {/* DEFAULT ROUTE */}
+              {/* ============================= */}
 
-<Route
-  path="/admin/settings"
-  element={
-    <Settings
-      user={user}
-      onLogout={handleLogout}
-    />
-  }
-/>
+              <Route
+                path="/"
+                element={
+                  <Navigate
+                    to={`/${user.role}`}
+                    replace
+                  />
+                }
+              />
 
-        {/* Warden Routes */}
-        <Route path="/warden" element={<WardenDashboard user={user} onLogout={handleLogout} />} />
+              {/* ============================= */}
+              {/* STUDENT */}
+              {/* ============================= */}
 
-        {/* Security Routes */}
-        <Route path="/security" element={<SecurityDashboard user={user} onLogout={handleLogout} />} />
+              <Route
+                path="/student"
+                element={
+                  <StudentDashboard
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
 
-        {/* Transport Coordinator Routes */}
-        <Route path="/transport" element={<TransportDashboard user={user} onLogout={handleLogout} />} />
+              {/* ============================= */}
+              {/* PARENT */}
+              {/* ============================= */}
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+              <Route
+                path="/parent"
+                element={
+                  <ParentDashboard
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
+
+              {/* ============================= */}
+              {/* ADMIN */}
+              {/* ============================= */}
+
+              <Route
+                path="/admin"
+                element={
+                  <AdminDashboard
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
+
+              {/* ADMIN - HOSTEL */}
+              <Route
+                path="/admin/hostel"
+                element={
+                  user.isSystemAdmin ||
+                  user.canManageBoysHostel ||
+                  user.canManageGirlsHostel ? (
+                    <HostelManagement
+                      user={user}
+                      onLogout={handleLogout}
+                    />
+                  ) : (
+                    <Navigate
+                      to="/admin"
+                      replace
+                    />
+                  )
+                }
+              />
+
+              {/* ADMIN - TRANSPORT */}
+              <Route
+                path="/admin/transport"
+                element={
+                  user.isSystemAdmin ||
+                  user.canManageTransport ? (
+                    <TransportManagement
+                      user={user}
+                      onLogout={handleLogout}
+                    />
+                  ) : (
+                    <Navigate
+                      to="/admin"
+                      replace
+                    />
+                  )
+                }
+              />
+
+              {/* ADMIN - OUTPASS */}
+              <Route
+                path="/admin/outpass"
+                element={
+                  user.isSystemAdmin ? (
+                    <OutpassManagement
+                      user={user}
+                      onLogout={handleLogout}
+                    />
+                  ) : (
+                    <Navigate
+                      to="/admin"
+                      replace
+                    />
+                  )
+                }
+              />
+
+              {/* ADMIN - ANALYTICS */}
+              <Route
+                path="/admin/analytics"
+                element={
+                  user.isSystemAdmin ? (
+                    <Analytics
+                      user={user}
+                      onLogout={handleLogout}
+                    />
+                  ) : (
+                    <Navigate
+                      to="/admin"
+                      replace
+                    />
+                  )
+                }
+              />
+
+              {/* ADMIN - SETTINGS */}
+              <Route
+                path="/admin/settings"
+                element={
+                  <Settings
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
+
+              {/* ============================= */}
+              {/* WARDEN */}
+              {/* ============================= */}
+
+              <Route
+                path="/warden"
+                element={
+                  <WardenDashboard
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
+
+              {/* ============================= */}
+              {/* SECURITY */}
+              {/* ============================= */}
+
+              <Route
+                path="/security"
+                element={
+                  <SecurityDashboard
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
+
+              {/* ============================= */}
+              {/* TRANSPORT */}
+              {/* ============================= */}
+
+              <Route
+                path="/transport"
+                element={
+                  <TransportDashboard
+                    user={user}
+                    onLogout={handleLogout}
+                  />
+                }
+              />
+
+              {/* ============================= */}
+              {/* UNKNOWN LOGGED-IN ROUTE */}
+              {/* ============================= */}
+
+              <Route
+                path="*"
+                element={
+                  <Navigate
+                    to="/"
+                    replace
+                  />
+                }
+              />
+
+            </>
+          )}
+
+        </Routes>
+      </BrowserRouter>
     </>
   );
 }

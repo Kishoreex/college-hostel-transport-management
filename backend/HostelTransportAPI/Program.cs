@@ -13,11 +13,11 @@ builder.Services.AddCors(options =>
     {
         policy
             .WithOrigins(
-                  "https://campus.madhapharma.in",
+                "https://campus.madhapharma.in",
                 "https://college-hostel-transport-management.vercel.app",
                 "https://college-hostel-transport-management-git-main-kishoreex1.vercel.app",
-                "http://202.61.121.102",
-                "https://202.61.121.102"
+                "https://localhost",
+                "capacitor://localhost"
             )
             .AllowAnyHeader()
             .AllowAnyMethod()

@@ -34,7 +34,7 @@ public class EmailService
 
         await smtp.AuthenticateAsync(
             "it@mdch.in",
-            "pwti bszs iour cvek");
+            "ytbm hyth ntac gsnp");
 
         await smtp.SendAsync(email);
 

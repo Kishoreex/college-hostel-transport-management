@@ -204,6 +204,8 @@ LOGIN DETAILS :-
         User ID : {parentUserId}
         Password : {parentPassword}
 
+  Use The Link : https://campus.madhapharma.in/
+
 IMPORTANT:
 • Please log in using the credentials above.
 • Keep your login credentials confidential and do not share them with anyone.

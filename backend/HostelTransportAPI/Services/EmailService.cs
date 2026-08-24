@@ -1,5 +1,6 @@
 using MailKit.Net.Smtp;
 using MimeKit;
+using MailKit.Security;
 
 namespace HostelTransportAPI.Services;
 
@@ -13,7 +14,7 @@ public class EmailService
         var email = new MimeMessage();
 
         email.From.Add(
-            MailboxAddress.Parse("it@mdch.in"));
+            new MailboxAddress("Madha Campus", "it@mdch.in"));
 
         email.To.Add(
             MailboxAddress.Parse(toEmail));
@@ -28,9 +29,9 @@ public class EmailService
         using var smtp = new SmtpClient();
 
         await smtp.ConnectAsync(
-            "smtp.mdch.in",
+            "smtp.gmail.com",
             587,
-            MailKit.Security.SecureSocketOptions.StartTls);
+            SecureSocketOptions.StartTls);
 
         await smtp.AuthenticateAsync(
             "it@mdch.in",

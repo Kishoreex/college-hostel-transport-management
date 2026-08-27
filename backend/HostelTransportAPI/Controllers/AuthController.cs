@@ -263,7 +263,7 @@ public class AuthController : ControllerBase
 
                 // KEEPING OLD VALUES TEMPORARILY
                 // so existing frontend code does not break.
-                user.IsSystemAdmin,
+               IsSystemAdmin = user.Role?.Name == "System Admin",
                 user.CanManageTransport,
                 user.CanManageBoysHostel,
                 user.CanManageGirlsHostel,

@@ -1,234 +1,754 @@
-    using Microsoft.AspNetCore.Mvc;
-    using HostelTransportAPI.Data;
-    using HostelTransportAPI.Models;
-    using HostelTransportAPI.DTOs;
-    namespace HostelTransportAPI.Controllers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using HostelTransportAPI.Data;
+using HostelTransportAPI.Models;
+using HostelTransportAPI.DTOs;
+using System.Security.Claims;
 
-    [ApiController]
-    [Route("api/[controller]")]
-    public class UsersController : ControllerBase
+namespace HostelTransportAPI.Controllers;
+
+[ApiController]
+[Route("api/[controller]")]
+[Authorize(Roles = "System Admin")]
+public class UsersController : ControllerBase
+{
+    private readonly ApplicationDbContext _context;
+
+    public UsersController(ApplicationDbContext context)
     {
-        private readonly ApplicationDbContext _context;
+        _context = context;
+    }
 
-        public UsersController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+
+    // =====================================================
+    // GET ALL USERS
+    // SYSTEM ADMIN ONLY
+    // =====================================================
 
     [HttpGet]
-    public IActionResult GetUsers()
+    public async Task<IActionResult> GetUsers()
     {
-       var users = _context.Users
-    .Where(x => x.RoleId == 1)
-    .ToList();
+        var users = await _context.Users
+            .Include(x => x.Role)
+            .Include(x => x.College)
+            .Where(x => x.RoleId != 2) // Don't show Students
+            .Select(x => new
+            {
+                x.Id,
+                x.UserId,
+                x.FullName,
+                x.Email,
+                x.PhoneNumber,
+
+                x.RoleId,
+                Role = x.Role!.Name,
+
+                x.CollegeId,
+                College = x.College != null
+                    ? x.College.Name
+                    : "All Colleges",
+
+                x.IsActive,
+                x.LastLogin,
+
+                x.ProfilePhoto
+            })
+            .ToListAsync();
 
         return Ok(users);
     }
 
+
+    // =====================================================
+    // CREATE USER
+    // SYSTEM ADMIN ONLY
+    // =====================================================
+
     [HttpPost]
     public async Task<IActionResult> CreateUser(User user)
     {
+        // -------------------------------------------------
+        // Validate Role
+        // -------------------------------------------------
+
+        var role = await _context.Roles
+            .FirstOrDefaultAsync(x => x.Id == user.RoleId);
+
+        if (role == null)
+        {
+            return BadRequest("Invalid role selected.");
+        }
+
+
+        // Students cannot be created from Settings → Users
+        if (role.Name == "Student")
+        {
+            return BadRequest(
+                "Student users must be created through Student Registration."
+            );
+        }
+
+
+        // -------------------------------------------------
+        // Validate College
+        // -------------------------------------------------
+
+        // System Admin = All Colleges
+        if (role.Name == "System Admin")
+        {
+            user.CollegeId = null;
+        }
+        else
+        {
+            if (!user.CollegeId.HasValue)
+            {
+                return BadRequest(
+                    "College is required for this role."
+                );
+            }
+
+            var collegeExists = await _context.Colleges
+                .AnyAsync(x =>
+                    x.Id == user.CollegeId.Value &&
+                    x.IsActive);
+
+            if (!collegeExists)
+            {
+                return BadRequest(
+                    "Invalid or inactive college selected."
+                );
+            }
+        }
+
+
+        // -------------------------------------------------
+        // Check duplicate User ID
+        // -------------------------------------------------
+
+        var existingUserId = await _context.Users
+            .AnyAsync(x => x.UserId == user.UserId);
+
+        if (existingUserId)
+        {
+            return BadRequest(
+                "User ID already exists."
+            );
+        }
+
+
+        // -------------------------------------------------
+        // Check duplicate Email
+        // -------------------------------------------------
+
+        var existingEmail = await _context.Users
+            .AnyAsync(x => x.Email == user.Email);
+
+        if (existingEmail)
+        {
+            return BadRequest(
+                "Email already exists."
+            );
+        }
+
+
+        // -------------------------------------------------
+        // Password
+        // -------------------------------------------------
+
+        if (string.IsNullOrWhiteSpace(user.PasswordHash))
+        {
+            return BadRequest(
+                "Password is required."
+            );
+        }
+
         user.PasswordHash =
             BCrypt.Net.BCrypt.HashPassword(
                 user.PasswordHash
             );
 
-        _context.Users.Add(user);var systemAdmins = _context.Users
-    .Where(x => x.IsSystemAdmin)
-    .ToList();
 
-foreach (var admin in systemAdmins)
-{
-    
-   var setting =
-    _context.NotificationSettings
-    .FirstOrDefault(x =>
-        x.UserId == admin.Id);
+        // -------------------------------------------------
+        // Force staff settings
+        // -------------------------------------------------
 
-if (setting == null ||
-    (setting.PushNotifications &&
-     setting.NewUserRegistration))
-{
-    _context.Notifications.Add(
-        new Notification
-        {
-            UserId = admin.Id,
-            Title = "New User Created",
-            Message = $"{user.FullName} account created",
-            Type = "User",
-            IsRead = false,
-            CreatedAt = DateTime.Now
-        }
-    );
-}
-}
-_context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = 6,
-        UserName = "Main Administrator",
-        Action = $"Created user {user.FullName}",
-        Module = "Users",
-        CreatedAt = DateTime.Now
-    });
-    _context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = user.Id,
-        UserName = user.FullName,
-        Action = "Changed Password",
-        Module = "Users",
-        CreatedAt = DateTime.Now
-    });
+        user.IsActive = true;
+
+        // Old permission fields are no longer used
+        user.IsSystemAdmin =
+            role.Name == "System Admin";
+
+        user.CanManageTransport = false;
+        user.CanManageBoysHostel = false;
+        user.CanManageGirlsHostel = false;
+
+
+        _context.Users.Add(user);
+
         await _context.SaveChangesAsync();
 
-        return Ok(user);
+
+        // -------------------------------------------------
+        // Notify System Admins
+        // -------------------------------------------------
+
+        var systemAdmins = await _context.Users
+            .Where(x => x.RoleId == 1 && x.IsActive)
+            .ToListAsync();
+
+        foreach (var admin in systemAdmins)
+        {
+            var setting =
+                await _context.NotificationSettings
+                    .FirstOrDefaultAsync(
+                        x => x.UserId == admin.Id
+                    );
+
+            if (
+                setting == null ||
+                (
+                    setting.PushNotifications &&
+                    setting.NewUserRegistration
+                )
+            )
+            {
+                _context.Notifications.Add(
+                    new Notification
+                    {
+                        UserId = admin.Id,
+                        Title = "New User Created",
+                        Message =
+                            $"{user.FullName} account created",
+                        Type = "User",
+                        IsRead = false,
+                        CreatedAt = DateTime.Now
+                    }
+                );
+            }
+        }
+
+
+        // -------------------------------------------------
+        // Activity Log
+        // -------------------------------------------------
+
+        var currentUserId =
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
+
+        var currentUser =
+            await _context.Users
+                .FirstOrDefaultAsync(x =>
+                    x.Id.ToString() == currentUserId
+                );
+
+
+        _context.ActivityLogs.Add(
+            new ActivityLog
+            {
+                UserId = currentUser?.Id ?? 0,
+                UserName =
+                    currentUser?.FullName ??
+                    "System Admin",
+                Action =
+                    $"Created user {user.FullName}",
+                Module = "Users",
+                CreatedAt = DateTime.Now
+            }
+        );
+
+
+        await _context.SaveChangesAsync();
+
+
+        return Ok(new
+        {
+            user.Id,
+            user.UserId,
+            user.FullName,
+            user.Email,
+            user.PhoneNumber,
+
+            user.RoleId,
+            Role = role.Name,
+
+            user.CollegeId,
+
+            College = user.CollegeId.HasValue
+                ? (
+                    await _context.Colleges
+                        .Where(x =>
+                            x.Id == user.CollegeId.Value)
+                        .Select(x => x.Name)
+                        .FirstOrDefaultAsync()
+                  )
+                : "All Colleges",
+
+            user.IsActive
+        });
     }
-   
+
+
+    // =====================================================
+    // UPDATE USER
+    // SYSTEM ADMIN ONLY
+    // =====================================================
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(
         int id,
         User updatedUser)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (user == null)
+        {
             return NotFound();
+        }
 
-        user.FullName = updatedUser.FullName;
-        user.Email = updatedUser.Email;
-        user.PhoneNumber = updatedUser.PhoneNumber;
+
+        // -------------------------------------------------
+        // Validate Role
+        // -------------------------------------------------
+
+        var role = await _context.Roles
+            .FirstOrDefaultAsync(
+                x => x.Id == updatedUser.RoleId
+            );
+
+        if (role == null)
+        {
+            return BadRequest(
+                "Invalid role selected."
+            );
+        }
+
+        if (role.Name == "Student")
+        {
+            return BadRequest(
+                "Student role cannot be assigned here."
+            );
+        }
+
+
+        // -------------------------------------------------
+        // Validate College
+        // -------------------------------------------------
+
+        if (role.Name == "System Admin")
+        {
+            user.CollegeId = null;
+        }
+        else
+        {
+            if (!updatedUser.CollegeId.HasValue)
+            {
+                return BadRequest(
+                    "College is required for this role."
+                );
+            }
+
+            var collegeExists =
+                await _context.Colleges.AnyAsync(
+                    x =>
+                        x.Id ==
+                        updatedUser.CollegeId.Value &&
+                        x.IsActive
+                );
+
+            if (!collegeExists)
+            {
+                return BadRequest(
+                    "Invalid or inactive college selected."
+                );
+            }
+
+            user.CollegeId =
+                updatedUser.CollegeId;
+        }
+
+
+        // -------------------------------------------------
+        // Basic Details
+        // -------------------------------------------------
+
+        user.FullName =
+            updatedUser.FullName;
+
+        user.Email =
+            updatedUser.Email;
+
+        user.PhoneNumber =
+            updatedUser.PhoneNumber;
+
+        user.RoleId =
+            updatedUser.RoleId;
+
+            user.CollegeId = updatedUser.CollegeId;
+
+
+        // -------------------------------------------------
+        // Old permission compatibility
+        // -------------------------------------------------
 
         user.IsSystemAdmin =
-            updatedUser.IsSystemAdmin;
+            role.Name == "System Admin";
 
-        user.CanManageTransport =
-            updatedUser.CanManageTransport;
+        user.CanManageTransport = false;
+        user.CanManageBoysHostel = false;
+        user.CanManageGirlsHostel = false;
 
-        user.CanManageBoysHostel =
-            updatedUser.CanManageBoysHostel;
 
-        user.CanManageGirlsHostel =
-            updatedUser.CanManageGirlsHostel;
+        // -------------------------------------------------
+        // Password
+        // -------------------------------------------------
 
-        if (!string.IsNullOrWhiteSpace(updatedUser.PasswordHash))
+        if (
+            !string.IsNullOrWhiteSpace(
+                updatedUser.PasswordHash
+            )
+        )
         {
             user.PasswordHash =
                 BCrypt.Net.BCrypt.HashPassword(
                     updatedUser.PasswordHash
                 );
         }
-_context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = 6,
-        UserName = "Main Administrator",
-        Action = $"Updated user {user.FullName}",
-        Module = "Users",
-        CreatedAt = DateTime.Now
-    });
+
+
+        // -------------------------------------------------
+        // Activity Log
+        // -------------------------------------------------
+
+        var currentUserId =
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
+
+        var currentUser =
+            await _context.Users
+                .FirstOrDefaultAsync(x =>
+                    x.Id.ToString() ==
+                    currentUserId
+                );
+
+
+        _context.ActivityLogs.Add(
+            new ActivityLog
+            {
+                UserId =
+                    currentUser?.Id ?? 0,
+
+                UserName =
+                    currentUser?.FullName ??
+                    "System Admin",
+
+                Action =
+                    $"Updated user {user.FullName}",
+
+                Module = "Users",
+
+                CreatedAt = DateTime.Now
+            }
+        );
+
+
         await _context.SaveChangesAsync();
 
-        return Ok(user);
+
+        return Ok(new
+        {
+            user.Id,
+            user.UserId,
+            user.FullName,
+            user.Email,
+            user.PhoneNumber,
+
+            user.RoleId,
+            Role = role.Name,
+
+            user.CollegeId,
+
+            College =
+                user.CollegeId.HasValue
+                    ? await _context.Colleges
+                        .Where(x =>
+                            x.Id ==
+                            user.CollegeId.Value)
+                        .Select(x => x.Name)
+                        .FirstOrDefaultAsync()
+                    : "All Colleges",
+
+            user.IsActive
+        });
     }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteUser(int id)
-        {
-            var user = await _context.Users.FindAsync(id);
 
-            if (user == null)
-                return NotFound();
+    // =====================================================
+    // DELETE USER
+    // SYSTEM ADMIN ONLY
+    // =====================================================
 
-            _context.Users.Remove(user);
-
-            await _context.SaveChangesAsync();
-
-            return Ok();
-        }
-
-        [HttpGet("{id}")]
-    public async Task<IActionResult> GetUser(int id)
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteUser(
+        int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (user == null)
+        {
             return NotFound();
+        }
 
-        return Ok(user);
+
+        // Prevent deleting yourself
+        var currentUserId =
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
+
+        if (
+            currentUserId ==
+            user.Id.ToString()
+        )
+        {
+            return BadRequest(
+                "You cannot delete your own account."
+            );
+        }
+
+
+        _context.Users.Remove(user);
+
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
+
+
+    // =====================================================
+    // GET SINGLE USER
+    // SYSTEM ADMIN ONLY
+    // =====================================================
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetUser(
+        int id)
+    {
+        var user = await _context.Users
+            .Include(x => x.Role)
+            .Include(x => x.College)
+            .FirstOrDefaultAsync(
+                x => x.Id == id
+            );
+
+        if (user == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(new
+        {
+            user.Id,
+            user.UserId,
+            user.FullName,
+            user.Email,
+            user.PhoneNumber,
+
+            user.RoleId,
+            Role = user.Role?.Name,
+
+            user.CollegeId,
+            College = user.College?.Name ??
+                      "All Colleges",
+
+            user.IsActive,
+            user.LastLogin
+        });
+    }
+
+
+    // =====================================================
+    // CHANGE PASSWORD
+    // SYSTEM ADMIN ONLY
+    // =====================================================
 
     [HttpPost("change-password/{id}")]
     public async Task<IActionResult> ChangePassword(
         int id,
         ChangePasswordDto dto)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(
+                x => x.Id == id
+            );
 
         if (user == null)
+        {
             return NotFound();
+        }
+
 
         bool validPassword =
             BCrypt.Net.BCrypt.Verify(
                 dto.CurrentPassword,
                 user.PasswordHash
             );
-Console.WriteLine($"Password Valid : {validPassword}");
+
+
         if (!validPassword)
-            return BadRequest("Current Password Incorrect");
+        {
+            return BadRequest(
+                "Current Password Incorrect"
+            );
+        }
+
 
         user.PasswordHash =
             BCrypt.Net.BCrypt.HashPassword(
                 dto.NewPassword
             );
 
+
         await _context.SaveChangesAsync();
 
-        return Ok("Password Updated");
+
+        return Ok(
+            "Password Updated"
+        );
     }
+
+
+    // =====================================================
+    // DISABLE USER
+    // SYSTEM ADMIN ONLY
+    // =====================================================
 
     [HttpPut("disable/{id}")]
-    public async Task<IActionResult> DisableUser(int id)
+    public async Task<IActionResult> DisableUser(
+        int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(
+                x => x.Id == id
+            );
 
         if (user == null)
+        {
             return NotFound();
+        }
+
+
+        var currentUserId =
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
+
+        if (
+            currentUserId ==
+            user.Id.ToString()
+        )
+        {
+            return BadRequest(
+                "You cannot disable your own account."
+            );
+        }
+
 
         user.IsActive = false;
+
+
         _context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = 6,
-        UserName = "Main Administrator",
-        Action = $"Disabled user {user.FullName}",
-        Module = "Users",
-        CreatedAt = DateTime.Now
-    });
+            new ActivityLog
+            {
+                UserId =
+                    int.TryParse(
+                        currentUserId,
+                        out var currentId
+                    )
+                    ? currentId
+                    : 0,
+
+                UserName =
+                    User.Identity?.Name ??
+                    "System Admin",
+
+                Action =
+                    $"Disabled user {user.FullName}",
+
+                Module = "Users",
+
+                CreatedAt = DateTime.Now
+            }
+        );
+
+
         await _context.SaveChangesAsync();
 
         return Ok();
     }
+
+
+    // =====================================================
+    // ENABLE USER
+    // SYSTEM ADMIN ONLY
+    // =====================================================
+
     [HttpPut("enable/{id}")]
-    public async Task<IActionResult> EnableUser(int id)
+    public async Task<IActionResult> EnableUser(
+        int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        var user = await _context.Users
+            .FirstOrDefaultAsync(
+                x => x.Id == id
+            );
 
         if (user == null)
+        {
             return NotFound();
+        }
+
 
         user.IsActive = true;
-_context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = 6,
-        UserName = "Main Administrator",
-        Action = $"Enabled user {user.FullName}",
-        Module = "Users",
-        CreatedAt = DateTime.Now
-    });
+
+
+        var currentUserId =
+            User.FindFirstValue(
+                ClaimTypes.NameIdentifier
+            );
+
+
+        _context.ActivityLogs.Add(
+            new ActivityLog
+            {
+                UserId =
+                    int.TryParse(
+                        currentUserId,
+                        out var currentId
+                    )
+                    ? currentId
+                    : 0,
+
+                UserName =
+                    User.Identity?.Name ??
+                    "System Admin",
+
+                Action =
+                    $"Enabled user {user.FullName}",
+
+                Module = "Users",
+
+                CreatedAt = DateTime.Now
+            }
+        );
+
+
         await _context.SaveChangesAsync();
 
         return Ok();
     }
-    }
+}

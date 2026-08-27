@@ -52,19 +52,22 @@ interface SettingsProps {
 
 interface SystemUser {
   id: number;
+  userId: string;
+
   name: string;
   phone: string;
   email: string;
+
+  roleId: number;
   role: string;
+
+  collegeId: number | null;
+  college: string;
+
   status: 'active' | 'inactive';
-  permissions: { systemAdmin?: boolean; transport: boolean; hostelBoys: boolean; hostelGirls: boolean };
 }
 
-const seedUsers: SystemUser[] = [
-  { id: 1, name: 'Dr. Sharma', email: 'sharma@college.edu', phone: '9876543210', role: 'Warden', status: 'active', permissions: { transport: false, hostelBoys: true, hostelGirls: false } },
-  { id: 2, name: 'Prof. Kumar', email: 'kumar@college.edu', phone: '9865432100', role: 'Warden', status: 'active', permissions: { transport: false, hostelBoys: false, hostelGirls: true } },
-  { id: 3, name: 'Mr. Patel', email: 'patel@college.edu', phone: '9854321000', role: 'Transport Coordinator', status: 'active', permissions: { transport: true, hostelBoys: false, hostelGirls: false } },
-];
+
 
 // Bottom sheet component
 function BottomSheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
@@ -188,29 +191,32 @@ async () => {
   );
 };
 const loadUsers = async () => {
-  
-  const data = await getUsers();
+  try {
+    const data = await getUsers();
 
-  setUsers(
-    data.map((u: any) => ({
-      id: u.id,
-      name: u.fullName,
-      email: u.email,
-      phone: u.phoneNumber,
-      role: u.module,
-      status: u.isActive
-  ? "active"
-  : "inactive",
-      permissions: {
-        systemAdmin: u.isSystemAdmin,
-        transport: u.canManageTransport,
-        hostelBoys: u.canManageBoysHostel,
-        hostelGirls: u.canManageGirlsHostel
-      }
-    }))
-  );
+    setUsers(
+      data.map((u: any) => ({
+        id: u.id,
+        userId: u.userId,
+        name: u.fullName,
+        email: u.email,
+        phone: u.phoneNumber || '',
+
+        roleId: u.roleId,
+        role: u.role,
+
+        collegeId: u.collegeId ?? null,
+        college: u.college || 'All Colleges',
+
+        status: u.isActive
+          ? 'active'
+          : 'inactive'
+      }))
+    );
+  } catch (error) {
+    console.error('Failed to load users:', error);
+  }
 };
-
   // Admin profile
  const [adminName, setAdminName] =
   useState(user.name);
@@ -235,10 +241,8 @@ const [adminEmail, setAdminEmail] =
   const [newPhone, setNewPhone] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newPermSystemAdmin, setNewPermSystemAdmin] = useState(false);
-  const [newPermTransport, setNewPermTransport] = useState(false);
-  const [newPermBoys, setNewPermBoys] = useState(false);
-  const [newPermGirls, setNewPermGirls] = useState(false);
+const [newCollegeId, setNewCollegeId] = useState<number | ''>('');
+const [newRoleId, setNewRoleId] = useState<number | ''>('');
 
   // Edit User sheet
   const [editSheet, setEditSheet] = useState<{ open: boolean; u: SystemUser | null }>({ open: false, u: null });
@@ -246,154 +250,220 @@ const [adminEmail, setAdminEmail] =
   const [editPhone, setEditPhone] = useState('');
   const [editEmail, setEditEmail] = useState('');
   const [editPassword, setEditPassword] = useState('');
-  const [editPermSystemAdmin, setEditPermSystemAdmin] = useState(false);
-  const [editPermTransport, setEditPermTransport] = useState(false);
-  const [editPermBoys, setEditPermBoys] = useState(false);
-  const [editPermGirls, setEditPermGirls] = useState(false);
+const [editCollegeId, setEditCollegeId] = useState<number | ''>('');
+const [editRoleId, setEditRoleId] = useState<number | ''>('');
+const colleges = [
+  {
+    id: 1,
+    name: 'Madha Dental College & Hospital'
+  },
+  {
+    id: 2,
+    name: 'Madha College of Physiotherapy'
+  },
+  {
+    id: 3,
+    name: 'Madha College of Nursing'
+  }
+];
+
+const staffRoles = [
+  {
+    id: 1,
+    name: 'System Admin'
+  },
+  {
+    id: 3,
+    name: 'Principal'
+  },
+  {
+    id: 4,
+    name: 'Hostel Incharge'
+  },
+  {
+    id: 5,
+    name: 'Admin Office'
+  }
+];
 
  const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
-  const openAdd = () => {
-    setNewName(''); setNewPhone(''); setNewEmail(''); setNewPassword('');
-    setNewPermSystemAdmin(false); setNewPermTransport(false); setNewPermBoys(false); setNewPermGirls(false);
-    setAddSheet(true);
-  };
+const openAdd = () => {
+  setNewName('');
+  setNewPhone('');
+  setNewEmail('');
+  setNewPassword('');
+
+  setNewCollegeId('');
+  setNewRoleId('');
+
+  setAddSheet(true);
+};
 
 const handleAdd = async () => {
-  if (!newName || !newPhone || !newEmail || !newPassword)
+  if (
+    !newName ||
+    !newPhone ||
+    !newEmail ||
+    !newPassword ||
+    !newRoleId
+  ) {
+    alert('Please fill all required fields.');
     return;
+  }
 
-  await createUser({
-    userId: newEmail.split("@")[0],
-    fullName: newName,
-    email: newEmail,
-    phoneNumber: newPhone,
-    passwordHash: newPassword,
-    roleId: 1,
-    module: "Admin",
-
-    isSystemAdmin: newPermSystemAdmin,
-    canManageTransport: newPermTransport,
-    canManageBoysHostel: newPermBoys,
-    canManageGirlsHostel: newPermGirls
-  });
-
-  await loadUsers();
-
-  setAddSheet(false);
-
-  setNewName("");
-  setNewPhone("");
-  setNewEmail("");
-  setNewPassword("");
-
-  setNewPermSystemAdmin(false);
-  setNewPermTransport(false);
-  setNewPermBoys(false);
-  setNewPermGirls(false);
-};
-
-  const openEdit = (u: SystemUser) => {
-    setEditSheet({ open: true, u });
-    setEditName(u.name); setEditPhone(u.phone); setEditEmail(u.email); setEditPassword('');
-    setEditPermSystemAdmin(u.permissions.systemAdmin || false);
-    setEditPermTransport(u.permissions.transport);
-    setEditPermBoys(u.permissions.hostelBoys);
-    setEditPermGirls(u.permissions.hostelGirls);
-  };
-
-const handleEdit = async () => {
-
-  if (!editSheet.u) return;
-
-  await updateUser(
-    editSheet.u.id,
-    {
-      fullName: editName,
-      email: editEmail,
-      phoneNumber: editPhone,
-
-
-    passwordHash: editPassword,
-      isSystemAdmin: editPermSystemAdmin,
-      canManageTransport: editPermTransport,
-      canManageBoysHostel: editPermBoys,
-      canManageGirlsHostel: editPermGirls
-    }
+  const selectedRole = staffRoles.find(
+    role => role.id === Number(newRoleId)
   );
 
+  if (!selectedRole) {
+    alert('Please select a valid role.');
+    return;
+  }
+
+  // System Admin does not belong to one college
+  if (
+    selectedRole.id !== 1 &&
+    !newCollegeId
+  ) {
+    alert('Please select a college.');
+    return;
+  }
+
+  try {
+    await createUser({
+      userId: newEmail.split('@')[0],
+
+      fullName: newName,
+
+      email: newEmail,
+
+      phoneNumber: newPhone,
+
+      passwordHash: newPassword,
+
+      roleId: Number(newRoleId),
+
+      collegeId:
+        selectedRole.id === 1
+          ? null
+          : Number(newCollegeId),
+
+      module: 'Admin'
+    });
+
+    await loadUsers();
+
+    setAddSheet(false);
+
+    setNewName('');
+    setNewPhone('');
+    setNewEmail('');
+    setNewPassword('');
+
+    setNewCollegeId('');
+    setNewRoleId('');
+  } catch (error: any) {
+    console.error(error);
+
+    alert(
+      error?.message ||
+      'Failed to create user.'
+    );
+  }
+};
+
+const openEdit = (u: SystemUser) => {
+  setEditSheet({
+    open: true,
+    u
+  });
+
+  setEditName(u.name);
+  setEditPhone(u.phone);
+  setEditEmail(u.email);
   setEditPassword('');
 
-  await loadUsers();
+  setEditCollegeId(
+    u.collegeId ?? ''
+  );
 
-  setEditSheet({
-    open: false,
-    u: null
-  });
+  setEditRoleId(
+    u.roleId
+  );
 };
 
-  const permBadges = (u: SystemUser) => [
-    u.permissions.systemAdmin && { label: 'System Admin', bg: '#fee2e2', fg: '#dc2626' },
-    u.permissions.transport && { label: 'Transport', bg: '#dbeafe', fg: '#1d4ed8' },
-    u.permissions.hostelBoys && { label: 'Boys Hostel', bg: '#e0e7ff', fg: '#4338ca' },
-    u.permissions.hostelGirls && { label: 'Girls Hostel', bg: '#fce7f3', fg: '#be185d' },
-  ].filter(Boolean) as { label: string; bg: string; fg: string }[];
+const handleEdit = async () => {
+  if (!editSheet.u) {
+    return;
+  }
 
-  const PermissionsBlock = ({ systemAdmin, setSystemAdmin, transport, setTransport, boys, setBoys, girls, setGirls }: {
-    systemAdmin: boolean; setSystemAdmin: (v: boolean) => void;
-    transport: boolean; setTransport: (v: boolean) => void;
-    boys: boolean; setBoys: (v: boolean) => void;
-    girls: boolean; setGirls: (v: boolean) => void;
-  }) => (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between bg-red-50 border border-red-200 p-3.5 rounded-2xl">
-        <div className="flex items-center space-x-3">
-          <div className="bg-red-100 p-2 rounded-xl"><Shield size={16} className="text-red-600" /></div>
-          <div>
-            <p className="font-semibold text-gray-800 text-sm">System Admin</p>
-            <p className="text-xs text-gray-400">Full access to all modules</p>
-          </div>
-        </div>
-        <Switch checked={systemAdmin} onChange={e => setSystemAdmin(e.target.checked)} size="small" color="error" />
-      </div>
-      <div className={`flex items-center justify-between bg-blue-50 border border-blue-100 p-3.5 rounded-2xl ${systemAdmin ? 'opacity-50' : ''}`}>
-        <div className="flex items-center space-x-3">
-          <div className="bg-blue-100 p-2 rounded-xl"><Bus size={16} className="text-blue-600" /></div>
-          <div>
-            <p className="font-semibold text-gray-800 text-sm">Transport</p>
-            <p className="text-xs text-gray-400">Manage bus routes & students</p>
-          </div>
-        </div>
-        <Switch checked={systemAdmin || transport} onChange={e => setTransport(e.target.checked)} size="small" color="primary" disabled={systemAdmin} />
-      </div>
-      <div className={`border border-gray-100 rounded-2xl overflow-hidden ${systemAdmin ? 'opacity-50' : ''}`}>
-        <div className="bg-gray-50 px-3.5 py-2 border-b border-gray-100 flex items-center space-x-2">
-          <Home size={14} className="text-gray-500" />
-          <p className="text-xs font-bold text-gray-600 uppercase tracking-wide">Hostel Access</p>
-        </div>
-        <div className="divide-y divide-gray-100">
-          {[
-            { label: 'Boys Hostel', value: boys, set: setBoys, emoji: '👦', accent: 'indigo' },
-            { label: 'Girls Hostel', value: girls, set: setGirls, emoji: '👧', accent: 'pink' },
-          ].map(p => (
-            <div key={p.label} className="flex items-center justify-between px-3.5 py-3">
-              <div className="flex items-center space-x-2.5">
-                <span className="text-base">{p.emoji}</span>
-                <span className="font-medium text-gray-700 text-sm">{p.label}</span>
-              </div>
-              <Switch
-                checked={systemAdmin || p.value}
-                onChange={e => p.set(e.target.checked)}
-                size="small"
-                disabled={systemAdmin}
-                sx={{ '& .MuiSwitch-thumb': { bgcolor: (systemAdmin || p.value) ? (p.accent === 'pink' ? '#ec4899' : '#6366f1') : undefined } }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
+  if (
+    !editName ||
+    !editPhone ||
+    !editEmail ||
+    !editRoleId
+  ) {
+    alert('Please fill all required fields.');
+    return;
+  }
+
+  const selectedRole = staffRoles.find(
+    role => role.id === Number(editRoleId)
   );
+
+  if (!selectedRole) {
+    alert('Please select a valid role.');
+    return;
+  }
+
+  if (
+    selectedRole.id !== 1 &&
+    !editCollegeId
+  ) {
+    alert('Please select a college.');
+    return;
+  }
+
+  try {
+    await updateUser(
+      editSheet.u.id,
+      {
+        fullName: editName,
+
+        email: editEmail,
+
+        phoneNumber: editPhone,
+
+        roleId: Number(editRoleId),
+
+        collegeId:
+          selectedRole.id === 1
+            ? null
+            : Number(editCollegeId),
+
+        passwordHash: editPassword
+      }
+    );
+
+    setEditPassword('');
+
+    await loadUsers();
+
+    setEditSheet({
+      open: false,
+      u: null
+    });
+  } catch (error: any) {
+    console.error(error);
+
+    alert(
+      error?.message ||
+      'Failed to update user.'
+    );
+  }
+};
+
 
   return (
     <DashboardLayout user={user} onLogout={onLogout} title="Settings">
@@ -540,16 +610,15 @@ const handleEdit = async () => {
                         {u.status === 'active' ? 'Active' : 'Disabled'}
                       </span>
                     </div>
+<div className="flex flex-wrap gap-2 mb-3">
+  <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-purple-100 text-purple-700">
+    {u.role}
+  </span>
 
-                    {permBadges(u).length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {permBadges(u).map(b => (
-                          <span key={b.label} className="text-xs px-2.5 py-0.5 rounded-full font-semibold" style={{ backgroundColor: b.bg, color: b.fg }}>
-                            {b.label}
-                          </span>
-                        ))}
-                      </div>
-                    )}
+  <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
+    {u.college}
+  </span>
+</div>
 
                     <div className="flex gap-2">
                       <button
@@ -703,24 +772,82 @@ const handleEdit = async () => {
           <FieldInput label="Email Address" value={newEmail} onChange={setNewEmail} placeholder="user@college.edu" icon={<Mail size={15} />} />
           <PasswordInput label="Password" value={newPassword} onChange={setNewPassword} placeholder="Set a password" />
 
-          <div className="pt-1">
-            <div className="flex items-center space-x-2 mb-3">
-              <div className="bg-purple-100 p-1.5 rounded-lg"><Shield size={14} className="text-purple-600" /></div>
-              <p className="font-bold text-gray-800 text-sm">Permissions</p>
-            </div>
-            <PermissionsBlock
-              systemAdmin={newPermSystemAdmin} setSystemAdmin={setNewPermSystemAdmin}
-              transport={newPermTransport} setTransport={setNewPermTransport}
-              boys={newPermBoys} setBoys={setNewPermBoys}
-              girls={newPermGirls} setGirls={setNewPermGirls}
-            />
-          </div>
+{/* College */}
+<div>
+  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+    College
+  </label>
+
+  <select
+    value={newCollegeId}
+    onChange={e =>
+      setNewCollegeId(
+        e.target.value ? Number(e.target.value) : ''
+      )
+    }
+    disabled={Number(newRoleId) === 1}
+    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all disabled:opacity-50"
+  >
+    <option value="">
+      {Number(newRoleId) === 1
+        ? 'All Colleges'
+        : 'Select College'}
+    </option>
+
+    {colleges.map(college => (
+      <option key={college.id} value={college.id}>
+        {college.name}
+      </option>
+    ))}
+  </select>
+</div>
+
+{/* Role */}
+<div>
+  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+    Role
+  </label>
+
+  <select
+    value={newRoleId}
+    onChange={e => {
+      const value = e.target.value;
+
+      setNewRoleId(
+        value ? Number(value) : ''
+      );
+
+      if (Number(value) === 1) {
+        setNewCollegeId('');
+      }
+    }}
+    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
+  >
+    <option value="">Select Role</option>
+
+    {staffRoles.map(role => (
+      <option key={role.id} value={role.id}>
+        {role.name}
+      </option>
+    ))}
+  </select>
+</div>
 
           <div className="flex gap-3 pt-2">
             <button onClick={() => setAddSheet(false)} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform">Cancel</button>
             <button
               onClick={handleAdd}
-              disabled={!newName || !newPhone || !newEmail}
+             disabled={
+  !newName ||
+  !newPhone ||
+  !newEmail ||
+  !newPassword ||
+  !newRoleId ||
+  (
+    Number(newRoleId) !== 1 &&
+    !newCollegeId
+  )
+}
               className="flex-1 py-3 rounded-2xl bg-blue-600 disabled:bg-blue-200 text-white text-sm font-semibold active:scale-95 transition-transform"
             >
               Add User
@@ -747,18 +874,66 @@ const handleEdit = async () => {
           <FieldInput label="Email Address" value={editEmail} onChange={setEditEmail} placeholder="Email address" icon={<Mail size={15} />} />
           <PasswordInput label="New Password (optional)" value={editPassword} onChange={setEditPassword} placeholder="Leave blank to keep current" />
 
-          <div className="pt-1">
-            <div className="flex items-center space-x-2 mb-3">
-              <div className="bg-purple-100 p-1.5 rounded-lg"><Shield size={14} className="text-purple-600" /></div>
-              <p className="font-bold text-gray-800 text-sm">Permissions</p>
-            </div>
-            <PermissionsBlock
-              systemAdmin={editPermSystemAdmin} setSystemAdmin={setEditPermSystemAdmin}
-              transport={editPermTransport} setTransport={setEditPermTransport}
-              boys={editPermBoys} setBoys={setEditPermBoys}
-              girls={editPermGirls} setGirls={setEditPermGirls}
-            />
-          </div>
+{/* College */}
+<div>
+  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+    College
+  </label>
+
+  <select
+    value={editCollegeId}
+    onChange={e =>
+      setEditCollegeId(
+        e.target.value ? Number(e.target.value) : ''
+      )
+    }
+    disabled={Number(editRoleId) === 1}
+    className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all disabled:opacity-50"
+  >
+    <option value="">
+      {Number(editRoleId) === 1
+        ? 'All Colleges'
+        : 'Select College'}
+    </option>
+
+    {colleges.map(college => (
+      <option key={college.id} value={college.id}>
+        {college.name}
+      </option>
+    ))}
+  </select>
+</div>
+
+{/* Role */}
+<div>
+  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+    Role
+  </label>
+
+  <select
+    value={editRoleId}
+    onChange={e => {
+      const value = e.target.value;
+
+      setEditRoleId(
+        value ? Number(value) : ''
+      );
+
+      if (Number(value) === 1) {
+        setEditCollegeId('');
+      }
+    }}
+    className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
+  >
+    <option value="">Select Role</option>
+
+    {staffRoles.map(role => (
+      <option key={role.id} value={role.id}>
+        {role.name}
+      </option>
+    ))}
+  </select>
+</div>
 
           <div className="flex gap-3 pt-2">
             <button onClick={() => setEditSheet({ open: false, u: null })} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform">Cancel</button>

@@ -76,6 +76,21 @@ const studentUser: User = {
   profilePhoto: result.profilePhoto
 };
 
+if (!result.token) {
+  toast.error("Login token was not received");
+  return;
+}
+
+localStorage.setItem(
+  "authToken",
+  result.token
+);
+
+localStorage.setItem(
+  "authUser",
+  JSON.stringify(studentUser)
+);
+
 onLogin(studentUser);
 
     toast.success("Login Successful");
@@ -114,7 +129,14 @@ console.log("result.id =", result.id);
 console.log("result.userId =", result.userId);
 console.log("result.UserId =", result.UserId);
 console.log("Object Keys =", Object.keys(result));
-if (result.role !== "Admin") {
+const staffRoles = [
+  "System Admin",
+  "Principal",
+  "Hostel Incharge",
+  "Admin Office"
+];
+
+if (!staffRoles.includes(result.role)) {
   toast.error("Please use Student Login");
   return;
 }
@@ -122,26 +144,59 @@ if (result.role !== "Admin") {
 const adminUser = {
     id: result.id.toString(),
 
-    // Accept either camelCase or PascalCase
     userId: result.userId ?? result.UserId,
 
     name: result.fullName ?? result.FullName,
-    role: "admin",
+
+    // Keep the actual backend role
+    role: result.role,
 
     email: result.email ?? result.Email,
-    phoneNumber: result.phoneNumber ?? result.PhoneNumber,
 
-    isSystemAdmin: result.isSystemAdmin ?? result.IsSystemAdmin,
-    canManageTransport: result.canManageTransport ?? result.CanManageTransport,
-    canManageBoysHostel: result.canManageBoysHostel ?? result.CanManageBoysHostel,
-    canManageGirlsHostel: result.canManageGirlsHostel ?? result.CanManageGirlsHostel,
+    phoneNumber:
+      result.phoneNumber ?? result.PhoneNumber,
 
-    profilePhoto: result.profilePhoto ?? result.ProfilePhoto
+    // NEW COLLEGE INFORMATION
+    collegeId: result.collegeId ?? result.CollegeId,
+
+    college:
+      result.college ?? result.College,
+
+    // Keep old fields temporarily
+    // so existing frontend code doesn't break.
+    isSystemAdmin:
+      result.isSystemAdmin ?? result.IsSystemAdmin,
+
+    canManageTransport:
+      result.canManageTransport ?? result.CanManageTransport,
+
+    canManageBoysHostel:
+      result.canManageBoysHostel ?? result.CanManageBoysHostel,
+
+    canManageGirlsHostel:
+      result.canManageGirlsHostel ?? result.CanManageGirlsHostel,
+
+    profilePhoto:
+      result.profilePhoto ?? result.ProfilePhoto
 };
 
 console.log("ADMIN USER");
 console.log(adminUser);
 
+if (!result.token) {
+  toast.error("Login token was not received");
+  return;
+}
+
+localStorage.setItem(
+  "authToken",
+  result.token
+);
+
+localStorage.setItem(
+  "authUser",
+  JSON.stringify(adminUser)
+);
 onLogin(adminUser as User);
 
     toast.success("Login Successful");

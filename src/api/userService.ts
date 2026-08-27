@@ -1,22 +1,72 @@
 import API_URL from "./api";
 
+function getAuthHeaders(): HeadersInit {
+  const token = localStorage.getItem("authToken");
+
+  return {
+    "Content-Type": "application/json",
+
+    ...(token
+      ? {
+          Authorization: `Bearer ${token}`
+        }
+      : {})
+  };
+}
+
+
+// =====================================================
+// USERS
+// =====================================================
+
 export async function getUsers() {
-  const response = await fetch(`${API_URL}/Users`);
+  const response = await fetch(
+    `${API_URL}/Users`,
+    {
+      method: "GET",
+      headers: getAuthHeaders()
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
+  }
 
   return await response.json();
 }
 
-export async function createUser(data: any) {
-  const response = await fetch(`${API_URL}/Users`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
-  });
+
+// =====================================================
+// CREATE USER
+// =====================================================
+
+export async function createUser(
+  data: any
+) {
+  const response = await fetch(
+    `${API_URL}/Users`,
+    {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
+  }
 
   return await response.json();
 }
+
+
+// =====================================================
+// UPDATE USER
+// =====================================================
 
 export async function updateUser(
   id: number,
@@ -26,15 +76,24 @@ export async function updateUser(
     `${API_URL}/Users/${id}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     }
   );
 
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
+  }
+
   return await response.json();
 }
+
+
+// =====================================================
+// CHANGE PASSWORD
+// =====================================================
 
 export async function changePassword(
   id: number,
@@ -45,9 +104,7 @@ export async function changePassword(
     `${API_URL}/Users/change-password/${id}`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         currentPassword,
         newPassword
@@ -55,24 +112,57 @@ export async function changePassword(
     }
   );
 
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
+  }
+
   return await response.text();
 }
 
-export async function disableUser(id:number) {
-  await fetch(
+
+// =====================================================
+// DISABLE USER
+// =====================================================
+
+export async function disableUser(
+  id: number
+) {
+  const response = await fetch(
     `${API_URL}/Users/disable/${id}`,
     {
-      method:"PUT"
+      method: "PUT",
+      headers: getAuthHeaders()
     }
   );
+
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
+  }
 }
 
-export async function enableUser(id:number) {
-  await fetch(
+
+// =====================================================
+// ENABLE USER
+// =====================================================
+
+export async function enableUser(
+  id: number
+) {
+  const response = await fetch(
     `${API_URL}/Users/enable/${id}`,
     {
-      method:"PUT"
+      method: "PUT",
+      headers: getAuthHeaders()
     }
   );
-}
 
+  if (!response.ok) {
+    throw new Error(
+      await response.text()
+    );
+  }
+}

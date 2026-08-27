@@ -1,6 +1,9 @@
 using HostelTransportAPI.Data;
 using HostelTransportAPI.Hubs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +32,47 @@ builder.Services.AddCors(options =>
 // SERVICES
 // ===============================
 builder.Services.AddControllers();
+
+builder.Services.AddSignalR();
+
+// ===============================
+// JWT AUTHENTICATION
+// ===============================
+
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException(
+        "JWT Key is missing from configuration."
+    );
+}
+
+builder.Services.AddAuthentication(
+    JwtBearerDefaults.AuthenticationScheme
+)
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(jwtKey)
+        ),
+
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+
+        ValidateLifetime = true,
+
+        ClockSkew = TimeSpan.Zero
+    };
+});
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddSignalR();
 
@@ -63,6 +107,10 @@ app.UseCors("AllowFrontend");
 app.UseSwagger();
 
 app.UseSwaggerUI();
+
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.UseStaticFiles();
 

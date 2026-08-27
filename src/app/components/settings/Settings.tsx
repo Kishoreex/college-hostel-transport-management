@@ -154,16 +154,24 @@ useState(true);
 const [newUserRegistration,
 setNewUserRegistration] =
 useState(true);
-  useEffect(() => {
-  loadUsers();
-    loadNotificationSettings();
-  const loadLogs = async () => {
-  const data = await getActivityLogs();
+useEffect(() => {
+  if (user.isSystemAdmin) {
+    loadUsers();
 
-  setAuditLogs(data);
-};
-  loadLogs();
-}, []);
+    const loadLogs = async () => {
+      try {
+        const data = await getActivityLogs();
+        setAuditLogs(data);
+      } catch (error) {
+        console.error('Failed to load activity logs:', error);
+      }
+    };
+
+    loadLogs();
+  }
+
+  loadNotificationSettings();
+}, [user.isSystemAdmin, user.id]);
 const loadNotificationSettings =
 async () => {
 

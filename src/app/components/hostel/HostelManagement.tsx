@@ -263,7 +263,10 @@ const canManageGirlsHostel =
 
 const canManageHostel =
   canManageBoysHostel || canManageGirlsHostel;
-
+const allowedHostelGenders = [
+  ...(canManageBoysHostel ? ["boys"] : []),
+  ...(canManageGirlsHostel ? ["girls"] : [])
+];
 const canViewHostelReports =
   isManagement;
 
@@ -948,15 +951,7 @@ const allStudentsFlat = rooms.flatMap(
 );
 
 const filteredStudents = allStudentsFlat.filter(student => {
-  if (user.isSystemAdmin) return true;
-
-  if (user.canManageBoysHostel)
-    return student.gender === "boys";
-
-  if (user.canManageGirlsHostel)
-    return student.gender === "girls";
-
-  return false;
+  return allowedHostelGenders.includes(student.gender);
 });
 console.log("FILTERED STUDENTS", filteredStudents);
     const dashboardStudents =
@@ -1421,11 +1416,7 @@ if (!canManageHostel) {
                   <div className="space-y-3">
                     <div className="flex bg-gray-100 rounded-2xl p-1">
                       {(
-      user.isSystemAdmin
-        ? ['boys', 'girls']
-        : user.canManageGirlsHostel
-        ? ['girls']
-        : ['boys']
+     allowedHostelGenders
     ).map(g => (
                         <button key={g} onClick={() => setRoomGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${roomGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
                           {g === 'boys' ? '👦 Boys' : '👧 Girls'}
@@ -1638,13 +1629,7 @@ if (!canManageHostel) {
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex bg-gray-100 rounded-2xl p-1">
-                      {(
-      user.isSystemAdmin
-        ? ['boys', 'girls']
-        : user.canManageGirlsHostel
-        ? ['girls']
-        : ['boys']
-    ).map(g => (
+                      {allowedHostelGenders.map(g => (
                         <button key={g} onClick={() => setOutpassGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${outpassGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
                           {g === 'boys' ? '👦 Boys' : '👧 Girls'}
                         </button>
@@ -1727,13 +1712,7 @@ if (!canManageHostel) {
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex bg-gray-100 rounded-2xl p-1">
-                      {(
-      user.isSystemAdmin
-        ? ['boys', 'girls']
-        : user.canManageGirlsHostel
-        ? ['girls']
-        : ['boys']
-    ).map(g => (
+                  {allowedHostelGenders.map(g => (
                         <button key={g} onClick={() => setOutpassGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${outpassGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
                           {g === 'boys' ? '👦 Boys' : '👧 Girls'}
                         </button>
@@ -1858,13 +1837,7 @@ if (!canManageHostel) {
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex bg-gray-100 rounded-2xl p-1">
-                      {(
-      user.isSystemAdmin
-        ? ['boys', 'girls']
-        : user.canManageGirlsHostel
-        ? ['girls']
-        : ['boys']
-    ).map(g => (
+                     {allowedHostelGenders.map(g => (
                         <button key={g} onClick={() => setVacatingGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${ vacatingGender === g? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
                           {g === 'boys' ? '👦 Boys' : '👧 Girls'}
                         </button>
@@ -1946,13 +1919,7 @@ if (!canManageHostel) {
                   <div className="space-y-3">
                     {/* Gender toggle */}
                     <div className="flex bg-gray-100 rounded-2xl p-1">
-                      {(
-      user.isSystemAdmin
-        ? ['boys', 'girls']
-        : user.canManageGirlsHostel
-        ? ['girls']
-        : ['boys']
-                            ).map(g => (
+                 {allowedHostelGenders.map(g => (
                         <button key={g} onClick={() => setHistoryGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${historyGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
                           {g === 'boys' ? '👦 Boys' : '👧 Girls'}
                         </button>
@@ -3206,13 +3173,7 @@ a.status?.toLowerCase()==="pending";
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex bg-gray-100 rounded-2xl p-1 mb-3">
-  {(
-    user.isSystemAdmin
-      ? ["boys", "girls"]
-      : user.canManageGirlsHostel
-      ? ["girls"]
-      : ["boys"]
-  ).map((g) => (
+{allowedHostelGenders.map(g => (
     <button
       key={g}
       onClick={() => setApplicationGender(g as "boys" | "girls")}

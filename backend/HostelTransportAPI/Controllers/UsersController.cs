@@ -124,11 +124,11 @@ public async Task<IActionResult> GetUsers()
         // -------------------------------------------------
 
         // System Admin = All Colleges
-       // =====================================================
+// =====================================================
 // COLLEGE
 // =====================================================
 
-if (!updatedUser.CollegeId.HasValue)
+if (!user.CollegeId.HasValue)
 {
     return BadRequest(
         "College is required."
@@ -138,8 +138,7 @@ if (!updatedUser.CollegeId.HasValue)
 var collegeExists =
     await _context.Colleges.AnyAsync(
         x =>
-            x.Id ==
-            updatedUser.CollegeId.Value &&
+            x.Id == user.CollegeId.Value &&
             x.IsActive
     );
 
@@ -149,12 +148,6 @@ if (!collegeExists)
         "Invalid or inactive college selected."
     );
 }
-
-user.CollegeId =
-    updatedUser.CollegeId;
-            
-        
-
 
         // -------------------------------------------------
         // Check duplicate User ID

@@ -387,7 +387,6 @@ public class UsersController : ControllerBase
         user.RoleId =
             updatedUser.RoleId;
 
-            user.CollegeId = updatedUser.CollegeId;
 
 
         // -------------------------------------------------

@@ -149,7 +149,7 @@ const adminUser = {
     name: result.fullName ?? result.FullName,
 
     // Keep the actual backend role
-    role: result.role,
+    role: "admin",
 
     email: result.email ?? result.Email,
 

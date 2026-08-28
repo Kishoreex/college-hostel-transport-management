@@ -79,6 +79,7 @@ import API_URL, { HUB_URL } from "../../../api/api";
       name: string;
       phone: string;
       college: string;
+       email: string;
       department: string;
       year: string;
       batch: string;
@@ -1403,7 +1404,7 @@ const reportTypes = [
               </div>
 
               {[
-                { title: 'Academic Details', bg: 'bg-blue-50', titleColor: 'text-blue-700', rows: [['College', selectedStudent.college], ['Department', selectedStudent.department], ['Year', selectedStudent.year], ['Batch', selectedStudent.batch]] },
+                { title: 'Academic Details', bg: 'bg-blue-50', titleColor: 'text-blue-700', rows: [['College', selectedStudent.college], ['Department', selectedStudent.department], ['Year', selectedStudent.year], ['Batch', selectedStudent.batch],['Email', selectedStudent.email]],  },
                 { title: 'Parent Details', bg: 'bg-green-50', titleColor: 'text-green-700', rows: [['Parent Name', selectedStudent.parentName], ['Phone', selectedStudent.parentPhone], ['Address', selectedStudent.address]] },
                 { title: 'Room Details', bg: 'bg-purple-50', titleColor: 'text-purple-700', rows: [[
   'Room Number',

@@ -471,22 +471,41 @@ useEffect(() => {
   loadHostelStudents();
 }, []);
 
-
 const loadHostelStudents = async () => {
   try {
-    const data = await getStudentRegistrations();
+    const data = await getAllStudentRegistrations();
 
-    console.log("HOSTEL STUDENTS:", data);
+    console.log("ALL STUDENT REGISTRATIONS:", data);
 
     const activeStudents = data.filter((student: any) => {
-      return student.status?.toLowerCase() === "approved";
+      const status = String(
+        student.status ?? ""
+      ).toLowerCase();
+
+      const isApproved =
+        student.isApproved === true ||
+        student.IsApproved === true;
+
+      return (
+        isApproved ||
+        status === "approved" ||
+        status === "active"
+      );
     });
 
-    console.log("ACTIVE HOSTEL STUDENTS:", activeStudents);
+    console.log(
+      "ACTIVE HOSTEL STUDENTS:",
+      activeStudents
+    );
 
     setHostelStudents(activeStudents);
   } catch (error) {
-    console.error("Failed to load hostel students:", error);
+    console.error(
+      "Failed to load hostel students:",
+      error
+    );
+
+    setHostelStudents([]);
   }
 };
 
@@ -967,13 +986,22 @@ const loadApplications = async () => {
       const filteredRooms = rooms.filter(r => r.gender === roomGender);
 const dashboardStudents = hostelStudents.filter(
   (student: any) => {
-    const gender = student.gender?.toLowerCase();
+    const gender =
+      String(student.gender ?? "").toLowerCase();
+
+    const isBoys =
+      gender === "male" ||
+      gender === "boy" ||
+      gender === "boys";
+
+    const isGirls =
+      gender === "female" ||
+      gender === "girl" ||
+      gender === "girls";
 
     return (
-      gender === "male" ||
-      gender === "female" ||
-      gender === "boys" ||
-      gender === "girls"
+      (isBoys && canManageBoysHostel) ||
+      (isGirls && canManageGirlsHostel)
     );
   }
 );

@@ -573,7 +573,6 @@ const openEdit = (u: SystemUser) => {
     u.hostelApprovalLevel || ''
   );
 };
-
 const handleEdit = async () => {
   if (!editSheet.u) {
     return;
@@ -583,7 +582,8 @@ const handleEdit = async () => {
     !editName ||
     !editPhone ||
     !editEmail ||
-    !editRoleId
+    !editRoleId ||
+    !editCollegeId
   ) {
     alert('Please fill all required fields.');
     return;
@@ -598,15 +598,34 @@ const handleEdit = async () => {
     return;
   }
 
-  if (
-    selectedRole.id !== 1 &&
-    !editCollegeId
-  ) {
-    alert('Please select a college.');
-    return;
+  const hasHostel =
+    editModule
+      .split(',')
+      .filter(Boolean)
+      .includes("Hostel");
+
+  const hasTransport =
+    editModule
+      .split(',')
+      .filter(Boolean)
+      .includes("Transport");
+
+  // Hostel validation
+  if (hasHostel) {
+
+    if (!editBoysHostel && !editGirlsHostel) {
+      alert("Please select Boys Hostel or Girls Hostel.");
+      return;
+    }
+
+    if (!editHostelApprovalLevel) {
+      alert("Please select an approval level.");
+      return;
+    }
   }
 
   try {
+
     await updateUser(
       editSheet.u.id,
       {
@@ -618,11 +637,35 @@ const handleEdit = async () => {
 
         roleId: Number(editRoleId),
 
-      collegeId: Number(editCollegeId),
+        collegeId: Number(editCollegeId),
 
-        passwordHash: editPassword
+        // MODULE
+        module: editModule,
+
+        // TRANSPORT PERMISSION
+        canManageTransport: hasTransport,
+
+        // HOSTEL PERMISSIONS
+        canManageBoysHostel:
+          hasHostel && editBoysHostel,
+
+        canManageGirlsHostel:
+          hasHostel && editGirlsHostel,
+
+        // APPROVAL LEVEL
+        hostelApprovalLevel:
+          hasHostel
+            ? editHostelApprovalLevel
+            : null,
+
+        // PASSWORD
+        ...(editPassword
+          ? { passwordHash: editPassword }
+          : {})
       }
     );
+
+    alert("User updated successfully.");
 
     setEditPassword('');
 
@@ -632,7 +675,9 @@ const handleEdit = async () => {
       open: false,
       u: null
     });
+
   } catch (error: any) {
+
     console.error(error);
 
     alert(

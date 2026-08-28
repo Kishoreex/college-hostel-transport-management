@@ -474,40 +474,22 @@ const loadHostelStudents = async () => {
   try {
     const data = await getAllStudentRegistrations();
 
-    console.log("ALL STUDENT REGISTRATIONS:", data);
+    console.log("========== STUDENT API ==========");
+    console.log("RAW DATA:", data);
+    console.log("IS ARRAY:", Array.isArray(data));
+    console.log("COUNT:", Array.isArray(data) ? data.length : "NOT ARRAY");
 
-    const activeStudents = data.filter((student: any) => {
-      const status = String(
-        student.status ?? ""
-      ).toLowerCase();
+    if (Array.isArray(data) && data.length > 0) {
+      console.log("FIRST STUDENT:", data[0]);
+      console.log("FIRST STUDENT KEYS:", Object.keys(data[0]));
+    }
 
-      const isApproved =
-        student.isApproved === true ||
-        student.IsApproved === true;
-
-      return (
-        isApproved ||
-        status === "approved" ||
-        status === "active"
-      );
-    });
-
-    console.log(
-      "ACTIVE HOSTEL STUDENTS:",
-      activeStudents
-    );
-
-    setHostelStudents(activeStudents);
+    setHostelStudents(Array.isArray(data) ? data : []);
   } catch (error) {
-    console.error(
-      "Failed to load hostel students:",
-      error
-    );
-
+    console.error("FAILED TO LOAD STUDENTS:", error);
     setHostelStudents([]);
   }
 };
-
 
 const loadRooms = async () => {
       try {
@@ -813,10 +795,10 @@ const loadLeaveHistory = async () => {
     useEffect(() => {
 
   const connection =
-    new signalR.HubConnectionBuilder()
-      .withUrl(`${HUB_URL}/notificationHub`)
-      .withAutomaticReconnect()
-      .build();
+  new signalR.HubConnectionBuilder()
+    .withUrl(HUB_URL)
+    .withAutomaticReconnect()
+    .build();
 
   connectionRef.current = connection;
 

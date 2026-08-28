@@ -789,13 +789,52 @@ const handleEdit = async () => {
                       </span>
                     </div>
 <div className="flex flex-wrap gap-2 mb-3">
+
+  {/* ROLE */}
   <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-purple-100 text-purple-700">
     {u.role}
   </span>
 
+  {/* COLLEGE */}
   <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
     {u.college}
   </span>
+
+  {/* TRANSPORT */}
+  {u.canManageTransport && (
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-cyan-100 text-cyan-700">
+      🚌 Transport
+    </span>
+  )}
+
+  {/* HOSTEL */}
+  {u.module?.split(',').includes("Hostel") && (
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
+      🏠 Hostel
+    </span>
+  )}
+
+  {/* BOYS HOSTEL */}
+  {u.canManageBoysHostel && (
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700">
+      👦 Boys Hostel
+    </span>
+  )}
+
+  {/* GIRLS HOSTEL */}
+  {u.canManageGirlsHostel && (
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-pink-100 text-pink-700">
+      👧 Girls Hostel
+    </span>
+  )}
+
+  {/* APPROVAL LEVEL */}
+  {u.hostelApprovalLevel && (
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-indigo-100 text-indigo-700">
+      ✓ {u.hostelApprovalLevel}
+    </span>
+  )}
+
 </div>
 <div className="flex gap-2">
 

@@ -472,7 +472,9 @@ useEffect(() => {
 }, []);
 const loadHostelStudents = async () => {
   try {
-    const data = await getStudentRegistrations();
+    const data = await getStudentRegistrations(
+  isManagement ? null : user.college
+);
 
     console.log("========== ACTIVE STUDENT API ==========");
     console.log("RAW DATA:", data);
@@ -567,7 +569,9 @@ const loadRooms = async () => {
     await getAllRoomAllocations();
 
   const registrationsData =
-    await getStudentRegistrations();
+  await getStudentRegistrations(
+    isManagement ? null : user.college
+  );
 
         const rooms = roomsData.map(
           (room: any) => ({
@@ -1677,7 +1681,10 @@ if (!canManageHostel) {
       console.log("Room Gender:", room.gender);
       console.log("API Gender:", gender);
 
-      const students = await getAvailableStudents(gender);
+    const students = await getAvailableStudents(
+  gender,
+  isManagement ? null : user.college
+);
 
       console.log("AVAILABLE STUDENTS RAW:", students);
 

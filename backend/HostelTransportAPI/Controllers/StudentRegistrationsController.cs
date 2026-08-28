@@ -5,6 +5,7 @@ using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
 using Microsoft.AspNetCore.SignalR;
 using HostelTransportAPI.Hubs;
+using Microsoft.EntityFrameworkCore;
 
 namespace HostelTransportAPI.Controllers;
 
@@ -70,11 +71,25 @@ public IActionResult GetAll()
         .ToList();
 
     return Ok(data);
-}[HttpGet("approved")]
-public IActionResult GetApprovedStudents()
+}
+[HttpGet("approved")]
+public async Task<IActionResult> GetApprovedStudents(
+    [FromQuery] string? college)
 {
-    var data = _context.StudentRegistrations
-        .Where(x => x.IsApproved && x.Status == "Active")
+    var query = _context.StudentRegistrations
+        .Where(x =>
+            x.IsApproved &&
+            x.Status == "Active");
+
+    // If college is provided, show only that college.
+    // If college is empty/null, show all colleges.
+    if (!string.IsNullOrWhiteSpace(college))
+    {
+        query = query.Where(x =>
+            x.CollegeName == college);
+    }
+
+    var data = await query
         .OrderBy(x => x.StudentName)
         .Select(x => new
         {
@@ -95,7 +110,7 @@ public IActionResult GetApprovedStudents()
             x.Status,
             x.IsApproved
         })
-        .ToList();
+        .ToListAsync();
 
     return Ok(data);
 }

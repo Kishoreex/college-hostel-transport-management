@@ -115,34 +115,50 @@ return Ok(allocation);
     }    
 
     
-   
-[HttpGet("available-students/{gender}")]
+ [HttpGet("available-students/{gender}")]
 public async Task<IActionResult> GetAvailableStudents(
-    string gender)
+    string gender,
+    [FromQuery] string? college)
 {
     var allocatedStudentIds =
         await _context.HostelRoomAllocations
-        .Where(x => x.Status == "Allocated")
-        .Select(x => x.StudentId)
-        .ToListAsync();
+            .Where(x => x.Status == "Allocated")
+            .Select(x => x.StudentId)
+            .ToListAsync();
 
-    var students = await _context.StudentRegistrations
+    var query = _context.StudentRegistrations
         .Where(x =>
-            x.RegistrationType == "hostel" &&
-            x.Status == "Approved" &&
+            x.RegistrationType.ToLower() == "hostel" &&
+            x.Status.ToLower() == "active" &&
             x.Gender.ToLower() == gender.ToLower() &&
-            !allocatedStudentIds.Contains(x.StudentId))
+            x.StudentId != null &&
+            !allocatedStudentIds.Contains(x.StudentId));
+
+    // College filter
+    // Management sends no college -> sees all colleges
+    if (!string.IsNullOrWhiteSpace(college))
+    {
+        query = query.Where(x =>
+            x.CollegeName == college);
+    }
+
+    var students = await query
         .Select(x => new
         {
             x.StudentId,
             x.StudentName,
+            x.RegisterNumber,
+            x.CollegeName,
             x.Department,
             x.Year,
-            x.Gender
+            x.Batch,
+            x.Gender,
+            x.Phone
         })
+        .OrderBy(x => x.StudentName)
         .ToListAsync();
 
- return Ok(students);
+    return Ok(students);
 }
 
 [HttpDelete("student/{studentId}")]

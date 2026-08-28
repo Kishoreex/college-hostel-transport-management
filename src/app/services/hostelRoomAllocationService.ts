@@ -9,13 +9,19 @@ export const getAllRoomAllocations = async () => {
 };
 
 
-
 export const getAvailableStudents = async (
-  gender: string
+  gender: string,
+  college?: string | null
 ) => {
-  const response = await fetch(
-    `${API_URL}/HostelRoomAllocation/available-students/${gender}`
-  );
+  const url = college
+    ? `${API_URL}/HostelRoomAllocation/available-students/${gender}?college=${encodeURIComponent(college)}`
+    : `${API_URL}/HostelRoomAllocation/available-students/${gender}`;
+
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to load available students");
+  }
 
   return await response.json();
 };

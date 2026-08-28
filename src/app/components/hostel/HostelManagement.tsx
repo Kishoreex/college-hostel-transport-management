@@ -465,13 +465,33 @@ const downloadReport = async () => {
       const [studentSheetOpen, setStudentSheetOpen] =
   useState(false);
     const [rooms, setRooms] = useState<any[]>([]);
+const [hostelStudents, setHostelStudents] = useState<any[]>([]);
+useEffect(() => {
+  loadRooms();
+  loadHostelStudents();
+}, []);
 
-    useEffect(() => {
-      loadRooms();
-    }, []);
+
+const loadHostelStudents = async () => {
+  try {
+    const data = await getStudentRegistrations();
+
+    console.log("HOSTEL STUDENTS:", data);
+
+    const activeStudents = data.filter((student: any) => {
+      return student.status?.toLowerCase() === "approved";
+    });
+
+    console.log("ACTIVE HOSTEL STUDENTS:", activeStudents);
+
+    setHostelStudents(activeStudents);
+  } catch (error) {
+    console.error("Failed to load hostel students:", error);
+  }
+};
 
 
-      const loadRooms = async () => {
+const loadRooms = async () => {
       try {
         const roomsData = await getAllRooms();
         const allocationsData =
@@ -945,39 +965,66 @@ const loadApplications = async () => {
     );
   });
       const filteredRooms = rooms.filter(r => r.gender === roomGender);
-const allocatedStudents = rooms.flatMap(r => r.students);
-const allStudentsFlat = rooms.flatMap(
-  (room: any) => room.students
-);
+const dashboardStudents = hostelStudents.filter(
+  (student: any) => {
+    const gender = student.gender?.toLowerCase();
 
-const filteredStudents = allStudentsFlat.filter(student => {
-  return allowedHostelGenders.includes(student.gender);
-});
-console.log("FILTERED STUDENTS", filteredStudents);
-    const dashboardStudents =
-  filteredStudents;
+    return (
+      gender === "male" ||
+      gender === "female" ||
+      gender === "boys" ||
+      gender === "girls"
+    );
+  }
+);
 
 const totalCount =
   dashboardStudents.length;
 
 const boysCount =
   dashboardStudents.filter(
-    s => s.gender === "boys"
+    (student: any) => {
+      const gender = student.gender?.toLowerCase();
+
+      return (
+        gender === "male" ||
+        gender === "boys"
+      );
+    }
   ).length;
 
 const girlsCount =
   dashboardStudents.filter(
-    s => s.gender === "girls"
+    (student: any) => {
+      const gender = student.gender?.toLowerCase();
+
+      return (
+        gender === "female" ||
+        gender === "girls"
+      );
+    }
   ).length;
 
-    const displayStudents =
-      searchQuery.length > 1
-        ? filteredStudents.filter(
-            s =>
-              s.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-              s.id.toLowerCase().includes(searchQuery.toLowerCase())
-          )
-        : filteredStudents;
+console.log("DASHBOARD ACTIVE HOSTEL STUDENTS:", dashboardStudents);
+console.log("TOTAL:", totalCount);
+console.log("BOYS:", boysCount);
+console.log("GIRLS:", girlsCount);
+
+  const displayStudents =
+  searchQuery.length > 1
+    ? dashboardStudents.filter(
+        (s: any) =>
+          s.studentName
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          s.studentId
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          s.registerNumber
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase())
+      )
+    : dashboardStudents;
 
 
     const confirmReject = async () => {

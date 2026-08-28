@@ -173,14 +173,66 @@ const markAllRead = async () => {
       onClick: () => { navigate(`/${user.role}`); setDrawerOpen(false); },
     };
 
-    if (user.role === 'admin') {
-      return [
-        baseItem,
-        { icon: <Building2 size={22} />, label: 'Hostel Management', onClick: () => { navigate('/admin/hostel'); setDrawerOpen(false); } },
-        { icon: <Bus size={22} />, label: 'Transport Management', onClick: () => { navigate('/admin/transport'); setDrawerOpen(false); } },
-        { icon: <Settings size={22} />, label: 'Settings', onClick: () => { navigate('/admin/settings'); setDrawerOpen(false); } },
-      ];
-    }
+if (user.role === 'admin') {
+  const isManagement =
+    user.staffRole?.toLowerCase() === "management" ||
+    user.role?.toLowerCase() === "management";
+
+  const canManageBoysHostel =
+    isManagement ||
+    user.canManageBoysHostel === true;
+
+  const canManageGirlsHostel =
+    isManagement ||
+    user.canManageGirlsHostel === true;
+
+  const canManageHostel =
+    canManageBoysHostel ||
+    canManageGirlsHostel;
+
+  const canManageTransport =
+    isManagement ||
+    user.canManageTransport === true;
+
+  return [
+    baseItem,
+
+    ...(canManageHostel
+      ? [
+          {
+            icon: <Building2 size={22} />,
+            label: 'Hostel Management',
+            onClick: () => {
+              navigate('/admin/hostel');
+              setDrawerOpen(false);
+            },
+          },
+        ]
+      : []),
+
+    ...(canManageTransport
+      ? [
+          {
+            icon: <Bus size={22} />,
+            label: 'Transport Management',
+            onClick: () => {
+              navigate('/admin/transport');
+              setDrawerOpen(false);
+            },
+          },
+        ]
+      : []),
+
+    {
+      icon: <Settings size={22} />,
+      label: 'Settings',
+      onClick: () => {
+        navigate('/admin/settings');
+        setDrawerOpen(false);
+      },
+    },
+  ];
+}
 
     return [baseItem];
   };

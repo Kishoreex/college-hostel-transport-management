@@ -102,6 +102,13 @@ interface CancellationRequest {
 
 export default function TransportManagement({ user, onLogout }: TransportManagementProps) {
   const [activeScreen, setActiveScreen] = useState<string | null>(null);
+  const isManagement =
+  user.role?.toLowerCase() === "management" ||
+  user.staffRole?.toLowerCase() === "management";
+
+const canManageTransport =
+  isManagement ||
+  user.canManageTransport === true;
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [studentDetailOpen, setStudentDetailOpen] = useState(false);
@@ -427,8 +434,7 @@ const handleCreateRoute = async () => {
 const pendingApplications = applications.filter(
   (app: any) => app.status === "Pending"
 );
-
- const transportQuickActions = [
+const transportQuickActions = [
   {
     label: "Routes",
     icon: <Bus size={22} />,
@@ -436,13 +442,13 @@ const pendingApplications = applications.filter(
     screen: "routes",
   },
   {
-    label: "Students ",
+    label: "Students",
     icon: <Users size={22} />,
     color: "bg-purple-500",
     screen: "students",
   },
   {
-    label: "Applications ",
+    label: "Applications",
     icon: <CheckCircle2 size={22} />,
     color: "bg-green-500",
     screen: "applications",
@@ -459,12 +465,17 @@ const pendingApplications = applications.filter(
     color: "bg-orange-500",
     screen: "routemap",
   },
-  {
-    label: "Reports",
-    icon: <Building2 size={22} />,
-    color: "bg-indigo-500",
-    screen: "reports",
-  },
+
+  ...(isManagement
+    ? [
+        {
+          label: "Reports",
+          icon: <Building2 size={22} />,
+          color: "bg-indigo-500",
+          screen: "reports",
+        },
+      ]
+    : []),
 ];
 const stats = [
   {
@@ -481,6 +492,32 @@ const stats = [
     color: "bg-purple-500",
   },
 ];
+
+if (!canManageTransport) {
+  return (
+    <DashboardLayout
+      user={user}
+      onLogout={onLogout}
+      title="Transport Management"
+    >
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-5xl mb-4">
+            🔒
+          </div>
+
+          <h2 className="text-xl font-bold text-gray-800">
+            Access Restricted
+          </h2>
+
+          <p className="text-sm text-gray-500 mt-2">
+            You do not have permission to access Transport Management.
+          </p>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
   return (
     <DashboardLayout user={user} onLogout={onLogout} title="Transport Management">
       <div className="space-y-4 max-w-2xl mx-auto pb-6">

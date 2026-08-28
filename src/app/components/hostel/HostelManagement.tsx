@@ -251,10 +251,26 @@ import * as signalR from "@microsoft/signalr";
       const connectionRef =
 useRef<signalR.HubConnection | null>(null);
       const [activeScreen, setActiveScreen] = useState<string | null>(null);
-    const defaultGender =
-      user.canManageGirlsHostel
-        ? 'girls'
-        : 'boys';
+  const isManagement =
+  user.role?.toLowerCase() === "management" ||
+  user.staffRole?.toLowerCase() === "management";
+
+const canManageBoysHostel =
+  isManagement || user.canManageBoysHostel === true;
+
+const canManageGirlsHostel =
+  isManagement || user.canManageGirlsHostel === true;
+
+const canManageHostel =
+  canManageBoysHostel || canManageGirlsHostel;
+
+const canViewHostelReports =
+  isManagement;
+
+const defaultGender =
+  canManageGirlsHostel && !canManageBoysHostel
+    ? "girls"
+    : "boys";
 
     const [roomGender, setRoomGender] =
       useState<'boys' | 'girls'>(defaultGender);
@@ -277,7 +293,106 @@ const [reportCollege, setReportCollege] =
 useState("All");
 const [reportPeriod, setReportPeriod] =
 useState("3years");
+useEffect(() => {
+  if (
+    roomGender === "girls" &&
+    !canManageGirlsHostel
+  ) {
+    setRoomGender("boys");
+  }
 
+  if (
+    roomGender === "boys" &&
+    !canManageBoysHostel &&
+    canManageGirlsHostel
+  ) {
+    setRoomGender("girls");
+  }
+
+  if (
+    outpassGender === "girls" &&
+    !canManageGirlsHostel
+  ) {
+    setOutpassGender("boys");
+  }
+
+  if (
+    outpassGender === "boys" &&
+    !canManageBoysHostel &&
+    canManageGirlsHostel
+  ) {
+    setOutpassGender("girls");
+  }
+
+  if (
+    applicationGender === "girls" &&
+    !canManageGirlsHostel
+  ) {
+    setApplicationGender("boys");
+  }
+
+  if (
+    applicationGender === "boys" &&
+    !canManageBoysHostel &&
+    canManageGirlsHostel
+  ) {
+    setApplicationGender("girls");
+  }
+
+  if (
+    vacatingGender === "girls" &&
+    !canManageGirlsHostel
+  ) {
+    setVacatingGender("boys");
+  }
+
+  if (
+    vacatingGender === "boys" &&
+    !canManageBoysHostel &&
+    canManageGirlsHostel
+  ) {
+    setVacatingGender("girls");
+  }
+
+  if (
+    historyGender === "girls" &&
+    !canManageGirlsHostel
+  ) {
+    setHistoryGender("boys");
+  }
+
+  if (
+    historyGender === "boys" &&
+    !canManageBoysHostel &&
+    canManageGirlsHostel
+  ) {
+    setHistoryGender("girls");
+  }
+
+  if (
+    reportGender === "girls" &&
+    !canManageGirlsHostel
+  ) {
+    setReportGender("boys");
+  }
+
+  if (
+    reportGender === "boys" &&
+    !canManageBoysHostel &&
+    canManageGirlsHostel
+  ) {
+    setReportGender("girls");
+  }
+}, [
+  roomGender,
+  outpassGender,
+  applicationGender,
+  vacatingGender,
+  historyGender,
+  reportGender,
+  canManageBoysHostel,
+  canManageGirlsHostel
+]);
 const [fromDate, setFromDate] =
 useState("");
 
@@ -1021,25 +1136,65 @@ await rejectOutpass(
     }
   };
 
-      const quickActions = [
-        { label: 'Rooms', icon: <DoorOpen size={22} />, color: 'bg-blue-500', screen: 'rooms' },
-        { label: 'Students', icon: <GraduationCap size={22} />, color: 'bg-purple-500', screen: 'students' },
-        { label: 'Outpass', icon: <FileText size={22} />, color: 'bg-orange-500', screen: 'outpass' },
-        { label: 'Leave', icon: <Calendar size={22} />, color: 'bg-teal-500', screen: 'leave' },
-   
-      
-        { label: 'Applications', icon: <Users size={22} />, color: 'bg-rose-500', screen: 'applications' },
-             { label: 'Vacating', icon: <LogOut size={22} />, color: 'bg-red-500', screen: 'vacating' },
-         { label: 'History', icon: <History size={22} />, color: 'bg-indigo-500', screen: 'history' },
-    ...(user.isSystemAdmin
-  ? [{
-      label: 'Reports',
-      icon: <FileText size={22} />,
-      color: 'bg-emerald-500',
-      screen: 'reports'
-    }]
-  : [])
-      ];
+   const quickActions = [
+  ...(canManageHostel
+    ? [
+        {
+          label: 'Rooms',
+          icon: <DoorOpen size={22} />,
+          color: 'bg-blue-500',
+          screen: 'rooms'
+        },
+        {
+          label: 'Students',
+          icon: <GraduationCap size={22} />,
+          color: 'bg-purple-500',
+          screen: 'students'
+        },
+        {
+          label: 'Outpass',
+          icon: <FileText size={22} />,
+          color: 'bg-orange-500',
+          screen: 'outpass'
+        },
+        {
+          label: 'Leave',
+          icon: <Calendar size={22} />,
+          color: 'bg-teal-500',
+          screen: 'leave'
+        },
+        {
+          label: 'Applications',
+          icon: <Users size={22} />,
+          color: 'bg-rose-500',
+          screen: 'applications'
+        },
+        {
+          label: 'Vacating',
+          icon: <LogOut size={22} />,
+          color: 'bg-red-500',
+          screen: 'vacating'
+        },
+        {
+          label: 'History',
+          icon: <History size={22} />,
+          color: 'bg-indigo-500',
+          screen: 'history'
+        }
+      ]
+    : []),
+
+  ...(canViewHostelReports
+    ? [
+        {
+          label: 'Reports',
+          icon: <FileText size={22} />,
+          color: 'bg-emerald-500',
+          screen: 'reports'
+        }
+      ]
+    : [])
+];
       const reportPeriods = [
   {
     value: "3years",
@@ -1182,7 +1337,31 @@ const reportTypes = [
           </DashboardLayout>
         );
       }
+if (!canManageHostel) {
+  return (
+    <DashboardLayout
+      user={user}
+      onLogout={onLogout}
+      title="Hostel Management"
+    >
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="text-5xl mb-4">
+            🔒
+          </div>
 
+          <h2 className="text-xl font-bold text-gray-800">
+            Access Restricted
+          </h2>
+
+          <p className="text-sm text-gray-500 mt-2">
+            You do not have permission to access Hostel Management.
+          </p>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
       return (
         <DashboardLayout user={user} onLogout={onLogout} title="Hostel Management">
           <div className="space-y-4 max-w-2xl mx-auto pb-6">
@@ -2709,12 +2888,10 @@ h.campus === "In Campus"
 
         <div className="flex bg-gray-100 rounded-2xl p-1">
 
-          {(user.isSystemAdmin
-            ? ["boys", "girls"]
-            : user.canManageGirlsHostel
-            ? ["girls"]
-            : ["boys"]
-          ).map(g => (
+       {[
+  ...(canManageBoysHostel ? ["boys"] : []),
+  ...(canManageGirlsHostel ? ["girls"] : [])
+].map(g => (
 
             <button
               key={g}

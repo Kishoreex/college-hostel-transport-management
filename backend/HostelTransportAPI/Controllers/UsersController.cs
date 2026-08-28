@@ -119,15 +119,9 @@ public async Task<IActionResult> GetUsers()
 }
 
 
-        // -------------------------------------------------
-        // Validate College
-        // -------------------------------------------------
-
-        // System Admin = All Colleges
 // =====================================================
 // COLLEGE
 // =====================================================
-
 if (!user.CollegeId.HasValue)
 {
     return BadRequest(
@@ -201,17 +195,24 @@ if (!collegeExists)
         // -------------------------------------------------
 
         user.IsActive = true;
+        
 
-        // Old permission fields are no longer used
- // =====================================================
+      // =====================================================
 // PERMISSIONS
 // =====================================================
 
 user.IsSystemAdmin = false;
 
+var modules = (user.Module ?? "")
+    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+    .Select(x => x.Trim())
+    .ToList();
+
 if (role.Name == "Management")
 {
     // Management has ALL permissions
+    user.Module = "Hostel,Transport";
+
     user.CanManageTransport = true;
     user.CanManageBoysHostel = true;
     user.CanManageGirlsHostel = true;
@@ -220,35 +221,38 @@ if (role.Name == "Management")
 }
 else
 {
-    // Transport
-    if (user.Module == "Transport")
+    // Transport permission
+    user.CanManageTransport =
+        modules.Contains("Transport");
+
+    // Hostel permissions
+    if (modules.Contains("Hostel"))
     {
-        user.CanManageTransport = true;
+        user.CanManageBoysHostel =
+            user.CanManageBoysHostel;
 
-        user.CanManageBoysHostel = false;
-        user.CanManageGirlsHostel = false;
-        user.HostelApprovalLevel = null;
+        user.CanManageGirlsHostel =
+            user.CanManageGirlsHostel;
+
+        if (string.IsNullOrWhiteSpace(
+            user.HostelApprovalLevel))
+        {
+            return BadRequest(
+                "Hostel approval level is required."
+            );
+        }
     }
-
-    // Hostel
-    else if (user.Module == "Hostel")
-    {
-        user.CanManageTransport = false;
-
-        // Keep permissions coming from frontend
-        // for Boys / Girls hostel
-
-        user.HostelApprovalLevel =
-            user.HostelApprovalLevel;
-    }
-
-    // Anything else
     else
     {
-        user.CanManageTransport = false;
         user.CanManageBoysHostel = false;
         user.CanManageGirlsHostel = false;
         user.HostelApprovalLevel = null;
+    }
+
+    // Transport only
+    if (!modules.Contains("Transport"))
+    {
+        user.CanManageTransport = false;
     }
 }
 
@@ -437,17 +441,16 @@ if (user.RoleId == 1002)
 // COLLEGE
 // =====================================================
 
-if (!user.CollegeId.HasValue)
+if (!updatedUser.CollegeId.HasValue)
 {
     return BadRequest(
         "College is required."
     );
 }
 
-var collegeExists = await _context.Colleges
-    .AnyAsync(x =>
-        x.Id == user.CollegeId.Value &&
-        x.IsActive);
+var collegeExists = await _context.Colleges.AnyAsync(x =>
+    x.Id == updatedUser.CollegeId.Value &&
+    x.IsActive);
 
 if (!collegeExists)
 {
@@ -474,17 +477,101 @@ if (!collegeExists)
 
 
 
-        // -------------------------------------------------
-        // Old permission compatibility
-        // -------------------------------------------------
+ // =====================================================
+// UPDATE COLLEGE
+// =====================================================
 
-        user.IsSystemAdmin =
-            role.Name == "System Admin";
+user.CollegeId =
+    updatedUser.CollegeId;
 
-        user.CanManageTransport = false;
+
+// =====================================================
+// UPDATE MODULE
+// =====================================================
+
+user.Module =
+    updatedUser.Module;
+
+
+// =====================================================
+// UPDATE PERMISSIONS
+// =====================================================
+
+user.IsSystemAdmin =
+    role.Name == "System Admin";
+
+var modules = (updatedUser.Module ?? "")
+    .Split(
+        ',',
+        StringSplitOptions.RemoveEmptyEntries
+    )
+    .Select(x => x.Trim())
+    .ToList();
+
+if (role.Name == "Management")
+{
+    // Management always has everything
+    user.Module = "Hostel,Transport";
+
+    user.CanManageTransport = true;
+    user.CanManageBoysHostel = true;
+    user.CanManageGirlsHostel = true;
+
+    user.HostelApprovalLevel = "All";
+}
+else
+{
+    // ---------------------------------------------
+    // TRANSPORT
+    // ---------------------------------------------
+
+    user.CanManageTransport =
+        modules.Contains("Transport");
+
+
+    // ---------------------------------------------
+    // HOSTEL
+    // ---------------------------------------------
+
+    if (modules.Contains("Hostel"))
+    {
+        user.CanManageBoysHostel =
+            updatedUser.CanManageBoysHostel;
+
+        user.CanManageGirlsHostel =
+            updatedUser.CanManageGirlsHostel;
+
+        user.HostelApprovalLevel =
+            updatedUser.HostelApprovalLevel;
+
+        if (
+            !user.CanManageBoysHostel &&
+            !user.CanManageGirlsHostel
+        )
+        {
+            return BadRequest(
+                "Please select Boys Hostel or Girls Hostel."
+            );
+        }
+
+        if (
+            string.IsNullOrWhiteSpace(
+                user.HostelApprovalLevel
+            )
+        )
+        {
+            return BadRequest(
+                "Please select an approval level."
+            );
+        }
+    }
+    else
+    {
         user.CanManageBoysHostel = false;
         user.CanManageGirlsHostel = false;
-
+        user.HostelApprovalLevel = null;
+    }
+}
 
         // -------------------------------------------------
         // Password

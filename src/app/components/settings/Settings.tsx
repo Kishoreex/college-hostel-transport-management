@@ -136,6 +136,10 @@ function FieldInput({ label, value, onChange, placeholder, icon }: { label: stri
 
 export default function Settings({ user, onLogout }: SettingsProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const canManageUsers =
+  user.isSystemAdmin ||
+  user.staffRole === "Management" ||
+  user.role === "management";
   const [users, setUsers] =
   useState<SystemUser[]>([]); 
 
@@ -155,10 +159,8 @@ const [newUserRegistration,
 setNewUserRegistration] =
 useState(true);
 useEffect(() => {
-  if (
-    user.isSystemAdmin ||
-    user.staffRole === "Management"
-  ) {
+
+  if (canManageUsers) {
     loadUsers();
 
     const loadLogs = async () => {
@@ -177,9 +179,9 @@ useEffect(() => {
   }
 
   loadNotificationSettings();
+
 }, [
-  user.isSystemAdmin,
-  user.staffRole,
+  canManageUsers,
   user.id
 ]);
 const loadNotificationSettings =
@@ -503,10 +505,7 @@ const handleEdit = async () => {
           <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant="fullWidth" sx={{ '& .MuiTab-root': { fontSize: '0.75rem' } }}>
            <Tab label="GENERAL" />
 
-{(
-  user.isSystemAdmin ||
-  user.staffRole === "Management"
-) && (
+{canManageUsers && (
   <Tab label="USERS" />
 )}
 
@@ -608,7 +607,7 @@ const handleEdit = async () => {
             )}
 
             {/* ── USERS ── */}
-            {user.isSystemAdmin && activeTab === 1 && (
+      {canManageUsers && activeTab === 1 && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="font-bold text-gray-800">System Users</h3>
@@ -689,7 +688,7 @@ const handleEdit = async () => {
             )}
 
             {/* ── NOTIFICATIONS ── */}
-           {activeTab === (user.isSystemAdmin ? 2 : 1) && (
+        {activeTab === (canManageUsers ? 2 : 1) && (
               <div className="space-y-3">
                 {[
                   { title: '🔔 Push Notifications', items: ['Enable push notifications', 'NewOutpass Request','New Leave Application' , 'New User Registration'] },
@@ -768,7 +767,7 @@ const handleEdit = async () => {
             )}
 
             {/* ── LOGS ── */}
-           {activeTab === (user.isSystemAdmin ? 3 : 2) && (
+         {activeTab === (canManageUsers ? 3 : 2) && (
               <div className="space-y-3">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className="font-bold text-gray-800">Activity Logs</h3>

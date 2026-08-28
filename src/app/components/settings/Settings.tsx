@@ -592,10 +592,7 @@ const handleEdit = async () => {
 
         roleId: Number(editRoleId),
 
-        collegeId:
-          selectedRole.id === 1
-            ? null
-            : Number(editCollegeId),
+      collegeId: Number(editCollegeId),
 
         passwordHash: editPassword
       }
@@ -1029,57 +1026,40 @@ const handleEdit = async () => {
   </select>
 </div>
 
-{u.role.toLowerCase() === "management" ? (
+{/* PERMISSION PREVIEW */}
 
-  <>
-    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
-      All Permissions
+{newModule === "Transport" && (
+  <div className="flex flex-wrap gap-2">
+
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
+      ✓ Transport
     </span>
 
-    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
-      Transport
-    </span>
+  </div>
+)}
 
-    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
-      Boys Hostel
-    </span>
+{newModule === "Hostel" && (
+  <div className="flex flex-wrap gap-2">
 
-    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
-      Girls Hostel
-    </span>
-  </>
-
-) : (
-
-  <>
-    {u.module === "Transport" && (
-      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
-        Transport
-      </span>
-    )}
-
-    {u.module === "Hostel" &&
-      u.canManageBoysHostel && (
+    {newBoysHostel && (
       <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700">
-        Boys Hostel
+        ✓ Boys Hostel
       </span>
     )}
 
-    {u.module === "Hostel" &&
-      u.canManageGirlsHostel && (
+    {newGirlsHostel && (
       <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-pink-100 text-pink-700">
-        Girls Hostel
+        ✓ Girls Hostel
       </span>
     )}
 
-    {u.module === "Hostel" &&
-      u.hostelApprovalLevel && (
+    {newHostelApprovalLevel && (
       <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-indigo-100 text-indigo-700">
-        {u.hostelApprovalLevel}
+        ✓ {newHostelApprovalLevel}
       </span>
     )}
-  </>
 
+  </div>
 )}
 {/* MODULE */}
 
@@ -1264,7 +1244,7 @@ disabled={
         VIEW ONLY
        ===================================================== */}
 
-    {editSheet.u?.role?.toLowerCase() === "management" ? (
+{u.role?.toLowerCase() === "management" ? (
 
       <div className="space-y-4">
 

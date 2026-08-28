@@ -37,6 +37,9 @@ interface AdminDashboardProps {
 }
 
 export default function AdminDashboard({ user, onLogout }: AdminDashboardProps) {
+  const canViewStudents =
+  user.role === "management" ||
+  user.staffRole === "Management";
 const [summary, setSummary] = useState({
 
     totalStudents: 0,
@@ -464,11 +467,13 @@ if (
           </td>
 
           <td className="text-center">
-       {user.isSystemAdmin ? (
+   {canViewStudents ? (
     <button
         className="text-blue-600 font-bold hover:underline"
         onClick={() =>
-            openHostelStudents("Madha Dental College & Hospital")
+            openHostelStudents(
+                "Madha Dental College & Hospital"
+            )
         }
     >
         {summary.mdchHostel}
@@ -481,20 +486,20 @@ if (
           </td>
 
           <td className="text-center">
-            {user.isSystemAdmin ? (
+ {canViewStudents ? (
     <button
         className="text-blue-600 font-bold hover:underline"
         onClick={() =>
-       openTransportStudents(
-"Madha Dental College & Hospital"
-)
+            openTransportStudents(
+                "Madha Dental College & Hospital"
+            )
         }
     >
-      {summary.mdchTransport}
+        {summary.mdchTransport}
     </button>
 ) : (
     <span className="font-bold text-gray-700">
-       {summary.mdchTransport}
+        {summary.mdchTransport}
     </span>
 )}
         
@@ -507,40 +512,40 @@ if (
           </td>
 
           <td className="text-center">
-            {user.isSystemAdmin ? (
+{canViewStudents ? (
     <button
         className="text-blue-600 font-bold hover:underline"
         onClick={() =>
-         openHostelStudents(
-"Madha College of Nursing"
-)
+            openHostelStudents(
+                "Madha College of Nursing"
+            )
         }
     >
-    {summary.mconHostel}
+        {summary.mconHostel}
     </button>
 ) : (
     <span className="font-bold text-gray-700">
-     {summary.mconHostel}
+        {summary.mconHostel}
     </span>
 )}
   
           </td>
 
           <td className="text-center">
-            {user.isSystemAdmin ? (
+{canViewStudents ? (
     <button
         className="text-blue-600 font-bold hover:underline"
         onClick={() =>
-          openTransportStudents(
-"Madha College of Nursing"
-)
+            openTransportStudents(
+                "Madha College of Nursing"
+            )
         }
     >
-       {summary.mconTransport}
+        {summary.mconTransport}
     </button>
 ) : (
     <span className="font-bold text-gray-700">
-     {summary.mconTransport}
+        {summary.mconTransport}
     </span>
 )}
     
@@ -553,40 +558,40 @@ if (
           </td>
 
           <td className="text-center">
-            {user.isSystemAdmin ? (
+{canViewStudents ? (
     <button
         className="text-blue-600 font-bold hover:underline"
         onClick={() =>
-           openHostelStudents(
-"Madha College of Physiotherapy"
-)
+            openHostelStudents(
+                "Madha College of Physiotherapy"
+            )
         }
     >
-       {summary.mcopHostel}
+        {summary.mcopHostel}
     </button>
 ) : (
     <span className="font-bold text-gray-700">
-     {summary.mcopHostel}
+        {summary.mcopHostel}
     </span>
 )}
      
           </td>
 
           <td className="text-center">
-            {user.isSystemAdmin ? (
+   {canViewStudents ? (
     <button
         className="text-blue-600 font-bold hover:underline"
         onClick={() =>
-          openTransportStudents(
-"Madha College of Physiotherapy"
-)
+            openTransportStudents(
+                "Madha College of Physiotherapy"
+            )
         }
     >
-  {summary.mcopTransport}
+        {summary.mcopTransport}
     </button>
 ) : (
     <span className="font-bold text-gray-700">
-    {summary.mcopTransport}
+        {summary.mcopTransport}
     </span>
 )}
        

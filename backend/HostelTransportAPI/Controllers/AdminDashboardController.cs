@@ -13,135 +13,170 @@ public class AdminDashboardController : ControllerBase
     {
         _context = context;
     }
-[HttpGet("summary")]
-public IActionResult Summary()
-{
-    // Hostel Students
-    var mdchHostel = _context.StudentRegistrations.Count(x =>
-        x.Status == "Approved" &&
-        x.CollegeName == "Madha Dental College & Hospital");
 
-    var mconHostel = _context.StudentRegistrations.Count(x =>
-        x.Status == "Approved" &&
-        x.CollegeName == "Madha College of Nursing");
+    // =====================================================
+    // DASHBOARD SUMMARY
+    // ONLY ACTIVE STUDENTS
+    // =====================================================
 
-    var mcopHostel = _context.StudentRegistrations.Count(x =>
-        x.Status == "Approved" &&
-        x.CollegeName == "Madha College of Physiotherapy");
-
-    // Transport Students
-    var mdchTransport = _context.TransportRegistrations.Count(x =>
-        x.Status == "Approved" &&
-        x.CollegeName == "Madha Dental College & Hospital");
-
-    var mconTransport = _context.TransportRegistrations.Count(x =>
-        x.Status == "Approved" &&
-        x.CollegeName == "Madha College of Nursing");
-
-    var mcopTransport = _context.TransportRegistrations.Count(x =>
-        x.Status == "Approved" &&
-        x.CollegeName == "Madha College of Physiotherapy");
-
-    var hostelStudents =
-        mdchHostel +
-        mconHostel +
-        mcopHostel;
-
-    var transportStudents =
-        mdchTransport +
-        mconTransport +
-        mcopTransport;
-
-    var totalStudents =
-        hostelStudents +
-        transportStudents;
-
-    return Ok(new
+    [HttpGet("summary")]
+    public IActionResult Summary()
     {
-        totalStudents,
+        // =========================
+        // HOSTEL STUDENTS
+        // =========================
 
-        hostelStudents,
-        transportStudents,
+        var mdchHostel = _context.StudentRegistrations.Count(x =>
+            x.Status == "Active" &&
+            x.CollegeName == "Madha Dental College & Hospital");
 
-        mdchHostel,
-        mdchTransport,
+        var mconHostel = _context.StudentRegistrations.Count(x =>
+            x.Status == "Active" &&
+            x.CollegeName == "Madha College of Nursing");
 
-        mconHostel,
-        mconTransport,
+        var mcopHostel = _context.StudentRegistrations.Count(x =>
+            x.Status == "Active" &&
+            x.CollegeName == "Madha College of Physiotherapy");
 
-        mcopHostel,
-        mcopTransport
-    });
-}
-[HttpGet("hostelStudents")]
-public IActionResult GetHostelStudents(string college)
-{
-    var students = _context.StudentRegistrations
-        .Where(x =>
-            x.Status == "Approved" &&
-            x.CollegeName == college)
-        .Select(x => new
+
+        // =========================
+        // TRANSPORT STUDENTS
+        // =========================
+
+        var mdchTransport = _context.TransportRegistrations.Count(x =>
+            x.Status == "Active" &&
+            x.CollegeName == "Madha Dental College & Hospital");
+
+        var mconTransport = _context.TransportRegistrations.Count(x =>
+            x.Status == "Active" &&
+            x.CollegeName == "Madha College of Nursing");
+
+        var mcopTransport = _context.TransportRegistrations.Count(x =>
+            x.Status == "Active" &&
+            x.CollegeName == "Madha College of Physiotherapy");
+
+
+        // =========================
+        // TOTALS
+        // =========================
+
+        var hostelStudents =
+            mdchHostel +
+            mconHostel +
+            mcopHostel;
+
+        var transportStudents =
+            mdchTransport +
+            mconTransport +
+            mcopTransport;
+
+        var totalStudents =
+            hostelStudents +
+            transportStudents;
+
+
+        return Ok(new
         {
-            x.StudentId,
-            x.StudentName,
-            x.Department,
-            x.Year,
-            x.Batch,
-            x.Phone,
-            x.ParentName,
-            x.ParentPhone,
-            x.Address,
-            x.CollegeName,
+            totalStudents,
 
-            RoomNumber = _context.HostelRoomAllocations
-                .Where(r => r.StudentId == x.StudentId)
-                .Select(r => r.RoomNumber)
-                .FirstOrDefault()
-        })
-        .OrderBy(x => x.StudentName)
-        .ToList();
+            hostelStudents,
+            transportStudents,
 
-    return Ok(students);
-}
-[HttpGet("transportStudents")]
-public IActionResult GetTransportStudents(string college)
-{
-    var students = _context.TransportRegistrations
-        .Where(x =>
-            x.Status == "Approved" &&
-            x.CollegeName == college)
-        .Select(x => new
-        {
-            x.StudentId,
-            x.StudentName,
-            x.Department,
-            x.Year,
-            x.Batch,
-            x.Phone,
-            x.ParentName,
-            x.ParentPhone,
-            x.Address,
-            x.CollegeName,
+            mdchHostel,
+            mdchTransport,
 
-            BusRoute = x.Route != null
-                ? x.Route.RouteName
-                : "",
+            mconHostel,
+            mconTransport,
 
-            BusNumber = x.Route != null
-                ? x.Route.BusNumber
-                : "",
+            mcopHostel,
+            mcopTransport
+        });
+    }
 
-            PickupPoint = x.Stop != null
-                ? x.Stop.StopName
-                : "",
 
-            PickupTime = x.Stop != null
-                ? x.Stop.PickupTime.ToString(@"hh\:mm")
-                : ""
-        })
-        .OrderBy(x => x.StudentName)
-        .ToList();
+    // =====================================================
+    // HOSTEL STUDENTS
+    // ONLY ACTIVE STUDENTS
+    // =====================================================
 
-    return Ok(students);
-}
+    [HttpGet("hostelStudents")]
+    public IActionResult GetHostelStudents(string college)
+    {
+        var students = _context.StudentRegistrations
+            .Where(x =>
+                x.Status == "Active" &&
+                x.CollegeName == college)
+            .Select(x => new
+            {
+                x.StudentId,
+                x.StudentName,
+                x.Department,
+                x.Year,
+                x.Batch,
+                x.Phone,
+                x.Email,
+                x.ParentName,
+                x.ParentPhone,
+                x.Address,
+                x.CollegeName,
+
+                RoomNumber = _context.HostelRoomAllocations
+                    .Where(r => r.StudentId == x.StudentId)
+                    .Select(r => r.RoomNumber)
+                    .FirstOrDefault()
+            })
+            .OrderBy(x => x.StudentName)
+            .ToList();
+
+        return Ok(students);
+    }
+
+
+    // =====================================================
+    // TRANSPORT STUDENTS
+    // ONLY ACTIVE STUDENTS
+    // =====================================================
+
+    [HttpGet("transportStudents")]
+    public IActionResult GetTransportStudents(string college)
+    {
+        var students = _context.TransportRegistrations
+            .Where(x =>
+                x.Status == "Active" &&
+                x.CollegeName == college)
+            .Select(x => new
+            {
+                x.StudentId,
+                x.StudentName,
+                x.Department,
+                x.Year,
+                x.Batch,
+                x.Phone,
+                x.Email,
+                x.ParentName,
+                x.ParentPhone,
+                x.Address,
+                x.CollegeName,
+
+                BusRoute = x.Route != null
+                    ? x.Route.RouteName
+                    : "",
+
+                BusNumber = x.Route != null
+                    ? x.Route.BusNumber
+                    : "",
+
+                PickupPoint = x.Stop != null
+                    ? x.Stop.StopName
+                    : "",
+
+                PickupTime = x.Stop != null
+                    ? x.Stop.PickupTime.ToString(@"hh\:mm")
+                    : ""
+            })
+            .OrderBy(x => x.StudentName)
+            .ToList();
+
+        return Ok(students);
+    }
 }

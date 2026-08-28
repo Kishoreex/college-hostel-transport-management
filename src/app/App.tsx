@@ -189,7 +189,26 @@ await logout(logoutId);
                   />
                 }
               />
+{/* ============================= */}
+{/* MANAGEMENT */}
+{/* ============================= */}
 
+<Route
+  path="/management"
+  element={
+    user.role === "management" ? (
+      <AdminDashboard
+        user={user}
+        onLogout={handleLogout}
+      />
+    ) : (
+      <Navigate
+        to="/"
+        replace
+      />
+    )
+  }
+/>
               {/* ADMIN - HOSTEL */}
               <Route
                 path="/admin/hostel"

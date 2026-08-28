@@ -776,7 +776,7 @@ const handleEdit = async () => {
 </div>
 <div className="flex gap-2">
 
-  {u.role.toLowerCase() === "management" ? (
+ {editSheet.u?.role?.toLowerCase() === "management" ? (
 
     <button
       onClick={() => openEdit(u)}
@@ -797,33 +797,40 @@ const handleEdit = async () => {
         <span>Edit</span>
       </button>
 
-      <button
-        onClick={async () => {
+{u.role?.toLowerCase() !== "management" && (
+  <button
+    onClick={async () => {
 
-          if (u.status === "active") {
-            await disableUser(u.id);
-          } else {
-            await enableUser(u.id);
-          }
+      if (u.status === "active") {
 
-          await loadUsers();
+        await disableUser(u.id);
 
-        }}
-        className={`flex-1 flex items-center justify-center space-x-1.5 active:scale-95 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-          u.status === "active"
-            ? "bg-red-50 text-red-600 hover:bg-red-100"
-            : "bg-green-50 text-green-700 hover:bg-green-100"
-        }`}
-      >
-        <Shield size={14} />
+      } else {
 
-        <span>
-          {u.status === "active"
-            ? "Disable"
-            : "Enable"}
-        </span>
+        await enableUser(u.id);
 
-      </button>
+      }
+
+      await loadUsers();
+
+    }}
+    className={`flex-1 flex items-center justify-center space-x-1.5 active:scale-95 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+      u.status === 'active'
+        ? 'bg-red-50 text-red-600 hover:bg-red-100'
+        : 'bg-green-50 text-green-700 hover:bg-green-100'
+    }`}
+  >
+
+    <Shield size={14} />
+
+    <span>
+      {u.status === 'active'
+        ? 'Disable'
+        : 'Enable'}
+    </span>
+
+  </button>
+)}
     </>
 
   )}
@@ -1240,8 +1247,7 @@ disabled={
         </div>
       </BottomSheet>
 
-     {/* ── EDIT USER SHEET ── */}
-<BottomSheet
+    <BottomSheet
   open={editSheet.open}
   onClose={() =>
     setEditSheet({
@@ -1249,26 +1255,20 @@ disabled={
       u: null
     })
   }
-  title={
-    editSheet.u?.role?.toLowerCase() === "management"
-      ? "View User"
-      : "Edit User"
-  }
+  title="Edit User"
 >
   <div className="space-y-4">
 
     {/* =====================================================
-        MANAGEMENT VIEW
-        ===================================================== */}
+        MANAGEMENT ACCOUNT
+        VIEW ONLY
+       ===================================================== */}
 
     {editSheet.u?.role?.toLowerCase() === "management" ? (
 
       <div className="space-y-4">
 
-        {/* Management Account Notice */}
-
         <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
-
           <p className="text-sm font-bold text-green-700">
             Management Account
           </p>
@@ -1276,11 +1276,7 @@ disabled={
           <p className="text-xs text-green-600 mt-1">
             This account has all permissions and cannot be modified.
           </p>
-
         </div>
-
-
-        {/* Full Name */}
 
         <FieldInput
           label="Full Name"
@@ -1289,9 +1285,6 @@ disabled={
           icon={<UserCircle size={15} />}
         />
 
-
-        {/* Phone */}
-
         <FieldInput
           label="Phone Number"
           value={editPhone}
@@ -1299,48 +1292,12 @@ disabled={
           icon={<Phone size={15} />}
         />
 
-
-        {/* Email */}
-
         <FieldInput
           label="Email Address"
           value={editEmail}
           onChange={() => {}}
           icon={<Mail size={15} />}
         />
-
-
-        {/* Role */}
-
-        <div>
-
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            Role
-          </label>
-
-          <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800">
-            Management
-          </div>
-
-        </div>
-
-
-        {/* College */}
-
-        <div>
-
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            College
-          </label>
-
-          <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800">
-            {editSheet.u.college || "All Colleges"}
-          </div>
-
-        </div>
-
-
-        {/* Permissions */}
 
         <div className="bg-gray-50 rounded-2xl p-4">
 
@@ -1351,19 +1308,13 @@ disabled={
           <div className="space-y-2 text-sm text-gray-700">
 
             <p>✓ Transport</p>
-
             <p>✓ Boys Hostel</p>
-
             <p>✓ Girls Hostel</p>
-
             <p>✓ All Approval Levels</p>
 
           </div>
 
         </div>
-
-
-        {/* Close */}
 
         <button
           onClick={() =>
@@ -1382,10 +1333,10 @@ disabled={
     ) : (
 
       /* =====================================================
-         NORMAL USER EDIT
+         NORMAL STAFF USER EDIT
          ===================================================== */
 
-      <>
+      <div className="space-y-4">
 
         {/* Current user card */}
 
@@ -1400,7 +1351,6 @@ disabled={
             </div>
 
             <div>
-
               <p className="font-semibold text-gray-800 text-sm">
                 {editSheet.u.name}
               </p>
@@ -1408,14 +1358,10 @@ disabled={
               <p className="text-xs text-gray-500">
                 Editing user details below
               </p>
-
             </div>
 
           </div>
         )}
-
-
-        {/* Full Name */}
 
         <FieldInput
           label="Full Name"
@@ -1425,9 +1371,6 @@ disabled={
           icon={<UserCircle size={15} />}
         />
 
-
-        {/* Phone */}
-
         <FieldInput
           label="Phone Number"
           value={editPhone}
@@ -1435,9 +1378,6 @@ disabled={
           placeholder="Phone number"
           icon={<Phone size={15} />}
         />
-
-
-        {/* Email */}
 
         <FieldInput
           label="Email Address"
@@ -1447,9 +1387,6 @@ disabled={
           icon={<Mail size={15} />}
         />
 
-
-        {/* Password */}
-
         <PasswordInput
           label="New Password (optional)"
           value={editPassword}
@@ -1457,48 +1394,9 @@ disabled={
           placeholder="Leave blank to keep current"
         />
 
-
-        {/* Role */}
-
-        <div>
-
-          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            Role
-          </label>
-
-          <select
-            value={editRoleId}
-            onChange={e =>
-              setEditRoleId(
-                e.target.value
-                  ? Number(e.target.value)
-                  : ''
-              )
-            }
-            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
-          >
-
-            <option value="">
-              Select Role
-            </option>
-
-            {staffRoles.map(role => (
-
-              <option
-                key={role.id}
-                value={role.id}
-              >
-                {role.name}
-              </option>
-
-            ))}
-
-          </select>
-
-        </div>
-
-
-        {/* College */}
+        {/* =====================================================
+            COLLEGE
+           ===================================================== */}
 
         <div>
 
@@ -1523,14 +1421,12 @@ disabled={
             </option>
 
             {colleges.map(college => (
-
               <option
                 key={college.id}
                 value={college.id}
               >
                 {college.name}
               </option>
-
             ))}
 
           </select>
@@ -1538,156 +1434,58 @@ disabled={
         </div>
 
 
-        {/* Module */}
+        {/* =====================================================
+            ROLE
+           ===================================================== */}
 
         <div>
 
           <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-            Module
+            Role
           </label>
 
           <select
-            value={editModule}
+            value={editRoleId}
             onChange={e => {
+              const value = e.target.value;
 
-              const value =
-                e.target.value;
-
-              setEditModule(value);
-
-              if (value !== "Hostel") {
-
-                setEditBoysHostel(false);
-                setEditGirlsHostel(false);
-                setEditHostelApprovalLevel('');
-
-              }
-
+              setEditRoleId(
+                value
+                  ? Number(value)
+                  : ''
+              );
             }}
-            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
+            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
           >
 
             <option value="">
-              Select Module
+              Select Role
             </option>
 
-            <option value="Hostel">
-              Hostel
-            </option>
+            {staffRoles
+              .filter(
+                role =>
+                  role.name !== "System Admin"
+              )
+              .map(role => (
 
-            <option value="Transport">
-              Transport
-            </option>
+                <option
+                  key={role.id}
+                  value={role.id}
+                >
+                  {role.name}
+                </option>
+
+              ))}
 
           </select>
 
         </div>
 
 
-        {/* Hostel Settings */}
-
-        {editModule === "Hostel" && (
-
-          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
-
-            {/* Hostel */}
-
-            <div>
-
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                Hostel
-              </label>
-
-              <div className="space-y-3">
-
-                <label className="flex items-center gap-3">
-
-                  <input
-                    type="checkbox"
-                    checked={editBoysHostel}
-                    onChange={e =>
-                      setEditBoysHostel(
-                        e.target.checked
-                      )
-                    }
-                    className="w-4 h-4"
-                  />
-
-                  <span className="text-sm text-gray-700">
-                    Boys Hostel
-                  </span>
-
-                </label>
-
-
-                <label className="flex items-center gap-3">
-
-                  <input
-                    type="checkbox"
-                    checked={editGirlsHostel}
-                    onChange={e =>
-                      setEditGirlsHostel(
-                        e.target.checked
-                      )
-                    }
-                    className="w-4 h-4"
-                  />
-
-                  <span className="text-sm text-gray-700">
-                    Girls Hostel
-                  </span>
-
-                </label>
-
-              </div>
-
-            </div>
-
-
-            {/* Approval Level */}
-
-            <div>
-
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                Approval Level
-              </label>
-
-              <select
-                value={editHostelApprovalLevel}
-                onChange={e =>
-                  setEditHostelApprovalLevel(
-                    e.target.value
-                  )
-                }
-                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
-              >
-
-                <option value="">
-                  Select Approval Level
-                </option>
-
-                <option value="First Level">
-                  First Level
-                </option>
-
-                <option value="Second Level">
-                  Second Level
-                </option>
-
-                <option value="Final Level">
-                  Final Level
-                </option>
-
-              </select>
-
-            </div>
-
-          </div>
-
-        )}
-
-
-        {/* Buttons */}
+        {/* =====================================================
+            SAVE / CANCEL
+           ===================================================== */}
 
         <div className="flex gap-3 pt-2">
 
@@ -1703,7 +1501,6 @@ disabled={
             Cancel
           </button>
 
-
           <button
             onClick={handleEdit}
             className="flex-1 py-3 rounded-2xl bg-blue-600 text-white text-sm font-semibold active:scale-95 transition-transform"
@@ -1713,7 +1510,7 @@ disabled={
 
         </div>
 
-      </>
+      </div>
 
     )}
 

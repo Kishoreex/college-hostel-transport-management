@@ -70,18 +70,18 @@ public IActionResult GetAll()
         .ToList();
 
     return Ok(data);
-}
-[HttpGet("approved")]
+}[HttpGet("approved")]
 public IActionResult GetApprovedStudents()
 {
     var data = _context.StudentRegistrations
-        .Where(x => x.Status == "Approved")
+        .Where(x => x.IsApproved && x.Status == "Active")
         .OrderBy(x => x.StudentName)
         .Select(x => new
         {
             x.Id,
             x.StudentId,
             x.StudentName,
+            x.RegisterNumber,
             x.Phone,
             x.CollegeName,
             x.Department,
@@ -90,7 +90,10 @@ public IActionResult GetApprovedStudents()
             x.ParentName,
             x.ParentPhone,
             x.Address,
-            x.Gender
+            x.Gender,
+            x.Email,
+            x.Status,
+            x.IsApproved
         })
         .ToList();
 

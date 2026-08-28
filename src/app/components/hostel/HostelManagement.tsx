@@ -469,24 +469,32 @@ useEffect(() => {
   loadRooms();
   loadHostelStudents();
 }, []);
-
 const loadHostelStudents = async () => {
   try {
-    const data = await getAllStudentRegistrations();
+    const data = await getStudentRegistrations();
 
-    console.log("========== STUDENT API ==========");
+    console.log("========== ACTIVE STUDENT API ==========");
     console.log("RAW DATA:", data);
     console.log("IS ARRAY:", Array.isArray(data));
     console.log("COUNT:", Array.isArray(data) ? data.length : "NOT ARRAY");
 
     if (Array.isArray(data) && data.length > 0) {
       console.log("FIRST STUDENT:", data[0]);
-      console.log("FIRST STUDENT KEYS:", Object.keys(data[0]));
+      console.log(
+        "FIRST STUDENT KEYS:",
+        Object.keys(data[0])
+      );
     }
 
-    setHostelStudents(Array.isArray(data) ? data : []);
+    setHostelStudents(
+      Array.isArray(data) ? data : []
+    );
   } catch (error) {
-    console.error("FAILED TO LOAD STUDENTS:", error);
+    console.error(
+      "FAILED TO LOAD ACTIVE STUDENTS:",
+      error
+    );
+
     setHostelStudents([]);
   }
 };

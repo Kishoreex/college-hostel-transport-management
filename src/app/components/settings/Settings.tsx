@@ -1244,7 +1244,7 @@ disabled={
         VIEW ONLY
        ===================================================== */}
 
-{u.role?.toLowerCase() === "management" ? (
+{editSheet.u?.role?.toLowerCase() === "management" ? (
 
       <div className="space-y-4">
 

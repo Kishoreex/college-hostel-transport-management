@@ -368,6 +368,25 @@ const staffRoles = [
   }
 ];
 
+const toggleModule = (
+  current: string,
+  module: string
+) => {
+
+  const modules = current
+    ? current.split(',').filter(Boolean)
+    : [];
+
+  if (modules.includes(module)) {
+
+    return modules
+      .filter(m => m !== module)
+      .join(',');
+
+  }
+
+  return [...modules, module].join(',');
+};
  const [auditLogs, setAuditLogs] = useState<any[]>([]);
 
 const openAdd = () => {
@@ -416,7 +435,7 @@ const handleAdd = async () => {
   }
 
   // Hostel validation
-  if (newModule === "Hostel") {
+if (newModule.split(',').includes("Hostel")) {
 
     if (
       !newBoysHostel &&
@@ -463,22 +482,29 @@ const handleAdd = async () => {
 
       module:
         newModule,
+canManageTransport:
+  newModule
+    .split(',')
+    .includes("Transport"),
 
-      canManageTransport:
-        newModule === "Transport",
+canManageBoysHostel:
+  newModule
+    .split(',')
+    .includes("Hostel") &&
+  newBoysHostel,
 
-      canManageBoysHostel:
-        newModule === "Hostel" &&
-        newBoysHostel,
+canManageGirlsHostel:
+  newModule
+    .split(',')
+    .includes("Hostel") &&
+  newGirlsHostel,
 
-      canManageGirlsHostel:
-        newModule === "Hostel" &&
-        newGirlsHostel,
-
-      hostelApprovalLevel:
-        newModule === "Hostel"
-          ? newHostelApprovalLevel
-          : null
+hostelApprovalLevel:
+  newModule
+    .split(',')
+    .includes("Hostel")
+    ? newHostelApprovalLevel
+    : null
     });
 
     await loadUsers();
@@ -949,204 +975,219 @@ const handleEdit = async () => {
       </div>
 
       {/* ── ADD USER SHEET ── */}
-      <BottomSheet open={addSheet} onClose={() => setAddSheet(false)} title="Add New User">
-        <div className="space-y-4">
-          <FieldInput label="Full Name" value={newName} onChange={setNewName} placeholder="e.g. Dr. Ramesh Kumar" icon={<UserCircle size={15} />} />
-          <FieldInput label="Phone Number" value={newPhone} onChange={setNewPhone} placeholder="10-digit mobile number" icon={<Phone size={15} />} />
-          <FieldInput label="Email Address" value={newEmail} onChange={setNewEmail} placeholder="user@college.edu" icon={<Mail size={15} />} />
-          <PasswordInput label="Password" value={newPassword} onChange={setNewPassword} placeholder="Set a password" />
+      {/* ── ADD USER SHEET ── */}
 
-{/* ROLE */}
+<BottomSheet
+  open={addSheet}
+  onClose={() => setAddSheet(false)}
+  title="Add New User"
+>
+  <div className="space-y-4">
 
-<div>
-  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-    Role
-  </label>
+    {/* FULL NAME */}
 
-  <select
-    value={newRoleId}
-    onChange={e =>
-      setNewRoleId(
-        e.target.value
-          ? Number(e.target.value)
-          : ''
-      )
-    }
-    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
-  >
+    <FieldInput
+      label="Full Name"
+      value={newName}
+      onChange={setNewName}
+      placeholder="e.g. Dr. Ramesh Kumar"
+      icon={<UserCircle size={15} />}
+    />
 
-    <option value="">
-      Select Role
-    </option>
 
-    {staffRoles.map(role => (
-      <option
-        key={role.id}
-        value={role.id}
+    {/* PHONE */}
+
+    <FieldInput
+      label="Phone Number"
+      value={newPhone}
+      onChange={setNewPhone}
+      placeholder="10-digit mobile number"
+      icon={<Phone size={15} />}
+    />
+
+
+    {/* EMAIL */}
+
+    <FieldInput
+      label="Email Address"
+      value={newEmail}
+      onChange={setNewEmail}
+      placeholder="user@college.edu"
+      icon={<Mail size={15} />}
+    />
+
+
+    {/* PASSWORD */}
+
+    <PasswordInput
+      label="Password"
+      value={newPassword}
+      onChange={setNewPassword}
+      placeholder="Set a password"
+    />
+
+
+    {/* =====================================================
+        ROLE
+       ===================================================== */}
+
+    <div>
+
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        Role
+      </label>
+
+      <select
+        value={newRoleId}
+        onChange={e =>
+          setNewRoleId(
+            e.target.value
+              ? Number(e.target.value)
+              : ''
+          )
+        }
+        className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
       >
-        {role.name}
-      </option>
-    ))}
 
-  </select>
-</div>
+        <option value="">
+          Select Role
+        </option>
 
-{/* COLLEGE */}
+        {staffRoles.map(role => (
+          <option
+            key={role.id}
+            value={role.id}
+          >
+            {role.name}
+          </option>
+        ))}
 
-<div>
-  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-    College
-  </label>
+      </select>
 
-  <select
-    value={newCollegeId}
-    onChange={e =>
-      setNewCollegeId(
-        e.target.value
-          ? Number(e.target.value)
-          : ''
-      )
-    }
-    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
-  >
+    </div>
 
-    <option value="">
-      Select College
-    </option>
 
-    {colleges.map(college => (
-      <option
-        key={college.id}
-        value={college.id}
+    {/* =====================================================
+        COLLEGE
+       ===================================================== */}
+
+    <div>
+
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        College
+      </label>
+
+      <select
+        value={newCollegeId}
+        onChange={e =>
+          setNewCollegeId(
+            e.target.value
+              ? Number(e.target.value)
+              : ''
+          )
+        }
+        className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
       >
-        {college.name}
-      </option>
-    ))}
 
-  </select>
-</div>
+        <option value="">
+          Select College
+        </option>
 
-{/* PERMISSION PREVIEW */}
+        {colleges.map(college => (
+          <option
+            key={college.id}
+            value={college.id}
+          >
+            {college.name}
+          </option>
+        ))}
 
-{newModule === "Transport" && (
-  <div className="flex flex-wrap gap-2">
+      </select>
 
-    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
-      ✓ Transport
-    </span>
+    </div>
 
-  </div>
-)}
 
-{newModule === "Hostel" && (
-  <div className="flex flex-wrap gap-2">
+    {/* =====================================================
+        MODULE
+       ===================================================== */}
 
-    {newBoysHostel && (
-      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700">
-        ✓ Boys Hostel
-      </span>
-    )}
-
-    {newGirlsHostel && (
-      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-pink-100 text-pink-700">
-        ✓ Girls Hostel
-      </span>
-    )}
-
-    {newHostelApprovalLevel && (
-      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-indigo-100 text-indigo-700">
-        ✓ {newHostelApprovalLevel}
-      </span>
-    )}
-
-  </div>
-)}
-{/* MODULE */}
-
-<div>
-  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-    Module
-  </label>
-
-  <select
-    value={newModule}
-    onChange={e => {
-
-      const value =
-        e.target.value;
-
-      setNewModule(value);
-
-      if (value !== "Hostel") {
-
-        setNewBoysHostel(false);
-        setNewGirlsHostel(false);
-        setNewHostelApprovalLevel('');
-
-      }
-
-    }}
-    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
-  >
-
-    <option value="">
-      Select Module
-    </option>
-
-    <option value="Hostel">
-      Hostel
-    </option>
-
-    <option value="Transport">
-      Transport
-    </option>
-
-  </select>
-</div>
-{newModule === "Hostel" && (
-  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
-
-    {/* Hostel */}
     <div>
 
       <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-        Hostel
+        Module
       </label>
 
-      <div className="space-y-3">
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+
+        {/* HOSTEL */}
 
         <label className="flex items-center gap-3">
+
           <input
             type="checkbox"
-            checked={newBoysHostel}
-            onChange={e =>
-              setNewBoysHostel(
-                e.target.checked
-              )
-            }
+            checked={newModule
+              .split(',')
+              .includes("Hostel")}
+            onChange={() => {
+
+              const updated =
+                toggleModule(
+                  newModule,
+                  "Hostel"
+                );
+
+              setNewModule(updated);
+
+              if (
+                !updated
+                  .split(',')
+                  .includes("Hostel")
+              ) {
+
+                setNewBoysHostel(false);
+                setNewGirlsHostel(false);
+                setNewHostelApprovalLevel('');
+
+              }
+
+            }}
             className="w-4 h-4"
           />
 
-          <span className="text-sm text-gray-700">
-            Boys Hostel
+          <span className="text-sm font-medium text-gray-700">
+            Hostel
           </span>
+
         </label>
 
+
+        {/* TRANSPORT */}
+
         <label className="flex items-center gap-3">
+
           <input
             type="checkbox"
-            checked={newGirlsHostel}
-            onChange={e =>
-              setNewGirlsHostel(
-                e.target.checked
-              )
-            }
+            checked={newModule
+              .split(',')
+              .includes("Transport")}
+            onChange={() => {
+
+              const updated =
+                toggleModule(
+                  newModule,
+                  "Transport"
+                );
+
+              setNewModule(updated);
+
+            }}
             className="w-4 h-4"
           />
 
-          <span className="text-sm text-gray-700">
-            Girls Hostel
+          <span className="text-sm font-medium text-gray-700">
+            Transport
           </span>
+
         </label>
 
       </div>
@@ -1154,78 +1195,214 @@ const handleEdit = async () => {
     </div>
 
 
-    {/* Approval Level */}
+    {/* =====================================================
+        HOSTEL PERMISSIONS
+       ===================================================== */}
 
-    <div>
+    {newModule
+      .split(',')
+      .includes("Hostel") && (
 
-      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-        Approval Level
-      </label>
+      <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
 
-      <select
-        value={newHostelApprovalLevel}
-        onChange={e =>
-          setNewHostelApprovalLevel(
-            e.target.value
+        {/* HOSTEL ACCESS */}
+
+        <div>
+
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+            Hostel
+          </label>
+
+          <div className="space-y-3">
+
+            {/* BOYS */}
+
+            <label className="flex items-center gap-3">
+
+              <input
+                type="checkbox"
+                checked={newBoysHostel}
+                onChange={e =>
+                  setNewBoysHostel(
+                    e.target.checked
+                  )
+                }
+                className="w-4 h-4"
+              />
+
+              <span className="text-sm text-gray-700">
+                Boys Hostel
+              </span>
+
+            </label>
+
+
+            {/* GIRLS */}
+
+            <label className="flex items-center gap-3">
+
+              <input
+                type="checkbox"
+                checked={newGirlsHostel}
+                onChange={e =>
+                  setNewGirlsHostel(
+                    e.target.checked
+                  )
+                }
+                className="w-4 h-4"
+              />
+
+              <span className="text-sm text-gray-700">
+                Girls Hostel
+              </span>
+
+            </label>
+
+          </div>
+
+        </div>
+
+
+        {/* APPROVAL LEVEL */}
+
+        <div>
+
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Approval Level
+          </label>
+
+          <select
+            value={newHostelApprovalLevel}
+            onChange={e =>
+              setNewHostelApprovalLevel(
+                e.target.value
+              )
+            }
+            className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
+          >
+
+            <option value="">
+              Select Approval Level
+            </option>
+
+            <option value="First Level">
+              First Level
+            </option>
+
+            <option value="Second Level">
+              Second Level
+            </option>
+
+            <option value="Final Level">
+              Final Level
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+    )}
+
+
+    {/* =====================================================
+        PERMISSION PREVIEW
+       ===================================================== */}
+
+    {newModule
+      .split(',')
+      .includes("Transport") && (
+
+      <div className="flex flex-wrap gap-2">
+
+        <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
+          ✓ Transport
+        </span>
+
+      </div>
+
+    )}
+
+
+    {newModule
+      .split(',')
+      .includes("Hostel") && (
+
+      <div className="flex flex-wrap gap-2">
+
+        {newBoysHostel && (
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700">
+            ✓ Boys Hostel
+          </span>
+        )}
+
+        {newGirlsHostel && (
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-pink-100 text-pink-700">
+            ✓ Girls Hostel
+          </span>
+        )}
+
+        {newHostelApprovalLevel && (
+          <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-indigo-100 text-indigo-700">
+            ✓ {newHostelApprovalLevel}
+          </span>
+        )}
+
+      </div>
+
+    )}
+
+
+    {/* =====================================================
+        BUTTONS
+       ===================================================== */}
+
+    <div className="flex gap-3 pt-2">
+
+      <button
+        onClick={() =>
+          setAddSheet(false)
+        }
+        className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform"
+      >
+        Cancel
+      </button>
+
+
+      <button
+        onClick={handleAdd}
+        disabled={
+          !newName ||
+          !newPhone ||
+          !newEmail ||
+          !newPassword ||
+          !newRoleId ||
+          !newCollegeId ||
+          !newModule ||
+          (
+            newModule
+              .split(',')
+              .includes("Hostel") &&
+            !newBoysHostel &&
+            !newGirlsHostel
+          ) ||
+          (
+            newModule
+              .split(',')
+              .includes("Hostel") &&
+            !newHostelApprovalLevel
           )
         }
-        className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
+        className="flex-1 py-3 rounded-2xl bg-blue-600 disabled:bg-blue-200 text-white text-sm font-semibold active:scale-95 transition-transform"
       >
-
-        <option value="">
-          Select Approval Level
-        </option>
-
-        <option value="First Level">
-          First Level
-        </option>
-
-        <option value="Second Level">
-          Second Level
-        </option>
-
-        <option value="Final Level">
-          Final Level
-        </option>
-
-      </select>
+        Add User
+      </button>
 
     </div>
 
   </div>
-)}
-
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => setAddSheet(false)} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform">Cancel</button>
-            <button
-              onClick={handleAdd}
-disabled={
-  !newName ||
-  !newPhone ||
-  !newEmail ||
-  !newPassword ||
-  !newRoleId ||
-  !newCollegeId ||
-  !newModule ||
-  (
-    newModule === "Hostel" &&
-    (
-      !newBoysHostel &&
-      !newGirlsHostel
-    )
-  ) ||
-  (
-    newModule === "Hostel" &&
-    !newHostelApprovalLevel
-  )
-}
-              className="flex-1 py-3 rounded-2xl bg-blue-600 disabled:bg-blue-200 text-white text-sm font-semibold active:scale-95 transition-transform"
-            >
-              Add User
-            </button>
-          </div>
-        </div>
-      </BottomSheet>
+</BottomSheet>
 
     <BottomSheet
   open={editSheet.open}
@@ -1462,7 +1639,194 @@ disabled={
 
         </div>
 
+{/* =====================================================
+    MODULE
+   ===================================================== */}
 
+<div>
+
+  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+    Module
+  </label>
+
+  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-3">
+
+    {/* HOSTEL */}
+
+    <label className="flex items-center gap-3">
+
+      <input
+        type="checkbox"
+        checked={editModule
+          .split(',')
+          .includes("Hostel")}
+        onChange={() => {
+
+          const updated = toggleModule(
+            editModule,
+            "Hostel"
+          );
+
+          setEditModule(updated);
+
+          if (
+            !updated
+              .split(',')
+              .includes("Hostel")
+          ) {
+
+            setEditBoysHostel(false);
+            setEditGirlsHostel(false);
+            setEditHostelApprovalLevel('');
+
+          }
+
+        }}
+        className="w-4 h-4"
+      />
+
+      <span className="text-sm font-medium text-gray-700">
+        Hostel
+      </span>
+
+    </label>
+
+
+    {/* TRANSPORT */}
+
+    <label className="flex items-center gap-3">
+
+      <input
+        type="checkbox"
+        checked={
+          editModule
+            .split(',')
+            .includes("Transport")
+        }
+        onChange={() => {
+
+          const updated = toggleModule(
+            editModule,
+            "Transport"
+          );
+
+          setEditModule(updated);
+
+        }}
+        className="w-4 h-4"
+      />
+
+      <span className="text-sm font-medium text-gray-700">
+        Transport
+      </span>
+
+    </label>
+
+  </div>
+
+</div>
+
+{editModule
+  .split(',')
+  .includes("Hostel") && (
+
+  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
+
+    {/* HOSTEL */}
+
+    <div>
+
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        Hostel
+      </label>
+
+      <div className="space-y-3">
+
+        <label className="flex items-center gap-3">
+
+          <input
+            type="checkbox"
+            checked={editBoysHostel}
+            onChange={e =>
+              setEditBoysHostel(
+                e.target.checked
+              )
+            }
+            className="w-4 h-4"
+          />
+
+          <span className="text-sm text-gray-700">
+            Boys Hostel
+          </span>
+
+        </label>
+
+
+        <label className="flex items-center gap-3">
+
+          <input
+            type="checkbox"
+            checked={editGirlsHostel}
+            onChange={e =>
+              setEditGirlsHostel(
+                e.target.checked
+              )
+            }
+            className="w-4 h-4"
+          />
+
+          <span className="text-sm text-gray-700">
+            Girls Hostel
+          </span>
+
+        </label>
+
+      </div>
+
+    </div>
+
+
+    {/* APPROVAL LEVEL */}
+
+    <div>
+
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        Approval Level
+      </label>
+
+      <select
+        value={editHostelApprovalLevel}
+        onChange={e =>
+          setEditHostelApprovalLevel(
+            e.target.value
+          )
+        }
+        className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
+      >
+
+        <option value="">
+          Select Approval Level
+        </option>
+
+        <option value="First Level">
+          First Level
+        </option>
+
+        <option value="Second Level">
+          Second Level
+        </option>
+
+        <option value="Final Level">
+          Final Level
+        </option>
+
+      </select>
+
+    </div>
+
+  </div>
+
+)}
         {/* =====================================================
             SAVE / CANCEL
            ===================================================== */}

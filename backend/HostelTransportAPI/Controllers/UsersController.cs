@@ -10,10 +10,11 @@ namespace HostelTransportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "System Admin")]
+[Authorize(Roles = "System Admin,Management")]
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
+    private const string ProtectedManagementUserId = "MainAdmin@mdch";
 
     public UsersController(ApplicationDbContext context)
     {
@@ -26,39 +27,59 @@ public class UsersController : ControllerBase
     // SYSTEM ADMIN ONLY
     // =====================================================
 
-    [HttpGet]
-    public async Task<IActionResult> GetUsers()
-    {
-        var users = await _context.Users
-            .Include(x => x.Role)
-            .Include(x => x.College)
-            .Where(x => x.RoleId != 2) // Don't show Students
-            .Select(x => new
-            {
-                x.Id,
-                x.UserId,
-                x.FullName,
-                x.Email,
-                x.PhoneNumber,
+// =====================================================
+// GET ALL STAFF USERS
+// Shows ONLY:
+// System Admin
+// Principal
+// Hostel Incharge
+// Admin Office
+// Management
+//
+// Does NOT show:
+// Student
+// Parent
+// =====================================================
 
-                x.RoleId,
-                Role = x.Role!.Name,
+[HttpGet]
+public async Task<IActionResult> GetUsers()
+{
+    var users = await _context.Users
+        .Include(x => x.Role)
+        .Include(x => x.College)
+        .Where(x =>
+            x.RoleId == 1 ||      // System Admin
+            x.RoleId == 3 ||      // Principal
+            x.RoleId == 4 ||      // Hostel Incharge
+            x.RoleId == 5 ||      // Admin Office
+            x.RoleId == 1002      // Management
+        )
+        .Select(x => new
+        {
+            x.Id,
+            x.UserId,
+            x.FullName,
+            x.Email,
+            x.PhoneNumber,
 
-                x.CollegeId,
-                College = x.College != null
-                    ? x.College.Name
-                    : "All Colleges",
+            x.RoleId,
+            Role = x.Role!.Name,
 
-                x.IsActive,
-                x.LastLogin,
+            x.CollegeId,
 
-                x.ProfilePhoto
-            })
-            .ToListAsync();
+            College = x.College != null
+                ? x.College.Name
+                : "All Colleges",
 
-        return Ok(users);
-    }
+            x.IsActive,
+            x.LastLogin,
 
+            x.ProfilePhoto
+        })
+        .ToListAsync();
+
+    return Ok(users);
+}
 
     // =====================================================
     // CREATE USER
@@ -82,12 +103,15 @@ public class UsersController : ControllerBase
 
 
         // Students cannot be created from Settings → Users
-        if (role.Name == "Student")
-        {
-            return BadRequest(
-                "Student users must be created through Student Registration."
-            );
-        }
+      if (
+    role.Name == "Student" ||
+    role.Name == "Parent"
+)
+{
+    return BadRequest(
+        "Student and Parent users cannot be created from Settings → Users."
+    );
+}
 
 
         // -------------------------------------------------
@@ -307,9 +331,24 @@ public class UsersController : ControllerBase
         if (user == null)
         {
             return NotFound();
+
+
+
         }
 
-
+                // Protect Management master account
+    if (
+        string.Equals(
+            user.UserId,
+            ProtectedManagementUserId,
+            StringComparison.OrdinalIgnoreCase
+        )
+    )
+    {
+        return BadRequest(
+            "The Management account cannot be modified."
+        );
+    }
         // -------------------------------------------------
         // Validate Role
         // -------------------------------------------------
@@ -501,8 +540,21 @@ public class UsersController : ControllerBase
         if (user == null)
         {
             return NotFound();
-        }
 
+
+        }
+            if (
+    string.Equals(
+        user.UserId,
+        ProtectedManagementUserId,
+        StringComparison.OrdinalIgnoreCase
+    )
+)
+{
+    return BadRequest(
+        "The Management account cannot be deleted."
+    );
+}
 
         // Prevent deleting yourself
         var currentUserId =
@@ -591,7 +643,18 @@ public class UsersController : ControllerBase
             return NotFound();
         }
 
-
+if (
+    string.Equals(
+        user.UserId,
+        ProtectedManagementUserId,
+        StringComparison.OrdinalIgnoreCase
+    )
+)
+{
+    return BadRequest(
+        "The Management account password cannot be changed from Users."
+    );
+}
         bool validPassword =
             BCrypt.Net.BCrypt.Verify(
                 dto.CurrentPassword,
@@ -640,7 +703,18 @@ public class UsersController : ControllerBase
         {
             return NotFound();
         }
-
+if (
+    string.Equals(
+        user.UserId,
+        ProtectedManagementUserId,
+        StringComparison.OrdinalIgnoreCase
+    )
+)
+{
+    return BadRequest(
+        "The Management account cannot be disabled."
+    );
+}
 
         var currentUserId =
             User.FindFirstValue(

@@ -5,6 +5,7 @@ export type UserRole =
   | 'security'
   | 'admin'
   | 'system-admin'
+  | 'management'
   | 'principal'
   | 'hostel-incharge'
   | 'admin-office';
@@ -21,6 +22,9 @@ export interface User {
   role: UserRole;
 
   email: string;
+    // Actual backend staff role
+  // Example: System Admin, Management, Principal
+  staffRole?: string;
 
   phoneNumber?: string;
 

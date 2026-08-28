@@ -155,7 +155,10 @@ const [newUserRegistration,
 setNewUserRegistration] =
 useState(true);
 useEffect(() => {
-  if (user.isSystemAdmin) {
+  if (
+    user.isSystemAdmin ||
+    user.staffRole === "Management"
+  ) {
     loadUsers();
 
     const loadLogs = async () => {
@@ -163,7 +166,10 @@ useEffect(() => {
         const data = await getActivityLogs();
         setAuditLogs(data);
       } catch (error) {
-        console.error('Failed to load activity logs:', error);
+        console.error(
+          'Failed to load activity logs:',
+          error
+        );
       }
     };
 
@@ -171,7 +177,11 @@ useEffect(() => {
   }
 
   loadNotificationSettings();
-}, [user.isSystemAdmin, user.id]);
+}, [
+  user.isSystemAdmin,
+  user.staffRole,
+  user.id
+]);
 const loadNotificationSettings =
 async () => {
 
@@ -202,8 +212,21 @@ const loadUsers = async () => {
   try {
     const data = await getUsers();
 
+const allowedRoles = [
+  "System Admin",
+  "Management",
+  "Principal",
+  "Hostel Incharge",
+  "Admin Office"
+];
+
+    const staffUsers = data.filter(
+      (u: any) =>
+        allowedRoles.includes(u.role)
+    );
+
     setUsers(
-      data.map((u: any) => ({
+      staffUsers.map((u: any) => ({
         id: u.id,
         userId: u.userId,
         name: u.fullName,
@@ -480,7 +503,10 @@ const handleEdit = async () => {
           <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)} variant="fullWidth" sx={{ '& .MuiTab-root': { fontSize: '0.75rem' } }}>
            <Tab label="GENERAL" />
 
-{user.isSystemAdmin && (
+{(
+  user.isSystemAdmin ||
+  user.staffRole === "Management"
+) && (
   <Tab label="USERS" />
 )}
 

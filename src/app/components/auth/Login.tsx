@@ -131,6 +131,7 @@ console.log("result.UserId =", result.UserId);
 console.log("Object Keys =", Object.keys(result));
 const staffRoles = [
   "System Admin",
+  "Management",
   "Principal",
   "Hostel Incharge",
   "Admin Office"
@@ -142,42 +143,45 @@ if (!staffRoles.includes(result.role)) {
 }
 
 const adminUser = {
-    id: result.id.toString(),
+  id: result.id.toString(),
 
-    userId: result.userId ?? result.UserId,
+  userId: result.userId ?? result.UserId,
 
-    name: result.fullName ?? result.FullName,
+  name: result.fullName ?? result.FullName,
 
-    // Keep the actual backend role
-    role: "admin",
+  // IMPORTANT:
+  // All staff use the /admin route.
+  // Do NOT put "System Admin" or "Management" here.
+  role: "admin",
 
-    email: result.email ?? result.Email,
+  // Keep the real backend role separately.
+  staffRole: result.role,
 
-    phoneNumber:
-      result.phoneNumber ?? result.PhoneNumber,
+  email: result.email ?? result.Email,
 
-    // NEW COLLEGE INFORMATION
-    collegeId: result.collegeId ?? result.CollegeId,
+  phoneNumber:
+    result.phoneNumber ?? result.PhoneNumber,
 
-    college:
-      result.college ?? result.College,
+  collegeId:
+    result.collegeId ?? result.CollegeId,
 
-    // Keep old fields temporarily
-    // so existing frontend code doesn't break.
-    isSystemAdmin:
-      result.isSystemAdmin ?? result.IsSystemAdmin,
+  college:
+    result.college ?? result.College,
 
-    canManageTransport:
-      result.canManageTransport ?? result.CanManageTransport,
+  isSystemAdmin:
+    result.isSystemAdmin ?? result.IsSystemAdmin,
 
-    canManageBoysHostel:
-      result.canManageBoysHostel ?? result.CanManageBoysHostel,
+  canManageTransport:
+    result.canManageTransport ?? result.CanManageTransport,
 
-    canManageGirlsHostel:
-      result.canManageGirlsHostel ?? result.CanManageGirlsHostel,
+  canManageBoysHostel:
+    result.canManageBoysHostel ?? result.CanManageBoysHostel,
 
-    profilePhoto:
-      result.profilePhoto ?? result.ProfilePhoto
+  canManageGirlsHostel:
+    result.canManageGirlsHostel ?? result.CanManageGirlsHostel,
+
+  profilePhoto:
+    result.profilePhoto ?? result.ProfilePhoto
 };
 
 console.log("ADMIN USER");

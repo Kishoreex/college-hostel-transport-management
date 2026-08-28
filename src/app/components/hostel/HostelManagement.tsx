@@ -2324,30 +2324,36 @@ const delayMins =
   h.lateMinutes || 0;
                             return (
                             <div key={h.id} className={`bg-white border rounded-2xl p-4 shadow-sm ${
-  stillOut
-    ? "border-red-300"
-    : returnedLate
-    ? "border-amber-200"
+  isManagement
+    ? stillOut
+      ? "border-red-300"
+      : returnedLate
+      ? "border-amber-200"
+      : "border-gray-100"
     : "border-gray-100"
 }`}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center space-x-3">
                                  <div
 className={`p-2.5 rounded-xl ${
-stillOut
-? "bg-red-100"
-: returnedLate
-? "bg-amber-100"
-: "bg-green-100"
+  isManagement
+    ? stillOut
+      ? "bg-red-100"
+      : returnedLate
+      ? "bg-amber-100"
+      : "bg-green-100"
+    : "bg-green-100"
 }`}
 >
   <UserCircle
 className={
-stillOut
-? "text-red-500"
-: returnedLate
-? "text-amber-600"
-: "text-green-600"
+  isManagement
+    ? stillOut
+      ? "text-red-500"
+      : returnedLate
+      ? "text-amber-600"
+      : "text-green-600"
+    : "text-green-600"
 }
 />                            </div>
                                   <div>
@@ -2423,7 +2429,7 @@ hour12:true
                                     <span className="font-medium text-gray-700">{v}</span>
                                   </div>
                                 ))}
-                                {h.actualExitTime && (
+                             {isManagement && h.actualExitTime && (
   <div className="flex justify-between text-sm">
     <span className="text-gray-400">
       Actual Exit
@@ -2451,7 +2457,7 @@ hour12:true
     </span>
   </div>
 )}
-                             {h.actualReturnTime && (
+                             {isManagement && h.actualReturnTime && (
   <div className="flex justify-between text-sm">
     <span className="text-gray-400">
       Actual Return
@@ -2478,7 +2484,8 @@ hour12:true
     </span>
   </div>
 )}
-{h.status !== "Cancelled" &&
+{isManagement &&
+ h.status !== "Cancelled" &&
  h.status !== "Rejected" &&
  h.status !== "Not Accepted By Warden" &&
  waitingForExit && (
@@ -2496,7 +2503,7 @@ hour12:true
 
 ) : (
 
-expiredWithoutExit && (
+isManagement && expiredWithoutExit && (
 <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3 text-red-700 text-sm font-semibold">
 ❌ Student did not exit before the outpass expired.
 </div>
@@ -2504,18 +2511,17 @@ expiredWithoutExit && (
 
 )}
 
-{exitedEarly && (
+{isManagement && exitedEarly && (
 <div className="bg-orange-50 border border-orange-200 rounded-xl p-3 mt-3 text-orange-700 text-sm font-semibold">
 🟠 Student exited {earlyMinutes} minute(s) early.
 </div>
 )}
-
-{returnedInTime && (
+{isManagement && returnedInTime && (
 <div className="bg-green-50 border border-green-200 rounded-xl p-3 mt-3 text-green-700 text-sm font-semibold">
 ✅ Student returned within the permitted time.
 </div>
 )}
-{studentOutside && (
+{isManagement && studentOutside && (
 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mt-3">
   <p className="text-sm font-semibold text-blue-700">
     🟢 Student is currently outside the hostel and is within the permitted outpass time.
@@ -2523,13 +2529,13 @@ expiredWithoutExit && (
 </div>
 )}
                               </div>
-                              {returnedLate && h.actualReturnTime && (
+                             {isManagement && returnedLate && h.actualReturnTime && (
                                 <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
                                   <Clock size={14} className="text-amber-600 shrink-0" />
                                   <p className="text-xs text-amber-800 font-semibold">Returned {delayMins} min{delayMins !== 1 ? 's' : ''} late — entered campus at {h.actualReturnTime}</p>
                                 </div>
                               )}
-                              {stillOut && (
+                            {isManagement && stillOut && (
                                 <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-2.5 mt-3">
                                   <AlertCircle size={14} className="text-red-500 shrink-0" />
                                   <p className="text-xs text-red-700 font-semibold">🔴 Student is still outside after the permitted return time. — expected by {h.expectedReturn}</p>
@@ -2828,13 +2834,15 @@ const scheduledExitTime = new Date(
                            <div
 key={h.id}
 className={`bg-white border rounded-2xl p-4 shadow-sm ${
-    overdueOutside
-        ? "border-red-300"
-        : outsideCampus
-        ? "border-blue-300"
-        : returnedLate
-        ? "border-amber-300"
-        : "border-gray-100"
+  isManagement
+    ? overdueOutside
+      ? "border-red-300"
+      : outsideCampus
+      ? "border-blue-300"
+      : returnedLate
+      ? "border-amber-300"
+      : "border-gray-100"
+    : "border-gray-100"
 }`}
 >
                               <div className="flex items-start justify-between mb-3">
@@ -2842,27 +2850,31 @@ className={`bg-white border rounded-2xl p-4 shadow-sm ${
                        
 
   <div
-    className={`p-2.5 rounded-xl ${
-      overdueOutside
-        ? "bg-red-100"
-        : outsideCampus
-        ? "bg-blue-100"
-        : returnedLate
-        ? "bg-amber-100"
-        : "bg-green-100"
-    }`}
+ className={`p-2.5 rounded-xl ${
+  isManagement
+    ? overdueOutside
+      ? "bg-red-100"
+      : outsideCampus
+      ? "bg-blue-100"
+      : returnedLate
+      ? "bg-amber-100"
+      : "bg-green-100"
+    : "bg-green-100"
+}`}
   >
     <UserCircle
       size={20}
-      className={
-        overdueOutside
-          ? "text-red-500"
-          : outsideCampus
-          ? "text-blue-600"
-          : returnedLate
-          ? "text-amber-600"
-          : "text-teal-600"
-      }
+    className={
+  isManagement
+    ? overdueOutside
+      ? "text-red-500"
+      : outsideCampus
+      ? "text-blue-600"
+      : returnedLate
+      ? "text-amber-600"
+      : "text-teal-600"
+    : "text-teal-600"
+}
     />
   </div>
 
@@ -2976,7 +2988,7 @@ h.campus === "In Campus"
                                     <span className="font-medium text-gray-700">{v}</span>
                                   </div>
                                 ))}
-                                {h.actualExitTime && (
+                                {isManagement && h.actualExitTime && (
   <div className="flex justify-between text-sm">
     <span className="text-gray-400">
       Actual Exit
@@ -2997,7 +3009,7 @@ h.campus === "In Campus"
     </span>
   </div>
 )}
-                                {h.actualReturnTime && (
+                       {isManagement && h.actualReturnTime && (
                                   <div className="flex justify-between text-sm">
                                    <span className="text-gray-400">
   Actual Return
@@ -3025,7 +3037,7 @@ h.campus === "In Campus"
                                   </div>
                                 )}
                               </div>
-                          {returnedLate && h.actualReturnTime && (
+                     {isManagement && returnedLate && h.actualReturnTime && (
       <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
         <Clock size={14} className="text-amber-600 shrink-0" />
         <p className="text-xs text-amber-800 font-semibold">
@@ -3045,14 +3057,14 @@ h.campus === "In Campus"
         </p>
       </div>
     )}
-                             {isOutCampus && outsideCampus && (
+                         {isManagement && isOutCampus && outsideCampus && (
 <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mt-3">
     <p className="text-sm font-semibold text-blue-700">
         🟢 Student is currently outside the campus and is still within the permitted leave time.
     </p>
 </div>
 )}
-{isOutCampus && overdueOutside && (
+{isManagement && isOutCampus && overdueOutside && (
 <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
     <AlertCircle
         size={14}
@@ -3064,7 +3076,8 @@ h.campus === "In Campus"
     </p>
 </div>
 )}
-   {isOutCampus &&
+ {isManagement &&
+ isOutCampus &&
   (h.status === "Not Accepted By Warden" ? (
     <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
       <p className="text-sm font-semibold text-red-700">
@@ -3075,7 +3088,7 @@ h.campus === "In Campus"
        h.status !== "Cancelled" &&
     h.status !== "Rejected" &&
     h.status !== "Not Accepted By Warden" &&
-    expiredWithoutExit && (
+isManagement && expiredWithoutExit && (
       <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
         <p className="text-sm font-semibold text-red-700">
           ❌ Leave expired before the student exited.
@@ -3083,7 +3096,10 @@ h.campus === "In Campus"
       </div>
     )
   ))}
-{isOutCampus && exitedEarly && h.actualExitTime && (
+{isManagement &&
+ isOutCampus &&
+ exitedEarly &&
+ h.actualExitTime && (
   <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
     <p className="text-sm font-semibold text-red-700">
       🔴 Student exited {h.earlyExitMinutes} minute{h.earlyExitMinutes !== 1 ? "s" : ""} early.
@@ -3110,7 +3126,7 @@ h.campus === "In Campus"
     </p>
   </div>
 )}
-{returnedInTime && (
+{isManagement && returnedInTime && (  
   <div className="bg-green-50 border border-green-200 rounded-xl p-3 mt-3">
     <p className="text-sm font-semibold text-green-700">
       ✅ Student returned within the permitted leave period.

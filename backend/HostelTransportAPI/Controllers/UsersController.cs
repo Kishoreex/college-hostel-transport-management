@@ -10,7 +10,7 @@ namespace HostelTransportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "System Admin,Management")]
+[Authorize(Roles = "Management")]
 public class UsersController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -48,11 +48,10 @@ public async Task<IActionResult> GetUsers()
         .Include(x => x.Role)
         .Include(x => x.College)
         .Where(x =>
-            x.RoleId == 1 ||      // System Admin
             x.RoleId == 3 ||      // Principal
             x.RoleId == 4 ||      // Hostel Incharge
             x.RoleId == 5 ||      // Admin Office
-            x.RoleId == 1002      // Management
+            x.RoleId == 1002     // Management
         )
         .Select(x => new
         {
@@ -71,16 +70,22 @@ public async Task<IActionResult> GetUsers()
                 ? x.College.Name
                 : "All Colleges",
 
+            x.Module,
+
+            x.CanManageTransport,
+            x.CanManageBoysHostel,
+            x.CanManageGirlsHostel,
+
+            x.HostelApprovalLevel,
+
             x.IsActive,
             x.LastLogin,
-
             x.ProfilePhoto
         })
         .ToListAsync();
 
     return Ok(users);
 }
-
     // =====================================================
     // CREATE USER
     // SYSTEM ADMIN ONLY
@@ -119,31 +124,36 @@ public async Task<IActionResult> GetUsers()
         // -------------------------------------------------
 
         // System Admin = All Colleges
-        if (role.Name == "System Admin")
-        {
-            user.CollegeId = null;
-        }
-        else
-        {
-            if (!user.CollegeId.HasValue)
-            {
-                return BadRequest(
-                    "College is required for this role."
-                );
-            }
+       // =====================================================
+// COLLEGE
+// =====================================================
 
-            var collegeExists = await _context.Colleges
-                .AnyAsync(x =>
-                    x.Id == user.CollegeId.Value &&
-                    x.IsActive);
+if (!updatedUser.CollegeId.HasValue)
+{
+    return BadRequest(
+        "College is required."
+    );
+}
 
-            if (!collegeExists)
-            {
-                return BadRequest(
-                    "Invalid or inactive college selected."
-                );
-            }
-        }
+var collegeExists =
+    await _context.Colleges.AnyAsync(
+        x =>
+            x.Id ==
+            updatedUser.CollegeId.Value &&
+            x.IsActive
+    );
+
+if (!collegeExists)
+{
+    return BadRequest(
+        "Invalid or inactive college selected."
+    );
+}
+
+user.CollegeId =
+    updatedUser.CollegeId;
+            
+        
 
 
         // -------------------------------------------------
@@ -200,12 +210,54 @@ public async Task<IActionResult> GetUsers()
         user.IsActive = true;
 
         // Old permission fields are no longer used
-        user.IsSystemAdmin =
-            role.Name == "System Admin";
+ // =====================================================
+// PERMISSIONS
+// =====================================================
 
+user.IsSystemAdmin = false;
+
+if (role.Name == "Management")
+{
+    // Management has ALL permissions
+    user.CanManageTransport = true;
+    user.CanManageBoysHostel = true;
+    user.CanManageGirlsHostel = true;
+
+    user.HostelApprovalLevel = "All";
+}
+else
+{
+    // Transport
+    if (user.Module == "Transport")
+    {
+        user.CanManageTransport = true;
+
+        user.CanManageBoysHostel = false;
+        user.CanManageGirlsHostel = false;
+        user.HostelApprovalLevel = null;
+    }
+
+    // Hostel
+    else if (user.Module == "Hostel")
+    {
+        user.CanManageTransport = false;
+
+        // Keep permissions coming from frontend
+        // for Boys / Girls hostel
+
+        user.HostelApprovalLevel =
+            user.HostelApprovalLevel;
+    }
+
+    // Anything else
+    else
+    {
         user.CanManageTransport = false;
         user.CanManageBoysHostel = false;
         user.CanManageGirlsHostel = false;
+        user.HostelApprovalLevel = null;
+    }
+}
 
 
         _context.Users.Add(user);
@@ -217,40 +269,46 @@ public async Task<IActionResult> GetUsers()
         // Notify System Admins
         // -------------------------------------------------
 
-        var systemAdmins = await _context.Users
-            .Where(x => x.RoleId == 1 && x.IsActive)
-            .ToListAsync();
+     // =====================================================
+// NOTIFY MANAGEMENT
+// =====================================================
 
-        foreach (var admin in systemAdmins)
-        {
-            var setting =
-                await _context.NotificationSettings
-                    .FirstOrDefaultAsync(
-                        x => x.UserId == admin.Id
-                    );
+var managementUsers = await _context.Users
+    .Where(x =>
+        x.RoleId == 1002 &&
+        x.IsActive)
+    .ToListAsync();
 
-            if (
-                setting == null ||
-                (
-                    setting.PushNotifications &&
-                    setting.NewUserRegistration
-                )
-            )
+foreach (var manager in managementUsers)
+{
+    var setting =
+        await _context.NotificationSettings
+            .FirstOrDefaultAsync(
+                x => x.UserId == manager.Id
+            );
+
+    if (
+        setting == null ||
+        (
+            setting.PushNotifications &&
+            setting.NewUserRegistration
+        )
+    )
+    {
+        _context.Notifications.Add(
+            new Notification
             {
-                _context.Notifications.Add(
-                    new Notification
-                    {
-                        UserId = admin.Id,
-                        Title = "New User Created",
-                        Message =
-                            $"{user.FullName} account created",
-                        Type = "User",
-                        IsRead = false,
-                        CreatedAt = DateTime.Now
-                    }
-                );
+                UserId = manager.Id,
+                Title = "New User Created",
+                Message =
+                    $"{user.FullName} account created",
+                Type = "User",
+                IsRead = false,
+                CreatedAt = DateTime.Now
             }
-        }
+        );
+    }
+}
 
 
         // -------------------------------------------------
@@ -335,7 +393,12 @@ public async Task<IActionResult> GetUsers()
 
 
         }
-
+if (user.RoleId == 1002)
+{
+    return BadRequest(
+        "Management accounts cannot be disabled."
+    );
+}
                 // Protect Management master account
     if (
         string.Equals(
@@ -377,38 +440,28 @@ public async Task<IActionResult> GetUsers()
         // Validate College
         // -------------------------------------------------
 
-        if (role.Name == "System Admin")
-        {
-            user.CollegeId = null;
-        }
-        else
-        {
-            if (!updatedUser.CollegeId.HasValue)
-            {
-                return BadRequest(
-                    "College is required for this role."
-                );
-            }
+    // =====================================================
+// COLLEGE
+// =====================================================
 
-            var collegeExists =
-                await _context.Colleges.AnyAsync(
-                    x =>
-                        x.Id ==
-                        updatedUser.CollegeId.Value &&
-                        x.IsActive
-                );
+if (!user.CollegeId.HasValue)
+{
+    return BadRequest(
+        "College is required."
+    );
+}
 
-            if (!collegeExists)
-            {
-                return BadRequest(
-                    "Invalid or inactive college selected."
-                );
-            }
+var collegeExists = await _context.Colleges
+    .AnyAsync(x =>
+        x.Id == user.CollegeId.Value &&
+        x.IsActive);
 
-            user.CollegeId =
-                updatedUser.CollegeId;
-        }
-
+if (!collegeExists)
+{
+    return BadRequest(
+        "Invalid or inactive college selected."
+    );
+}
 
         // -------------------------------------------------
         // Basic Details
@@ -543,6 +596,12 @@ public async Task<IActionResult> GetUsers()
 
 
         }
+        if (user.RoleId == 1002)
+{
+    return BadRequest(
+        "Management accounts cannot be deleted."
+    );
+}
             if (
     string.Equals(
         user.UserId,

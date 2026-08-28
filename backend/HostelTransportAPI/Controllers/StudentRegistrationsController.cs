@@ -170,7 +170,7 @@ registration.ParentTemporaryPassword = parentPassword;
 
 
 registration.IsApproved = true;
-registration.Status = "Approved";
+registration.Status = "Active";
 registration.ApprovedDate = DateTime.Now;
 registration.StudentId = userId;
 

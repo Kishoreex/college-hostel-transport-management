@@ -143,7 +143,7 @@ public async Task<IActionResult> GetAll()
 _context.Users.Add(user);
 
 registration.IsApproved = true;
-registration.Status = "Approved";
+registration.Status = "Active";
 registration.StudentId = userId;
 
 await _context.SaveChangesAsync();

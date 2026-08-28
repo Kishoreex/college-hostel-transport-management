@@ -64,6 +64,14 @@ interface SystemUser {
   collegeId: number | null;
   college: string;
 
+  module: string;
+
+  canManageTransport: boolean;
+  canManageBoysHostel: boolean;
+  canManageGirlsHostel: boolean;
+
+  hostelApprovalLevel: string | null;
+
   status: 'active' | 'inactive';
 }
 
@@ -136,8 +144,7 @@ function FieldInput({ label, value, onChange, placeholder, icon }: { label: stri
 
 export default function Settings({ user, onLogout }: SettingsProps) {
   const [activeTab, setActiveTab] = useState(0);
-  const canManageUsers =
-  user.isSystemAdmin ||
+const canManageUsers =
   user.staffRole === "Management" ||
   user.role === "management";
   const [users, setUsers] =
@@ -214,13 +221,12 @@ const loadUsers = async () => {
   try {
     const data = await getUsers();
 
-const allowedRoles = [
-  "System Admin",
-  "Management",
-  "Principal",
-  "Hostel Incharge",
-  "Admin Office"
-];
+    const allowedRoles = [
+      "Management",
+      "Principal",
+      "Hostel Incharge",
+      "Admin Office"
+    ];
 
     const staffUsers = data.filter(
       (u: any) =>
@@ -231,6 +237,7 @@ const allowedRoles = [
       staffUsers.map((u: any) => ({
         id: u.id,
         userId: u.userId,
+
         name: u.fullName,
         email: u.email,
         phone: u.phoneNumber || '',
@@ -238,16 +245,39 @@ const allowedRoles = [
         roleId: u.roleId,
         role: u.role,
 
-        collegeId: u.collegeId ?? null,
-        college: u.college || 'All Colleges',
+        collegeId:
+          u.collegeId ?? null,
 
-        status: u.isActive
-          ? 'active'
-          : 'inactive'
+        college:
+          u.college || 'All Colleges',
+
+        module:
+          u.module || '',
+
+        canManageTransport:
+          u.canManageTransport ?? false,
+
+        canManageBoysHostel:
+          u.canManageBoysHostel ?? false,
+
+        canManageGirlsHostel:
+          u.canManageGirlsHostel ?? false,
+
+        hostelApprovalLevel:
+          u.hostelApprovalLevel ?? null,
+
+        status:
+          u.isActive
+            ? 'active'
+            : 'inactive'
       }))
     );
+
   } catch (error) {
-    console.error('Failed to load users:', error);
+    console.error(
+      'Failed to load users:',
+      error
+    );
   }
 };
   // Admin profile
@@ -277,6 +307,17 @@ const [adminEmail, setAdminEmail] =
 const [newCollegeId, setNewCollegeId] = useState<number | ''>('');
 const [newRoleId, setNewRoleId] = useState<number | ''>('');
 
+const [newModule, setNewModule] =
+  useState('');
+
+const [newBoysHostel, setNewBoysHostel] =
+  useState(false);
+
+const [newGirlsHostel, setNewGirlsHostel] =
+  useState(false);
+
+const [newHostelApprovalLevel, setNewHostelApprovalLevel] =
+  useState('');
   // Edit User sheet
   const [editSheet, setEditSheet] = useState<{ open: boolean; u: SystemUser | null }>({ open: false, u: null });
   const [editName, setEditName] = useState('');
@@ -285,6 +326,18 @@ const [newRoleId, setNewRoleId] = useState<number | ''>('');
   const [editPassword, setEditPassword] = useState('');
 const [editCollegeId, setEditCollegeId] = useState<number | ''>('');
 const [editRoleId, setEditRoleId] = useState<number | ''>('');
+
+const [editModule, setEditModule] =
+  useState('');
+
+const [editBoysHostel, setEditBoysHostel] =
+  useState(false);
+
+const [editGirlsHostel, setEditGirlsHostel] =
+  useState(false);
+
+const [editHostelApprovalLevel, setEditHostelApprovalLevel] =
+  useState('');
 const colleges = [
   {
     id: 1,
@@ -301,10 +354,6 @@ const colleges = [
 ];
 
 const staffRoles = [
-  {
-    id: 1,
-    name: 'System Admin'
-  },
   {
     id: 3,
     name: 'Principal'
@@ -330,59 +379,106 @@ const openAdd = () => {
   setNewCollegeId('');
   setNewRoleId('');
 
+  setNewModule('');
+
+  setNewBoysHostel(false);
+  setNewGirlsHostel(false);
+
+  setNewHostelApprovalLevel('');
+
   setAddSheet(true);
 };
 
 const handleAdd = async () => {
+
   if (
     !newName ||
     !newPhone ||
     !newEmail ||
     !newPassword ||
-    !newRoleId
+    !newRoleId ||
+    !newCollegeId ||
+    !newModule
   ) {
     alert('Please fill all required fields.');
     return;
   }
 
-  const selectedRole = staffRoles.find(
-    role => role.id === Number(newRoleId)
-  );
+  const selectedRole =
+    staffRoles.find(
+      role =>
+        role.id === Number(newRoleId)
+    );
 
   if (!selectedRole) {
     alert('Please select a valid role.');
     return;
   }
 
-  // System Admin does not belong to one college
-  if (
-    selectedRole.id !== 1 &&
-    !newCollegeId
-  ) {
-    alert('Please select a college.');
-    return;
+  // Hostel validation
+  if (newModule === "Hostel") {
+
+    if (
+      !newBoysHostel &&
+      !newGirlsHostel
+    ) {
+      alert(
+        "Please select Boys Hostel or Girls Hostel."
+      );
+      return;
+    }
+
+    if (!newHostelApprovalLevel) {
+      alert(
+        "Please select an approval level."
+      );
+      return;
+    }
   }
 
   try {
+
     await createUser({
-      userId: newEmail.split('@')[0],
 
-      fullName: newName,
+      userId:
+        newEmail.split('@')[0],
 
-      email: newEmail,
+      fullName:
+        newName,
 
-      phoneNumber: newPhone,
+      email:
+        newEmail,
 
-      passwordHash: newPassword,
+      phoneNumber:
+        newPhone,
 
-      roleId: Number(newRoleId),
+      passwordHash:
+        newPassword,
+
+      roleId:
+        Number(newRoleId),
 
       collegeId:
-        selectedRole.id === 1
-          ? null
-          : Number(newCollegeId),
+        Number(newCollegeId),
 
-      module: 'Admin'
+      module:
+        newModule,
+
+      canManageTransport:
+        newModule === "Transport",
+
+      canManageBoysHostel:
+        newModule === "Hostel" &&
+        newBoysHostel,
+
+      canManageGirlsHostel:
+        newModule === "Hostel" &&
+        newGirlsHostel,
+
+      hostelApprovalLevel:
+        newModule === "Hostel"
+          ? newHostelApprovalLevel
+          : null
     });
 
     await loadUsers();
@@ -396,7 +492,16 @@ const handleAdd = async () => {
 
     setNewCollegeId('');
     setNewRoleId('');
+
+    setNewModule('');
+
+    setNewBoysHostel(false);
+    setNewGirlsHostel(false);
+
+    setNewHostelApprovalLevel('');
+
   } catch (error: any) {
+
     console.error(error);
 
     alert(
@@ -407,6 +512,7 @@ const handleAdd = async () => {
 };
 
 const openEdit = (u: SystemUser) => {
+
   setEditSheet({
     open: true,
     u
@@ -423,6 +529,22 @@ const openEdit = (u: SystemUser) => {
 
   setEditRoleId(
     u.roleId
+  );
+
+  setEditModule(
+    u.module || ''
+  );
+
+  setEditBoysHostel(
+    u.canManageBoysHostel
+  );
+
+  setEditGirlsHostel(
+    u.canManageGirlsHostel
+  );
+
+  setEditHostelApprovalLevel(
+    u.hostelApprovalLevel || ''
   );
 };
 
@@ -652,36 +774,61 @@ const handleEdit = async () => {
     {u.college}
   </span>
 </div>
+<div className="flex gap-2">
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => openEdit(u)}
-                        className="flex-1 flex items-center justify-center space-x-1.5 bg-gray-100 hover:bg-blue-50 active:scale-95 text-gray-700 hover:text-blue-700 py-2.5 rounded-xl text-sm font-semibold transition-all"
-                      >
-                        <Edit2 size={14} />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                       onClick={async () => {
+  {u.role.toLowerCase() === "management" ? (
 
-  if (u.status === "active") {
+    <button
+      onClick={() => openEdit(u)}
+      className="w-full flex items-center justify-center space-x-1.5 bg-gray-100 hover:bg-blue-50 text-gray-700 hover:text-blue-700 py-2.5 rounded-xl text-sm font-semibold transition-all"
+    >
+      <Eye size={14} />
+      <span>View</span>
+    </button>
 
-    await disableUser(u.id);
+  ) : (
 
-  } else {
+    <>
+      <button
+        onClick={() => openEdit(u)}
+        className="flex-1 flex items-center justify-center space-x-1.5 bg-gray-100 hover:bg-blue-50 active:scale-95 text-gray-700 hover:text-blue-700 py-2.5 rounded-xl text-sm font-semibold transition-all"
+      >
+        <Edit2 size={14} />
+        <span>Edit</span>
+      </button>
 
-    await enableUser(u.id);
+      <button
+        onClick={async () => {
 
-  }
+          if (u.status === "active") {
+            await disableUser(u.id);
+          } else {
+            await enableUser(u.id);
+          }
 
-  await loadUsers();
-}}
- className={`flex-1 flex items-center justify-center space-x-1.5 active:scale-95 py-2.5 rounded-xl text-sm font-semibold transition-all ${u.status === 'active' ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-green-50 text-green-700 hover:bg-green-100'}`}
-                      >
-                        <Shield size={14} />
-                        <span>{u.status === 'active' ? 'Disable' : 'Enable'}</span>
-                      </button>
-                    </div>
+          await loadUsers();
+
+        }}
+        className={`flex-1 flex items-center justify-center space-x-1.5 active:scale-95 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+          u.status === "active"
+            ? "bg-red-50 text-red-600 hover:bg-red-100"
+            : "bg-green-50 text-green-700 hover:bg-green-100"
+        }`}
+      >
+        <Shield size={14} />
+
+        <span>
+          {u.status === "active"
+            ? "Disable"
+            : "Enable"}
+        </span>
+
+      </button>
+    </>
+
+  )}
+
+</div>
                   </div>
                 ))}
               </div>
@@ -805,7 +952,43 @@ const handleEdit = async () => {
           <FieldInput label="Email Address" value={newEmail} onChange={setNewEmail} placeholder="user@college.edu" icon={<Mail size={15} />} />
           <PasswordInput label="Password" value={newPassword} onChange={setNewPassword} placeholder="Set a password" />
 
-{/* College */}
+{/* ROLE */}
+
+<div>
+  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+    Role
+  </label>
+
+  <select
+    value={newRoleId}
+    onChange={e =>
+      setNewRoleId(
+        e.target.value
+          ? Number(e.target.value)
+          : ''
+      )
+    }
+    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
+  >
+
+    <option value="">
+      Select Role
+    </option>
+
+    {staffRoles.map(role => (
+      <option
+        key={role.id}
+        value={role.id}
+      >
+        {role.name}
+      </option>
+    ))}
+
+  </select>
+</div>
+
+{/* COLLEGE */}
+
 <div>
   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
     College
@@ -815,70 +998,238 @@ const handleEdit = async () => {
     value={newCollegeId}
     onChange={e =>
       setNewCollegeId(
-        e.target.value ? Number(e.target.value) : ''
+        e.target.value
+          ? Number(e.target.value)
+          : ''
       )
     }
-    disabled={Number(newRoleId) === 1}
-    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all disabled:opacity-50"
+    className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
   >
+
     <option value="">
-      {Number(newRoleId) === 1
-        ? 'All Colleges'
-        : 'Select College'}
+      Select College
     </option>
 
     {colleges.map(college => (
-      <option key={college.id} value={college.id}>
+      <option
+        key={college.id}
+        value={college.id}
+      >
         {college.name}
       </option>
     ))}
+
   </select>
 </div>
 
-{/* Role */}
+{u.role.toLowerCase() === "management" ? (
+
+  <>
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
+      All Permissions
+    </span>
+
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
+      Transport
+    </span>
+
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
+      Boys Hostel
+    </span>
+
+    <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-green-100 text-green-700">
+      Girls Hostel
+    </span>
+  </>
+
+) : (
+
+  <>
+    {u.module === "Transport" && (
+      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
+        Transport
+      </span>
+    )}
+
+    {u.module === "Hostel" &&
+      u.canManageBoysHostel && (
+      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-orange-100 text-orange-700">
+        Boys Hostel
+      </span>
+    )}
+
+    {u.module === "Hostel" &&
+      u.canManageGirlsHostel && (
+      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-pink-100 text-pink-700">
+        Girls Hostel
+      </span>
+    )}
+
+    {u.module === "Hostel" &&
+      u.hostelApprovalLevel && (
+      <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-indigo-100 text-indigo-700">
+        {u.hostelApprovalLevel}
+      </span>
+    )}
+  </>
+
+)}
+{/* MODULE */}
+
 <div>
   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-    Role
+    Module
   </label>
 
   <select
-    value={newRoleId}
+    value={newModule}
     onChange={e => {
-      const value = e.target.value;
 
-      setNewRoleId(
-        value ? Number(value) : ''
-      );
+      const value =
+        e.target.value;
 
-      if (Number(value) === 1) {
-        setNewCollegeId('');
+      setNewModule(value);
+
+      if (value !== "Hostel") {
+
+        setNewBoysHostel(false);
+        setNewGirlsHostel(false);
+        setNewHostelApprovalLevel('');
+
       }
+
     }}
     className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
   >
-    <option value="">Select Role</option>
 
-    {staffRoles.map(role => (
-      <option key={role.id} value={role.id}>
-        {role.name}
-      </option>
-    ))}
+    <option value="">
+      Select Module
+    </option>
+
+    <option value="Hostel">
+      Hostel
+    </option>
+
+    <option value="Transport">
+      Transport
+    </option>
+
   </select>
 </div>
+{newModule === "Hostel" && (
+  <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
+
+    {/* Hostel */}
+    <div>
+
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+        Hostel
+      </label>
+
+      <div className="space-y-3">
+
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={newBoysHostel}
+            onChange={e =>
+              setNewBoysHostel(
+                e.target.checked
+              )
+            }
+            className="w-4 h-4"
+          />
+
+          <span className="text-sm text-gray-700">
+            Boys Hostel
+          </span>
+        </label>
+
+        <label className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            checked={newGirlsHostel}
+            onChange={e =>
+              setNewGirlsHostel(
+                e.target.checked
+              )
+            }
+            className="w-4 h-4"
+          />
+
+          <span className="text-sm text-gray-700">
+            Girls Hostel
+          </span>
+        </label>
+
+      </div>
+
+    </div>
+
+
+    {/* Approval Level */}
+
+    <div>
+
+      <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+        Approval Level
+      </label>
+
+      <select
+        value={newHostelApprovalLevel}
+        onChange={e =>
+          setNewHostelApprovalLevel(
+            e.target.value
+          )
+        }
+        className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
+      >
+
+        <option value="">
+          Select Approval Level
+        </option>
+
+        <option value="First Level">
+          First Level
+        </option>
+
+        <option value="Second Level">
+          Second Level
+        </option>
+
+        <option value="Final Level">
+          Final Level
+        </option>
+
+      </select>
+
+    </div>
+
+  </div>
+)}
 
           <div className="flex gap-3 pt-2">
             <button onClick={() => setAddSheet(false)} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform">Cancel</button>
             <button
               onClick={handleAdd}
-             disabled={
+disabled={
   !newName ||
   !newPhone ||
   !newEmail ||
   !newPassword ||
   !newRoleId ||
+  !newCollegeId ||
+  !newModule ||
   (
-    Number(newRoleId) !== 1 &&
-    !newCollegeId
+    newModule === "Hostel" &&
+    (
+      !newBoysHostel &&
+      !newGirlsHostel
+    )
+  ) ||
+  (
+    newModule === "Hostel" &&
+    !newHostelApprovalLevel
   )
 }
               className="flex-1 py-3 rounded-2xl bg-blue-600 disabled:bg-blue-200 text-white text-sm font-semibold active:scale-95 transition-transform"
@@ -889,91 +1240,485 @@ const handleEdit = async () => {
         </div>
       </BottomSheet>
 
-      {/* ── EDIT USER SHEET ── */}
-      <BottomSheet open={editSheet.open} onClose={() => setEditSheet({ open: false, u: null })} title="Edit User">
-        <div className="space-y-4">
-          {/* Current user card */}
-          {editSheet.u && (
-            <div className="flex items-center space-x-3 bg-blue-50 border border-blue-100 rounded-2xl p-3">
-              <div className="bg-blue-100 p-2 rounded-xl"><UserCircle size={20} className="text-blue-600" /></div>
-              <div>
-                <p className="font-semibold text-gray-800 text-sm">{editSheet.u.name}</p>
-                <p className="text-xs text-gray-500">Editing user details below</p>
-              </div>
-            </div>
-          )}
-          <FieldInput label="Full Name" value={editName} onChange={setEditName} placeholder="Full name" icon={<UserCircle size={15} />} />
-          <FieldInput label="Phone Number" value={editPhone} onChange={setEditPhone} placeholder="Phone number" icon={<Phone size={15} />} />
-          <FieldInput label="Email Address" value={editEmail} onChange={setEditEmail} placeholder="Email address" icon={<Mail size={15} />} />
-          <PasswordInput label="New Password (optional)" value={editPassword} onChange={setEditPassword} placeholder="Leave blank to keep current" />
+     {/* ── EDIT USER SHEET ── */}
+<BottomSheet
+  open={editSheet.open}
+  onClose={() =>
+    setEditSheet({
+      open: false,
+      u: null
+    })
+  }
+  title={
+    editSheet.u?.role?.toLowerCase() === "management"
+      ? "View User"
+      : "Edit User"
+  }
+>
+  <div className="space-y-4">
 
-{/* College */}
-<div>
-  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-    College
-  </label>
+    {/* =====================================================
+        MANAGEMENT VIEW
+        ===================================================== */}
 
-  <select
-    value={editCollegeId}
-    onChange={e =>
-      setEditCollegeId(
-        e.target.value ? Number(e.target.value) : ''
-      )
-    }
-    disabled={Number(editRoleId) === 1}
-    className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all disabled:opacity-50"
-  >
-    <option value="">
-      {Number(editRoleId) === 1
-        ? 'All Colleges'
-        : 'Select College'}
-    </option>
+    {editSheet.u?.role?.toLowerCase() === "management" ? (
 
-    {colleges.map(college => (
-      <option key={college.id} value={college.id}>
-        {college.name}
-      </option>
-    ))}
-  </select>
-</div>
+      <div className="space-y-4">
 
-{/* Role */}
-<div>
-  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-    Role
-  </label>
+        {/* Management Account Notice */}
 
-  <select
-    value={editRoleId}
-    onChange={e => {
-      const value = e.target.value;
+        <div className="bg-green-50 border border-green-100 rounded-2xl p-4">
 
-      setEditRoleId(
-        value ? Number(value) : ''
-      );
+          <p className="text-sm font-bold text-green-700">
+            Management Account
+          </p>
 
-      if (Number(value) === 1) {
-        setEditCollegeId('');
-      }
-    }}
-    className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
-  >
-    <option value="">Select Role</option>
+          <p className="text-xs text-green-600 mt-1">
+            This account has all permissions and cannot be modified.
+          </p>
 
-    {staffRoles.map(role => (
-      <option key={role.id} value={role.id}>
-        {role.name}
-      </option>
-    ))}
-  </select>
-</div>
-
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => setEditSheet({ open: false, u: null })} className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform">Cancel</button>
-            <button onClick={handleEdit} className="flex-1 py-3 rounded-2xl bg-blue-600 text-white text-sm font-semibold active:scale-95 transition-transform">Save Changes</button>
-          </div>
         </div>
-      </BottomSheet>
+
+
+        {/* Full Name */}
+
+        <FieldInput
+          label="Full Name"
+          value={editName}
+          onChange={() => {}}
+          icon={<UserCircle size={15} />}
+        />
+
+
+        {/* Phone */}
+
+        <FieldInput
+          label="Phone Number"
+          value={editPhone}
+          onChange={() => {}}
+          icon={<Phone size={15} />}
+        />
+
+
+        {/* Email */}
+
+        <FieldInput
+          label="Email Address"
+          value={editEmail}
+          onChange={() => {}}
+          icon={<Mail size={15} />}
+        />
+
+
+        {/* Role */}
+
+        <div>
+
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Role
+          </label>
+
+          <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800">
+            Management
+          </div>
+
+        </div>
+
+
+        {/* College */}
+
+        <div>
+
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            College
+          </label>
+
+          <div className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800">
+            {editSheet.u.college || "All Colleges"}
+          </div>
+
+        </div>
+
+
+        {/* Permissions */}
+
+        <div className="bg-gray-50 rounded-2xl p-4">
+
+          <p className="text-xs font-bold text-gray-500 uppercase mb-3">
+            Permissions
+          </p>
+
+          <div className="space-y-2 text-sm text-gray-700">
+
+            <p>✓ Transport</p>
+
+            <p>✓ Boys Hostel</p>
+
+            <p>✓ Girls Hostel</p>
+
+            <p>✓ All Approval Levels</p>
+
+          </div>
+
+        </div>
+
+
+        {/* Close */}
+
+        <button
+          onClick={() =>
+            setEditSheet({
+              open: false,
+              u: null
+            })
+          }
+          className="w-full py-3 rounded-2xl bg-gray-200 text-gray-700 text-sm font-semibold"
+        >
+          Close
+        </button>
+
+      </div>
+
+    ) : (
+
+      /* =====================================================
+         NORMAL USER EDIT
+         ===================================================== */
+
+      <>
+
+        {/* Current user card */}
+
+        {editSheet.u && (
+          <div className="flex items-center space-x-3 bg-blue-50 border border-blue-100 rounded-2xl p-3">
+
+            <div className="bg-blue-100 p-2 rounded-xl">
+              <UserCircle
+                size={20}
+                className="text-blue-600"
+              />
+            </div>
+
+            <div>
+
+              <p className="font-semibold text-gray-800 text-sm">
+                {editSheet.u.name}
+              </p>
+
+              <p className="text-xs text-gray-500">
+                Editing user details below
+              </p>
+
+            </div>
+
+          </div>
+        )}
+
+
+        {/* Full Name */}
+
+        <FieldInput
+          label="Full Name"
+          value={editName}
+          onChange={setEditName}
+          placeholder="Full name"
+          icon={<UserCircle size={15} />}
+        />
+
+
+        {/* Phone */}
+
+        <FieldInput
+          label="Phone Number"
+          value={editPhone}
+          onChange={setEditPhone}
+          placeholder="Phone number"
+          icon={<Phone size={15} />}
+        />
+
+
+        {/* Email */}
+
+        <FieldInput
+          label="Email Address"
+          value={editEmail}
+          onChange={setEditEmail}
+          placeholder="Email address"
+          icon={<Mail size={15} />}
+        />
+
+
+        {/* Password */}
+
+        <PasswordInput
+          label="New Password (optional)"
+          value={editPassword}
+          onChange={setEditPassword}
+          placeholder="Leave blank to keep current"
+        />
+
+
+        {/* Role */}
+
+        <div>
+
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Role
+          </label>
+
+          <select
+            value={editRoleId}
+            onChange={e =>
+              setEditRoleId(
+                e.target.value
+                  ? Number(e.target.value)
+                  : ''
+              )
+            }
+            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
+          >
+
+            <option value="">
+              Select Role
+            </option>
+
+            {staffRoles.map(role => (
+
+              <option
+                key={role.id}
+                value={role.id}
+              >
+                {role.name}
+              </option>
+
+            ))}
+
+          </select>
+
+        </div>
+
+
+        {/* College */}
+
+        <div>
+
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            College
+          </label>
+
+          <select
+            value={editCollegeId}
+            onChange={e =>
+              setEditCollegeId(
+                e.target.value
+                  ? Number(e.target.value)
+                  : ''
+              )
+            }
+            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
+          >
+
+            <option value="">
+              Select College
+            </option>
+
+            {colleges.map(college => (
+
+              <option
+                key={college.id}
+                value={college.id}
+              >
+                {college.name}
+              </option>
+
+            ))}
+
+          </select>
+
+        </div>
+
+
+        {/* Module */}
+
+        <div>
+
+          <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            Module
+          </label>
+
+          <select
+            value={editModule}
+            onChange={e => {
+
+              const value =
+                e.target.value;
+
+              setEditModule(value);
+
+              if (value !== "Hostel") {
+
+                setEditBoysHostel(false);
+                setEditGirlsHostel(false);
+                setEditHostelApprovalLevel('');
+
+              }
+
+            }}
+            className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
+          >
+
+            <option value="">
+              Select Module
+            </option>
+
+            <option value="Hostel">
+              Hostel
+            </option>
+
+            <option value="Transport">
+              Transport
+            </option>
+
+          </select>
+
+        </div>
+
+
+        {/* Hostel Settings */}
+
+        {editModule === "Hostel" && (
+
+          <div className="bg-gray-50 border border-gray-200 rounded-2xl p-4 space-y-4">
+
+            {/* Hostel */}
+
+            <div>
+
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                Hostel
+              </label>
+
+              <div className="space-y-3">
+
+                <label className="flex items-center gap-3">
+
+                  <input
+                    type="checkbox"
+                    checked={editBoysHostel}
+                    onChange={e =>
+                      setEditBoysHostel(
+                        e.target.checked
+                      )
+                    }
+                    className="w-4 h-4"
+                  />
+
+                  <span className="text-sm text-gray-700">
+                    Boys Hostel
+                  </span>
+
+                </label>
+
+
+                <label className="flex items-center gap-3">
+
+                  <input
+                    type="checkbox"
+                    checked={editGirlsHostel}
+                    onChange={e =>
+                      setEditGirlsHostel(
+                        e.target.checked
+                      )
+                    }
+                    className="w-4 h-4"
+                  />
+
+                  <span className="text-sm text-gray-700">
+                    Girls Hostel
+                  </span>
+
+                </label>
+
+              </div>
+
+            </div>
+
+
+            {/* Approval Level */}
+
+            <div>
+
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+                Approval Level
+              </label>
+
+              <select
+                value={editHostelApprovalLevel}
+                onChange={e =>
+                  setEditHostelApprovalLevel(
+                    e.target.value
+                  )
+                }
+                className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none"
+              >
+
+                <option value="">
+                  Select Approval Level
+                </option>
+
+                <option value="First Level">
+                  First Level
+                </option>
+
+                <option value="Second Level">
+                  Second Level
+                </option>
+
+                <option value="Final Level">
+                  Final Level
+                </option>
+
+              </select>
+
+            </div>
+
+          </div>
+
+        )}
+
+
+        {/* Buttons */}
+
+        <div className="flex gap-3 pt-2">
+
+          <button
+            onClick={() =>
+              setEditSheet({
+                open: false,
+                u: null
+              })
+            }
+            className="flex-1 py-3 rounded-2xl border-2 border-gray-200 text-gray-600 text-sm font-semibold active:scale-95 transition-transform"
+          >
+            Cancel
+          </button>
+
+
+          <button
+            onClick={handleEdit}
+            className="flex-1 py-3 rounded-2xl bg-blue-600 text-white text-sm font-semibold active:scale-95 transition-transform"
+          >
+            Save Changes
+          </button>
+
+        </div>
+
+      </>
+
+    )}
+
+  </div>
+</BottomSheet>
     </DashboardLayout>
   );
 }

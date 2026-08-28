@@ -1663,27 +1663,92 @@ if (!canManageHostel) {
                               ))}
                             </div>
                           )}
-                          <button onClick={async () => {
+                        <button
+  onClick={async () => {
+    try {
       const gender =
         room.gender === "boys"
           ? "male"
           : "female";
-    const students =
-      await getAvailableStudents(gender);
 
-    console.log("AVAILABLE STUDENTS:", students);
+      console.log("================================");
+      console.log("ADD STUDENT");
+      console.log("Room:", room.roomNumber);
+      console.log("Room Gender:", room.gender);
+      console.log("API Gender:", gender);
 
-    setAvailableStudents(students);
+      const students = await getAvailableStudents(gender);
 
-      setAvailableStudents(students);
+      console.log("AVAILABLE STUDENTS RAW:", students);
+
+      const normalizedStudents = (students || []).map(
+        (student: any) => ({
+          studentId:
+            student.studentId ??
+            student.StudentId ??
+            student.id ??
+            "",
+
+          studentName:
+            student.studentName ??
+            student.StudentName ??
+            student.name ??
+            "",
+
+          year:
+            student.year ??
+            student.Year ??
+            "",
+
+          department:
+            student.department ??
+            student.Department ??
+            "",
+
+          college:
+            student.collegeName ??
+            student.CollegeName ??
+            student.college ??
+            ""
+        })
+      );
+
+      console.log(
+        "AVAILABLE STUDENTS NORMALIZED:",
+        normalizedStudents
+      );
+
+      setAvailableStudents(normalizedStudents);
 
       setAddStudentSheet({
         open: true,
         roomNumber: room.roomNumber
       });
-    }} className="w-full flex items-center justify-center space-x-2 border-2 border-dashed border-gray-200 hover:border-blue-300 text-gray-400 hover:text-blue-500 py-2.5 rounded-xl text-sm font-medium transition-colors active:scale-[0.98]">
-                            <Plus size={15} /><span>Add Student</span>
-                          </button>
+
+    } catch (error) {
+      console.error(
+        "FAILED TO LOAD AVAILABLE STUDENTS:",
+        error
+      );
+
+      setAvailableStudents([]);
+
+      setAddStudentSheet({
+        open: true,
+        roomNumber: room.roomNumber
+      });
+
+      toast.error(
+        "Failed to load available students"
+      );
+    }
+  }}
+  disabled={room.students.length >= room.capacity}
+  className="w-full flex items-center justify-center space-x-2 border-2 border-dashed border-gray-200 hover:border-blue-300 text-gray-400 hover:text-blue-500 py-2.5 rounded-xl text-sm font-medium transition-colors active:scale-[0.98]"
+>
+  <Plus size={15} />
+  <span>Add Student</span>
+</button>
                         </div>
                       );
                     })}

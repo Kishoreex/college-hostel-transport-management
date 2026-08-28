@@ -687,22 +687,80 @@ useEffect(() => {
   loadLeaveHistory();
 }, []);
 const loadLeaveRequests = async () => {
-  const data = await getLeaveRequests();
-  setLeaveRequests(data);
-};
-const loadLeaveHistory = async () => {
   try {
+    const data = await getLeaveRequests(
+      isManagement ? null : user.college
+    );
 
-    const response = await fetch(`${API_URL}/LeaveRequests/history`);
+    console.log("========== LEAVE API ==========");
+    console.log("COLLEGE:", user.college);
+    console.log("DATA:", data);
+
+    setLeaveRequests(data);
+  } catch (error) {
+    console.error("FAILED TO LOAD LEAVES:", error);
+    setLeaveRequests([]);
+  }
+};
+const loadOutpassHistory = async () => {
+  try {
+    const url = isManagement
+      ? `${API_URL}/Outpasses/history`
+      : `${API_URL}/Outpasses/history?college=${encodeURIComponent(
+          user.college || ""
+        )}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to load outpass history"
+      );
+    }
 
     const data = await response.json();
 
-    setLeaveHistory(data);
-
+    setOutpassHistory(data);
   } catch (error) {
+    console.error(
+      "FAILED TO LOAD OUTPASS HISTORY:",
+      error
+    );
 
-    console.error(error);
+    setOutpassHistory([]);
+  }
+};
+const loadLeaveHistory = async () => {
+  try {
+    const url = isManagement
+      ? `${API_URL}/LeaveRequests/history`
+      : `${API_URL}/LeaveRequests/history?college=${encodeURIComponent(
+          user.college || ""
+        )}`;
 
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to load leave history"
+      );
+    }
+
+    const data = await response.json();
+
+    console.log(
+      "LEAVE HISTORY COLLEGE:",
+      user.college
+    );
+
+    setLeaveHistory(data);
+  } catch (error) {
+    console.error(
+      "FAILED TO LOAD LEAVE HISTORY:",
+      error
+    );
+
+    setLeaveHistory([]);
   }
 };
     const handleApprove = async (
@@ -753,32 +811,57 @@ const loadLeaveHistory = async () => {
 
   loadLeaveRequests();
 };
-    const loadOutpasses = async () => {
-    const data = await getAllOutpasses();
+const loadOutpasses = async () => {
+  try {
+    const data = await getAllOutpasses(
+      isManagement ? null : user.college
+    );
 
-    console.log("API DATA:", data);
+    console.log("========== OUTPASS API ==========");
+    console.log("COLLEGE:", user.college);
+    console.log("IS MANAGEMENT:", isManagement);
+    console.log("DATA:", data);
 
     setOutpasses(data);
-    };
+  } catch (error) {
+    console.error("FAILED TO LOAD OUTPASSES:", error);
+    setOutpasses([]);
+  }
+};
       const [vacatingRequests, setVacatingRequests] =
       useState<any[]>([]);
       const [applicationHistory, setApplicationHistory] =
     useState<any[]>([]);
-
+const [outpassHistory, setOutpassHistory] =
+  useState<any[]>([]);
   const [vacatingHistory, setVacatingHistory] =
     useState<any[]>([]);
       useEffect(() => {
       loadVacatingRequests();
     }, []);
 
-    const loadVacatingRequests =
-      async () => {
-        const data =
-          await getAllVacatingRequests();
-    console.log(vacatingRequests);
-      console.log(data);
-        setVacatingRequests(data);
-      };
+    const loadVacatingRequests = async () => {
+  try {
+    const data =
+      await getAllVacatingRequests(
+        isManagement ? null : user.college
+      );
+
+    console.log("========== VACATING API ==========");
+    console.log("COLLEGE:", user.college);
+    console.log("IS MANAGEMENT:", isManagement);
+    console.log("DATA:", data);
+
+    setVacatingRequests(data);
+  } catch (error) {
+    console.error(
+      "FAILED TO LOAD VACATING:",
+      error
+    );
+
+    setVacatingRequests([]);
+  }
+};
       const handleApproveVacating =
       async (id: number) => {
         try {
@@ -990,7 +1073,10 @@ connection.on("RoomUpdated", async () => {
 const [selectedNewRoom, setSelectedNewRoom] = useState("");
 const loadApplications = async () => {
   try {
-       const data = await getAllStudentRegistrations();
+       const data =
+  await getAllStudentRegistrations(
+    isManagement ? null : user.college
+  );
 
     console.log("APPLICATIONS API", data);
 
@@ -1000,28 +1086,44 @@ const loadApplications = async () => {
     console.error(error);
   }
 };
-    const loadHistory = async () => {
-    try {
-      const appResponse = await fetch(
-        `${API_URL}/StudentRegistrations/history`
-      );
+ const loadHistory = async () => {
+  try {
+    const collegeParam =
+      isManagement
+        ? ""
+        : `?college=${encodeURIComponent(
+            user.college || ""
+          )}`;
 
-      const vacResponse = await fetch(
-        `${API_URL}/Vacating/history`
-      );
+    const appResponse = await fetch(
+      `${API_URL}/StudentRegistrations/history${collegeParam}`
+    );
 
-      const appData =
-        await appResponse.json();
+    const vacResponse = await fetch(
+      `${API_URL}/Vacating/history${collegeParam}`
+    );
 
-      const vacData =
-        await vacResponse.json();
+    const appData =
+      await appResponse.json();
 
-      setApplicationHistory(appData);
-      setVacatingHistory(vacData);
-    } catch (error) {
-      console.error(error);
-    }
-  };
+    const vacData =
+      await vacResponse.json();
+
+    console.log("========== HISTORY ==========");
+    console.log("COLLEGE:", user.college);
+    console.log("IS MANAGEMENT:", isManagement);
+    console.log("APPLICATION HISTORY:", appData);
+    console.log("VACATING HISTORY:", vacData);
+
+    setApplicationHistory(appData);
+    setVacatingHistory(vacData);
+  } catch (error) {
+    console.error(
+      "FAILED TO LOAD HISTORY:",
+      error
+    );
+  }
+};
      const filteredVacatingRequests =
   vacatingRequests.filter(req => {
 

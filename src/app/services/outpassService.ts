@@ -1,9 +1,16 @@
 
+export async function getOutpasses(
+  college?: string | null
+) {
+  const url = college
+    ? `${API_URL}/Outpasses?college=${encodeURIComponent(college)}`
+    : `${API_URL}/Outpasses`;
 
-export async function getOutpasses() {
-  const response = await fetch(
-    `${API_URL}/Outpasses`
-  );
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to load outpasses");
+  }
 
   return await response.json();
 }
@@ -37,9 +44,14 @@ async (studentId: string) => {
   return response.json();
 };
 
+export const getAllOutpasses = async (
+  college?: string | null
+) => {
+  const url = college
+    ? `${API_URL}/Outpasses?college=${encodeURIComponent(college)}`
+    : `${API_URL}/Outpasses`;
 
-export const getAllOutpasses = async () => {
-  const response = await fetch(`${API_URL}/Outpasses`);
+  const response = await fetch(url);
 
   if (!response.ok) {
     throw new Error("Failed to load outpasses");

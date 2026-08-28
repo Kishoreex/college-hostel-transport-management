@@ -14,11 +14,18 @@ export async function createLeaveRequest(data:any) {
 
   return await response.json();
 }
+export async function getLeaveRequests(
+  college?: string | null
+) {
+  const url = college
+    ? `${API_URL}/LeaveRequests?college=${encodeURIComponent(college)}`
+    : `${API_URL}/LeaveRequests`;
 
-export async function getLeaveRequests() {
-  const response = await fetch(
-    `${API_URL}/LeaveRequests`
-  );
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error("Failed to load leave requests");
+  }
 
   return await response.json();
 }

@@ -21,12 +21,26 @@ private readonly IHubContext<NotificationHub> _hub;
     _hub = hub;
 }
 
-   [HttpGet]
-public async Task<IActionResult> GetAll()
+  [HttpGet]
+public async Task<IActionResult> GetAll(
+    [FromQuery] string? college)
 {
     try
     {
-        var data = await _context.VacatingRequests
+        var query = _context.VacatingRequests
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(college))
+        {
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId &&
+                    s.CollegeName == college
+                )
+            );
+        }
+
+        var data = await query
             .Where(x =>
                 x.Status == "Pending" ||
 
@@ -40,6 +54,7 @@ public async Task<IActionResult> GetAll()
                  x.RejectedDate != null &&
                  x.RejectedDate >= DateTime.Now.AddHours(-72))
             )
+            .OrderByDescending(x => x.Id)
             .ToListAsync();
 
         return Ok(data);
@@ -212,12 +227,25 @@ public async Task<IActionResult> GetStudentRequest(
     return Ok(request);
 }
 [HttpGet("history")]
-public async Task<IActionResult> GetHistory()
+public async Task<IActionResult> GetHistory(
+    [FromQuery] string? college)
 {
     try
     {
-        var history = await _context.VacatingRequests
-            .Where(x => x.Status != "Pending")
+        var query = _context.VacatingRequests
+            .Where(x => x.Status != "Pending");
+
+        if (!string.IsNullOrWhiteSpace(college))
+        {
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId &&
+                    s.CollegeName == college
+                )
+            );
+        }
+
+        var history = await query
             .OrderByDescending(x => x.Id)
             .ToListAsync();
 

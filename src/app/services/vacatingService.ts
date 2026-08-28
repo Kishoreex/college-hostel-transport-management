@@ -3,10 +3,19 @@
 import API_URL from "../../api/api";
 
 export const getAllVacatingRequests =
-  async () => {
-    const response = await fetch(
-      `${API_URL}/Vacating`
-    );
+  async (college?: string | null) => {
+
+    const url = college
+      ? `${API_URL}/Vacating?college=${encodeURIComponent(college)}`
+      : `${API_URL}/Vacating`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to load vacating requests"
+      );
+    }
 
     return await response.json();
   };

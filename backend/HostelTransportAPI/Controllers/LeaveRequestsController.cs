@@ -99,15 +99,28 @@ await _hub.Clients.All.SendAsync(
     }
 
 [HttpGet]
-public async Task<IActionResult> GetAll()
+public async Task<IActionResult> GetAll(
+    [FromQuery] string? college)
 {
     var now = DateTime.Now;
 
-    var leaves = _context.LeaveRequests.ToList();
+    var query = _context.LeaveRequests
+        .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(college))
+    {
+        query = query.Where(x =>
+            _context.StudentRegistrations.Any(s =>
+                s.StudentId == x.StudentId &&
+                s.CollegeName == college
+            )
+        );
+    }
+
+    var leaves = await query.ToListAsync();
 
     foreach (var leave in leaves)
     {
-        // Pending -> Not Accepted By Warden
         if (leave.Status == "Pending")
         {
             DateTime lastApprovalTime;
@@ -118,14 +131,12 @@ public async Task<IActionResult> GetAll()
                 !string.IsNullOrWhiteSpace(leave.ReturnTime)
             )
             {
-                // Same-day out campus
                 lastApprovalTime =
                     leave.ToDate.Date +
                     TimeSpan.Parse(leave.ReturnTime);
             }
             else
             {
-                // In campus + multi-day out campus
                 lastApprovalTime =
                     leave.ToDate.Date
                         .AddHours(23)
@@ -139,7 +150,6 @@ public async Task<IActionResult> GetAll()
             }
         }
 
-        // Approved -> Completed
         if (leave.Status == "Approved")
         {
             DateTime leaveEnd;
@@ -172,7 +182,7 @@ public async Task<IActionResult> GetAll()
     await _context.SaveChangesAsync();
 
     return Ok(
-        _context.LeaveRequests
+        query
             .OrderByDescending(x => x.CreatedDate)
             .ToList()
     );

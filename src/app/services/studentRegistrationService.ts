@@ -16,14 +16,20 @@ export const getStudentRegistrations = async (
   return await response.json();
 };
 
-export const getAllStudentRegistrations = async () => {
-  const response = await fetch(
-    `${API_URL}/StudentRegistrations`
-  );
+export const getAllStudentRegistrations =
+  async (college?: string | null) => {
 
-  if (!response.ok) {
-    throw new Error("Failed to load registrations");
-  }
+    const url = college
+      ? `${API_URL}/StudentRegistrations?college=${encodeURIComponent(college)}`
+      : `${API_URL}/StudentRegistrations`;
 
-  return await response.json();
-};
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        "Failed to load registrations"
+      );
+    }
+
+    return await response.json();
+  };

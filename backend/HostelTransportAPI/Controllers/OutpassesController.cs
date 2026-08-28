@@ -4,6 +4,7 @@ using HostelTransportAPI.Models;
 using HostelTransportAPI.DTOs;
 using Microsoft.AspNetCore.SignalR;
 using HostelTransportAPI.Hubs;
+using Microsoft.EntityFrameworkCore;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
@@ -21,13 +22,26 @@ private readonly IHubContext<NotificationHub> _hub;
     _hub = hub;
 }
 [HttpGet]
-public IActionResult GetAll()
+public IActionResult GetAll([FromQuery] string? college)
 {
     try
     {
         var now = DateTime.Now;
 
-        var outpasses = _context.Outpasses.ToList();
+        var query = _context.Outpasses
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(college))
+        {
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId &&
+                    s.CollegeName == college
+                )
+            );
+        }
+
+        var outpasses = query.ToList();
 
         foreach (var outpass in outpasses)
         {
@@ -43,7 +57,7 @@ public IActionResult GetAll()
         _context.SaveChanges();
 
         return Ok(
-            _context.Outpasses
+            query
                 .OrderByDescending(x => x.Id)
                 .ToList()
         );
@@ -386,5 +400,35 @@ outpass.OutpassState = "Cancelled";
     {
         Message = "Outpass Cancelled"
     });
+}
+
+[HttpGet("history")]
+public async Task<IActionResult> GetHistory(
+    [FromQuery] string? college)
+{
+    var query = _context.Outpasses
+        .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(college))
+    {
+        query = query.Where(x =>
+            _context.StudentRegistrations.Any(s =>
+                s.StudentId == x.StudentId &&
+                s.CollegeName == college
+            )
+        );
+    }
+
+    var history = await query
+        .Where(x =>
+            x.Status == "Completed" ||
+            x.Status == "Rejected" ||
+            x.Status == "Cancelled" ||
+            x.OutpassState == "Expired"
+        )
+        .OrderByDescending(x => x.Id)
+        .ToListAsync();
+
+    return Ok(history);
 }
 }

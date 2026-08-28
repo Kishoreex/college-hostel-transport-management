@@ -63,12 +63,21 @@ return Ok(registration);
     }
 
  [HttpGet]
-public IActionResult GetAll()
+public async Task<IActionResult> GetAll(
+    [FromQuery] string? college)
 {
-    var data = _context.StudentRegistrations
-        .Where(x => x.Status == "Pending")
+    var query = _context.StudentRegistrations
+        .Where(x => x.Status == "Pending");
+
+    if (!string.IsNullOrWhiteSpace(college))
+    {
+        query = query.Where(x =>
+            x.CollegeName == college);
+    }
+
+    var data = await query
         .OrderByDescending(x => x.Id)
-        .ToList();
+        .ToListAsync();
 
     return Ok(data);
 }
@@ -287,12 +296,21 @@ return Ok(new
     });
 }
 [HttpGet("history")]
-public IActionResult GetHistory()
+public async Task<IActionResult> GetHistory(
+    [FromQuery] string? college)
 {
-    var history = _context.StudentRegistrations
-        .Where(x => x.Status != "Pending")
+    var query = _context.StudentRegistrations
+        .Where(x => x.Status != "Pending");
+
+    if (!string.IsNullOrWhiteSpace(college))
+    {
+        query = query.Where(x =>
+            x.CollegeName == college);
+    }
+
+    var history = await query
         .OrderByDescending(x => x.Id)
-        .ToList();
+        .ToListAsync();
 
     return Ok(history);
 }

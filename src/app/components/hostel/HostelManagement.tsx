@@ -67,8 +67,7 @@ import * as signalR from "@microsoft/signalr";
     } from 'lucide-react';
     import DashboardLayout from '../common/DashboardLayout';
     import type { User } from '../../types';
-    import API_URL from "../../../api/api";
-    const HUB_URL = API_URL.replace("/api", "");
+import API_URL, { HUB_URL } from "../../../api/api";
 
     interface HostelManagementProps {
       user: User;

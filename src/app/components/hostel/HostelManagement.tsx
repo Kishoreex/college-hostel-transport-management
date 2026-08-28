@@ -2370,38 +2370,43 @@ stillOut
 : "bg-green-100 text-green-700"
 }`}
 >
-{
-  h.status === "Cancelled"
-? "❌ Cancelled"
-
-: h.status === "Not Accepted By Warden"
-? "❌ Not Accepted By Warden"
-
-: h.status === "Rejected"
-? "❌ Rejected"
-:  waitingForExit
-? "🟡 Waiting For Exit"
-
-: expiredWithoutExit
-? "❌ Not Exited"
-
-: exitedEarly
-? `🟠 Exited Early (${earlyMinutes} min)`
-
-: studentOutside
-? "🟢 Student Outside"
-
-: stillOut
-? "🔴 Still Out"
-
-: returnedLate
-? `⚠️ Returned Late (${h.lateMinutes} min)`
-
-: returnedInTime
-? "✅ Returned In Time"
-
-: "Completed"
-}
+{isManagement ? (
+  <>
+    {h.status === "Cancelled"
+      ? "❌ Cancelled"
+      : h.status === "Not Accepted By Warden"
+      ? "❌ Not Accepted By Warden"
+      : h.status === "Rejected"
+      ? "❌ Rejected"
+      : waitingForExit
+      ? "🟡 Waiting For Exit"
+      : expiredWithoutExit
+      ? "❌ Not Exited"
+      : exitedEarly
+      ? `🟠 Exited Early (${earlyMinutes} min)`
+      : studentOutside
+      ? "🟢 Student Outside"
+      : stillOut
+      ? "🔴 Still Out"
+      : returnedLate
+      ? `⚠️ Returned Late (${h.lateMinutes} min)`
+      : returnedInTime
+      ? "✅ Returned In Time"
+      : "Completed"}
+  </>
+) : (
+  <>
+    {h.status === "Approved"
+      ? "✅ Approved"
+      : h.status === "Cancelled"
+      ? "❌ Cancelled"
+      : h.status === "Rejected"
+      ? "❌ Rejected"
+      : h.status === "Not Accepted By Warden"
+      ? "❌ Not Accepted By Warden"
+      : h.status || "Completed"}
+  </>
+)}
                    </span>
                               </div>
                               <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
@@ -2904,47 +2909,51 @@ className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
         : "bg-green-100 text-green-700"
 }`}
 >
- {
-h.status === "Not Accepted By Warden"
-? "❌ Not Accepted By Warden"
-
-: h.status === "Cancelled"
-? "❌ Cancelled"
-
-: h.status === "Rejected"
-? "❌ Rejected"
-
-: h.status === "Pending"
-? "🟡 Pending"
-
-: h.status === "Approved" && !isOutCampus
-? (now <= returnTime
-    ? "🟢 Active Leave"
-    : "✅ Leave Completed")
-
-: waitingForExit
-? "🟡 Waiting For Exit"
-
-: expiredWithoutExit
-? "❌ Not Exited"
-
-: exitedEarly
-? `🔴 Exited Early (${h.earlyExitMinutes} min)`
-
-: outsideCampus
-? "🟢 Outside Campus"
-
-: overdueOutside
-? "🔴 Outside Beyond Return Time"
-
-: returnedLate
-? `⚠️ Returned Late (${h.lateMinutes} min)`
-
-: returnedInTime
-? "✅ Returned In Time"
-
-: "Completed"
-}
+{isManagement ? (
+  <>
+    {h.status === "Not Accepted By Warden"
+      ? "❌ Not Accepted By Warden"
+      : h.status === "Cancelled"
+      ? "❌ Cancelled"
+      : h.status === "Rejected"
+      ? "❌ Rejected"
+      : h.status === "Pending"
+      ? "🟡 Pending"
+      : h.status === "Approved" && !isOutCampus
+      ? now <= returnTime
+        ? "🟢 Active Leave"
+        : "✅ Leave Completed"
+      : waitingForExit
+      ? "🟡 Waiting For Exit"
+      : expiredWithoutExit
+      ? "❌ Not Exited"
+      : exitedEarly
+      ? `🔴 Exited Early (${h.earlyExitMinutes} min)`
+      : outsideCampus
+      ? "🟢 Outside Campus"
+      : overdueOutside
+      ? "🔴 Outside Beyond Return Time"
+      : returnedLate
+      ? `⚠️ Returned Late (${h.lateMinutes} min)`
+      : returnedInTime
+      ? "✅ Returned In Time"
+      : "Completed"}
+  </>
+) : (
+  <>
+    {h.status === "Approved"
+      ? "✅ Approved"
+      : h.status === "Cancelled"
+      ? "❌ Cancelled"
+      : h.status === "Rejected"
+      ? "❌ Rejected"
+      : h.status === "Not Accepted By Warden"
+      ? "❌ Not Accepted By Warden"
+      : h.status === "Pending"
+      ? "🟡 Pending"
+      : h.status || "Completed"}
+  </>
+)}
                                   </span>
                                 </div>
                               </div>

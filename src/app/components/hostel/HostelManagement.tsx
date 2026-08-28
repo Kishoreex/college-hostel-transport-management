@@ -475,20 +475,80 @@ const loadHostelStudents = async () => {
 
     console.log("========== ACTIVE STUDENT API ==========");
     console.log("RAW DATA:", data);
-    console.log("IS ARRAY:", Array.isArray(data));
-    console.log("COUNT:", Array.isArray(data) ? data.length : "NOT ARRAY");
 
-    if (Array.isArray(data) && data.length > 0) {
-      console.log("FIRST STUDENT:", data[0]);
-      console.log(
-        "FIRST STUDENT KEYS:",
-        Object.keys(data[0])
-      );
-    }
+    const students = Array.isArray(data)
+      ? data.map((student: any) => ({
+          id:
+            student.studentId ??
+            student.StudentId ??
+            student.id ??
+            "",
 
-    setHostelStudents(
-      Array.isArray(data) ? data : []
-    );
+          name:
+            student.studentName ??
+            student.StudentName ??
+            student.name ??
+            "",
+
+          phone:
+            student.phone ??
+            student.Phone ??
+            "",
+
+          college:
+            student.collegeName ??
+            student.CollegeName ??
+            "",
+
+          department:
+            student.department ??
+            student.Department ??
+            "",
+
+          year:
+            student.year ??
+            student.Year ??
+            "",
+
+          batch:
+            student.batch ??
+            student.Batch ??
+            "",
+
+          parentName:
+            student.parentName ??
+            student.ParentName ??
+            "",
+
+          parentPhone:
+            student.parentPhone ??
+            student.ParentPhone ??
+            "",
+
+          address:
+            student.address ??
+            student.Address ??
+            "",
+
+          gender:
+            String(
+              student.gender ??
+              student.Gender ??
+              ""
+            ).toLowerCase() === "male"
+              ? "boys"
+              : "girls",
+
+          roomNumber: "",
+
+          roommates: []
+        }))
+      : [];
+
+    console.log("NORMALIZED STUDENTS:", students);
+
+    setHostelStudents(students);
+
   } catch (error) {
     console.error(
       "FAILED TO LOAD ACTIVE STUDENTS:",

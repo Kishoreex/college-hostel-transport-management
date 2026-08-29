@@ -479,9 +479,10 @@ if (newModule.split(',').includes("Hostel")) {
 
       roleId:
         Number(newRoleId),
-
-      collegeId:
-        Number(newCollegeId),
+collegeId:
+  newCollegeId === 0
+    ? null
+    : Number(newCollegeId),
 
       module:
         newModule,
@@ -638,7 +639,10 @@ const openEdit = (u: SystemUser) => {
 
         roleId: Number(editRoleId),
 
-        collegeId: Number(editCollegeId),
+        collegeId:
+  editCollegeId === 0
+    ? null
+    : Number(editCollegeId),
 
         // MODULE
         module: editModule,

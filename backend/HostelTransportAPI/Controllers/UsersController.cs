@@ -122,25 +122,54 @@ public async Task<IActionResult> GetUsers()
 // =====================================================
 // COLLEGE
 // =====================================================
-if (!user.CollegeId.HasValue)
-{
-    return BadRequest(
-        "College is required."
+
+bool isAllCollegeRole =
+    role.Name.Equals(
+        "System Admin",
+        StringComparison.OrdinalIgnoreCase
+    )
+    ||
+    role.Name.Equals(
+        "Management",
+        StringComparison.OrdinalIgnoreCase
+    )
+    ||
+    (
+        role.Name.Equals(
+            "Admin Office",
+            StringComparison.OrdinalIgnoreCase
+        )
+        &&
+        !user.CollegeId.HasValue
     );
+
+if (isAllCollegeRole)
+{
+    // NULL = ALL COLLEGES
+    user.CollegeId = null;
 }
-
-var collegeExists =
-    await _context.Colleges.AnyAsync(
-        x =>
-            x.Id == user.CollegeId.Value &&
-            x.IsActive
-    );
-
-if (!collegeExists)
+else
 {
-    return BadRequest(
-        "Invalid or inactive college selected."
-    );
+    if (!user.CollegeId.HasValue)
+    {
+        return BadRequest(
+            "College is required."
+        );
+    }
+
+    var collegeExists =
+        await _context.Colleges.AnyAsync(
+            x =>
+                x.Id == user.CollegeId.Value &&
+                x.IsActive
+        );
+
+    if (!collegeExists)
+    {
+        return BadRequest(
+            "Invalid or inactive college selected."
+        );
+    }
 }
 
         // -------------------------------------------------
@@ -433,30 +462,59 @@ if (user.RoleId == 1002)
         }
 
 
-        // -------------------------------------------------
-        // Validate College
-        // -------------------------------------------------
+// -------------------------------------------------
+// Validate College
+// -------------------------------------------------
 
-    // =====================================================
-// COLLEGE
-// =====================================================
-
-if (!updatedUser.CollegeId.HasValue)
-{
-    return BadRequest(
-        "College is required."
+bool isAllCollegeRole =
+    role.Name.Equals(
+        "System Admin",
+        StringComparison.OrdinalIgnoreCase
+    )
+    ||
+    role.Name.Equals(
+        "Management",
+        StringComparison.OrdinalIgnoreCase
+    )
+    ||
+    (
+        role.Name.Equals(
+            "Admin Office",
+            StringComparison.OrdinalIgnoreCase
+        )
+        &&
+        !updatedUser.CollegeId.HasValue
     );
+
+if (isAllCollegeRole)
+{
+    user.CollegeId = null;
 }
-
-var collegeExists = await _context.Colleges.AnyAsync(x =>
-    x.Id == updatedUser.CollegeId.Value &&
-    x.IsActive);
-
-if (!collegeExists)
+else
 {
-    return BadRequest(
-        "Invalid or inactive college selected."
-    );
+    if (!updatedUser.CollegeId.HasValue)
+    {
+        return BadRequest(
+            "College is required for this role."
+        );
+    }
+
+    var collegeExists =
+        await _context.Colleges.AnyAsync(
+            x =>
+                x.Id == updatedUser.CollegeId.Value &&
+                x.IsActive
+        );
+
+    if (!collegeExists)
+    {
+        return BadRequest(
+            "Invalid or inactive college selected."
+        );
+    }
+
+    user.CollegeId =
+        updatedUser.CollegeId;
 }
 
         // -------------------------------------------------

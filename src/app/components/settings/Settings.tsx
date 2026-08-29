@@ -415,18 +415,17 @@ const openAdd = () => {
 const handleAdd = async () => {
 
   if (
-    !newName ||
-    !newPhone ||
-    !newEmail ||
-    !newPassword ||
-    !newRoleId ||
-    !newCollegeId ||
-    !newModule
-  ) {
-    alert('Please fill all required fields.');
-    return;
-  }
-
+  !newName ||
+  !newPhone ||
+  !newEmail ||
+  !newPassword ||
+  !newRoleId ||
+  newCollegeId === '' ||
+  !newModule
+) {
+  alert('Please fill all required fields.');
+  return;
+}
   const selectedRole =
     staffRoles.find(
       role =>
@@ -576,8 +575,7 @@ const openEdit = (u: SystemUser) => {
   setEditHostelApprovalLevel(
     u.hostelApprovalLevel || ''
   );
-};
-const handleEdit = async () => {
+};const handleEdit = async () => {
   if (!editSheet.u) {
     return;
   }
@@ -587,12 +585,11 @@ const handleEdit = async () => {
     !editPhone ||
     !editEmail ||
     !editRoleId ||
-    !editCollegeId
+    editCollegeId === ''
   ) {
     alert('Please fill all required fields.');
     return;
   }
-
   const selectedRole = staffRoles.find(
     role => role.id === Number(editRoleId)
   );
@@ -1466,7 +1463,7 @@ const handleEdit = async () => {
           !newEmail ||
           !newPassword ||
           !newRoleId ||
-          !newCollegeId ||
+newCollegeId === '' ||
           !newModule ||
           (
             newModule

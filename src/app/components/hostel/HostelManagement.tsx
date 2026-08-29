@@ -1287,20 +1287,89 @@ console.log("TOTAL:", totalCount);
 console.log("BOYS:", boysCount);
 console.log("GIRLS:", girlsCount);
 
-  const displayStudents =
-  searchQuery.length > 1
-    ? dashboardStudents.filter(
-        (s: any) =>
-          s.studentName
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          s.studentId
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          s.registerNumber
-            ?.toLowerCase()
-            .includes(searchQuery.toLowerCase())
-      )
+const displayStudents =
+  searchQuery.trim().length > 0
+    ? dashboardStudents.filter((s: any) => {
+        const query = searchQuery.trim().toLowerCase();
+
+        return (
+          // Student Name
+          String(
+            s.name ??
+            s.studentName ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // Student ID
+          String(
+            s.id ??
+            s.studentId ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // Register Number
+          String(
+            s.registerNumber ??
+            s.registrationNumber ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // Phone Number
+          String(
+            s.phone ??
+            s.Phone ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // Room Number
+          String(
+            s.roomNumber ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // College
+          String(
+            s.college ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // Department
+          String(
+            s.department ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // Year
+          String(
+            s.year ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query) ||
+
+          // Batch
+          String(
+            s.batch ??
+            ""
+          )
+            .toLowerCase()
+            .includes(query)
+        );
+      })
     : dashboardStudents;
 
 

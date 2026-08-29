@@ -147,7 +147,7 @@ public async Task<IActionResult> GetAll(
 
             if (now > lastApprovalTime)
             {
-                leave.Status = "Not Accepted By Warden";
+                leave.Status = "Not Accepted By Hostel Incharge";
             }
         }
 
@@ -365,7 +365,7 @@ foreach (var leave in pendingLeaves)
 
     if (now > expiryTime)
     {
-        leave.Status = "Not Accepted By Warden";
+        leave.Status = "Not Accepted By Hostel Incharge";
     }
 }
 
@@ -383,7 +383,7 @@ _context.SaveChanges();
    || leave.Status == "Completed"
    || leave.Status == "Expired"
       || leave.Status == "Cancelled"
-   || leave.Status == "Not Accepted By Warden"
+   || leave.Status == "Not Accepted By Hostel Incharge"
          orderby leave.CreatedDate descending
 
          select new

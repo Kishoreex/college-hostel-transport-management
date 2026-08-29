@@ -2435,7 +2435,7 @@ return (
         h.status?.toLowerCase() === "approved" ||
         h.status?.toLowerCase() === "completed" ||
         h.status?.toLowerCase() === "cancelled" ||
-        h.status?.toLowerCase() === "not accepted by warden"
+        h.status?.toLowerCase() === "Not Accepted By Hostel Incharge"
     ) &&
     !h.leaveRequestId
 );
@@ -2544,8 +2544,8 @@ stillOut
   <>
     {h.status === "Cancelled"
       ? "❌ Cancelled"
-      : h.status === "Not Accepted By Warden"
-      ? "❌ Not Accepted By Warden"
+      : h.status === "Not Accepted By Hostel Incharge"
+      ? "❌ Not Accepted By Hostel Incharge"
       : h.status === "Rejected"
       ? "❌ Rejected"
       : waitingForExit
@@ -2572,8 +2572,8 @@ stillOut
       ? "❌ Cancelled"
       : h.status === "Rejected"
       ? "❌ Rejected"
-      : h.status === "Not Accepted By Warden"
-      ? "❌ Not Accepted By Warden"
+      : h.status === "Not Accepted By Hostel Incharge"
+      ? "❌ Not Accepted By Hostel Incharge"
       : h.status || "Completed"}
   </>
 )}
@@ -2662,7 +2662,7 @@ hour12:true
 {isManagement &&
  h.status !== "Cancelled" &&
  h.status !== "Rejected" &&
- h.status !== "Not Accepted By Warden" &&
+ h.status !== "Not Accepted By Hostel Incharge" &&
  waitingForExit && (
   <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
     <p className="text-blue-700 text-sm font-medium">
@@ -2670,10 +2670,10 @@ hour12:true
     </p>
   </div>
 )}
-{h.status === "Not Accepted By Warden" ? (
+{h.status === "Not Accepted By Hostel Incharge" ? (
 
 <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3 text-red-700 text-sm font-semibold">
-❌ Outpass request was not approved by the warden.
+❌ Outpass request was not approved by the hostel incharge.
 </div>
 
 ) : (
@@ -3081,8 +3081,8 @@ className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
 >
 {isManagement ? (
   <>
-    {h.status === "Not Accepted By Warden"
-      ? "❌ Not Accepted By Warden"
+    {h.status === "Not Accepted By Hostel Incharge"
+      ? "❌ Not Accepted By Hostel Incharge"
       : h.status === "Cancelled"
       ? "❌ Cancelled"
       : h.status === "Rejected"
@@ -3117,8 +3117,8 @@ className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
       ? "❌ Cancelled"
       : h.status === "Rejected"
       ? "❌ Rejected"
-      : h.status === "Not Accepted By Warden"
-      ? "❌ Not Accepted By Warden"
+      : h.status === "Not Accepted By Hostel Incharge"
+      ? "❌ Not Accepted By Hostel Incharge"
       : h.status === "Pending"
       ? "🟡 Pending"
       : h.status || "Completed"}
@@ -3257,16 +3257,16 @@ h.campus === "In Campus"
 )}
  {isManagement &&
  isOutCampus &&
-  (h.status === "Not Accepted By Warden" ? (
+  (h.status === "Not Accepted By Hostel Incharge" ? (
     <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
       <p className="text-sm font-semibold text-red-700">
-        ❌ Leave was not accepted by the warden.
+        ❌ Leave was not accepted by the hostel incharge.
       </p>
     </div>
   ) : (
        h.status !== "Cancelled" &&
     h.status !== "Rejected" &&
-    h.status !== "Not Accepted By Warden" &&
+    h.status !== "Not Accepted By Hostel Incharge" &&
 isManagement && expiredWithoutExit && (
       <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3">
         <p className="text-sm font-semibold text-red-700">

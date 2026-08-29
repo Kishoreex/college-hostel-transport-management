@@ -142,7 +142,7 @@ const getStatusColor = (
 
     case "rejected":
     case "cancelled":
-    case "not accepted by warden":
+    case "not accepted by hostel incharge":
       return "error";
 
     default:
@@ -162,7 +162,7 @@ const getStatusIcon = (status: string) => {
 
     case "rejected":
     case "cancelled":
-    case "not accepted by warden":
+    case "not accepted by hostel incharge":
       return <XCircle size={14} />;
 
     default:

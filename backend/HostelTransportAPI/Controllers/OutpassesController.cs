@@ -49,7 +49,7 @@ public IActionResult GetAll([FromQuery] string? college)
             {
                 if (now > outpass.ValidTo)
                 {
-                    outpass.Status = "Not Accepted By Warden";
+                    outpass.Status = "Not Accepted By Hostel Incharge";
                 }
             }
         }

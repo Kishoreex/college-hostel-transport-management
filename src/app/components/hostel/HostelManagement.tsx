@@ -2238,36 +2238,36 @@ if (!canManageHostel) {
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     {/* Gender toggle */}
-                    <div className="flex bg-gray-100 rounded-2xl p-1">
-                 {allowedHostelGenders.map(g => (
-                        <button key={g} onClick={() => setHistoryGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${historyGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
-                          {g === 'boys' ? '👦 Boys' : '👧 Girls'}
-                        </button>
-                      ))}
-                    </div>
-                    {/* Type toggle */}
-                    <div className="flex bg-gray-100 rounded-2xl p-1">
-                      {(
-  [
-    'outpass',
-    'leave',
-    'applications',
-    'vacating'
-  ] as const
+                <div className="flex bg-gray-100 rounded-2xl p-1">
+  {(
+    [
+      'outpass',
+      'leave',
+      ...(canManageAdmissions ? ['applications'] : []),
+      ...(canManageVacating ? ['vacating'] : [])
+    ] as const
   ).map(t => (
-                        <button key={t} onClick={() => setHistoryType(t)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${historyType === t ? 'bg-white text-gray-800 shadow' : 'text-gray-500'}`}>
-                        {
-    t === 'outpass'
-      ? '📋 Outpass History'
-      : t === 'leave'
-      ? '🗓 Leave History'
-      : t === 'applications'
-      ? '👨‍🎓 Applications'
-      : '🚪 Vacating'
-  }
-                        </button>
-                      ))}
-                    </div>
+    <button
+      key={t}
+      onClick={() => setHistoryType(t)}
+      className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
+        historyType === t
+          ? 'bg-white text-gray-800 shadow'
+          : 'text-gray-500'
+      }`}
+    >
+      {
+        t === 'outpass'
+          ? '📋 Outpass History'
+          : t === 'leave'
+          ? '🗓 Leave History'
+          : t === 'applications'
+          ? '👨‍🎓 Applications'
+          : '🚪 Vacating'
+      }
+    </button>
+  ))}
+</div>
 
                     {historyType === 'outpass' && (
                       <>

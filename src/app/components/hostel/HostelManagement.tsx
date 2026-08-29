@@ -510,7 +510,10 @@ const loadHostelStudents = async () => {
             student.phone ??
             student.Phone ??
             "",
-
+email:
+  student.email ??
+  student.Email ??
+  "",
           college:
             student.collegeName ??
             student.CollegeName ??

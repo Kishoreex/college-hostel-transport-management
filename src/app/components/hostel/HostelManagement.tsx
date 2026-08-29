@@ -648,6 +648,10 @@ console.log("Matched Registration:", registration);
 
       phone:
         registration?.phone || "",
+        email:
+  registration?.email ||
+  registration?.Email ||
+  "",
 
       college:
         registration?.collegeName || "",

@@ -3,6 +3,7 @@ using HostelTransportAPI.Data;
 using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.Models;
 using Microsoft.AspNetCore.SignalR;
+using System.Security.Claims;
 using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 
@@ -20,22 +21,82 @@ private readonly IHubContext<NotificationHub> _hub;
     _context = context;
     _hub = hub;
 }
-
-  [HttpGet]
-public async Task<IActionResult> GetAll(
-    [FromQuery] string? college)
+private async Task<string?> GetAllowedCollegeAsync()
 {
+    var role =
+        User.FindFirst(ClaimTypes.Role)?.Value
+        ?? User.FindFirst("role")?.Value;
+
+    var userId =
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    if (string.IsNullOrWhiteSpace(role) ||
+        string.IsNullOrWhiteSpace(userId))
+    {
+        return "__NO_ACCESS__";
+    }
+
+    role = role.Trim();
+
+    // Management = ALL COLLEGES
+    if (role.Equals(
+        "Management",
+        StringComparison.OrdinalIgnoreCase))
+    {
+        return null;
+    }
+
+    var staffUser = await _context.Users
+        .FirstOrDefaultAsync(u =>
+            u.UserId == userId);
+
+    if (staffUser == null)
+        return "__NO_ACCESS__";
+
+    // Admin Office
+    if (role.Equals(
+        "Admin Office",
+        StringComparison.OrdinalIgnoreCase))
+    {
+        if (staffUser.CollegeId == null ||
+            staffUser.CollegeId == 0)
+        {
+            return null;
+        }
+
+        var college = await _context.Colleges
+            .Where(c => c.Id == staffUser.CollegeId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync();
+
+        return college ?? "__NO_ACCESS__";
+    }
+
+    return "__NO_ACCESS__";
+}
+  [HttpGet]
+public async Task<IActionResult> GetAll()
+{
+    var allowedCollege = await GetAllowedCollegeAsync();
+
+    if (allowedCollege == "__NO_ACCESS__")
+    {
+        return Forbid();
+    }
+
     try
     {
         var query = _context.VacatingRequests
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(college))
+        if (!string.IsNullOrWhiteSpace(allowedCollege))
         {
             query = query.Where(x =>
                 _context.StudentRegistrations.Any(s =>
                     s.StudentId == x.StudentId &&
-                    s.CollegeName == college
+                    s.CollegeName == allowedCollege
                 )
             );
         }
@@ -119,7 +180,12 @@ return Ok(request);
 }
 [HttpPut("approve/{id}")]
 public async Task<IActionResult> Approve(int id)
+{var allowedCollege = await GetAllowedCollegeAsync();
+
+if (allowedCollege == "__NO_ACCESS__")
 {
+    return Forbid();
+}
     var request = await _context.VacatingRequests.FindAsync(id);
 
     if (request == null)
@@ -134,6 +200,14 @@ public async Task<IActionResult> Approve(int id)
 if (registration == null)
 {
     return BadRequest($"StudentRegistration NOT FOUND : {request.StudentId}");
+}
+
+if (!string.IsNullOrWhiteSpace(allowedCollege) &&
+    !registration.CollegeName.Equals(
+        allowedCollege,
+        StringComparison.OrdinalIgnoreCase))
+{
+    return Forbid();
 }
 
 registration.Status = "Vacated";
@@ -193,11 +267,39 @@ var check = await _context.StudentRegistrations
     [HttpPut("reject/{id}")]
     public async Task<IActionResult> Reject(int id)
     {
-        var request =
-            await _context.VacatingRequests.FindAsync(id);
 
-        if (request == null)
-            return NotFound();
+        var allowedCollege = await GetAllowedCollegeAsync();
+
+if (allowedCollege == "__NO_ACCESS__")
+{
+    return Forbid();
+}
+
+var request =
+    await _context.VacatingRequests.FindAsync(id);
+
+if (request == null)
+    return NotFound();
+
+var registration =
+    await _context.StudentRegistrations
+        .FirstOrDefaultAsync(x =>
+            x.StudentId == request.StudentId);
+
+if (registration == null)
+{
+    return BadRequest(
+        $"StudentRegistration NOT FOUND : {request.StudentId}");
+}
+
+if (!string.IsNullOrWhiteSpace(allowedCollege) &&
+    !registration.CollegeName.Equals(
+        allowedCollege,
+        StringComparison.OrdinalIgnoreCase))
+{
+    return Forbid();
+}
+      
 
        request.Status = "Rejected";
 
@@ -225,22 +327,27 @@ public async Task<IActionResult> GetStudentRequest(
         .FirstOrDefaultAsync();
 
     return Ok(request);
-}
-[HttpGet("history")]
-public async Task<IActionResult> GetHistory(
-    [FromQuery] string? college)
+}[HttpGet("history")]
+public async Task<IActionResult> GetHistory()
 {
+    var allowedCollege = await GetAllowedCollegeAsync();
+
+    if (allowedCollege == "__NO_ACCESS__")
+    {
+        return Forbid();
+    }
+
     try
     {
         var query = _context.VacatingRequests
             .Where(x => x.Status != "Pending");
 
-        if (!string.IsNullOrWhiteSpace(college))
+        if (!string.IsNullOrWhiteSpace(allowedCollege))
         {
             query = query.Where(x =>
                 _context.StudentRegistrations.Any(s =>
                     s.StudentId == x.StudentId &&
-                    s.CollegeName == college
+                    s.CollegeName == allowedCollege
                 )
             );
         }

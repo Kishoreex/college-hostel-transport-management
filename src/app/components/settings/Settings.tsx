@@ -340,6 +340,10 @@ const [editHostelApprovalLevel, setEditHostelApprovalLevel] =
   useState('');
 const colleges = [
   {
+    id: 0,
+    name: 'All Colleges'
+  },
+  {
     id: 1,
     name: 'Madha Dental College & Hospital'
   },

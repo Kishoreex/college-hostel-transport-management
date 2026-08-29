@@ -251,9 +251,22 @@ import API_URL, { HUB_URL } from "../../../api/api";
       const connectionRef =
 useRef<signalR.HubConnection | null>(null);
       const [activeScreen, setActiveScreen] = useState<string | null>(null);
-  const isManagement =
-  user.role?.toLowerCase() === "management" ||
-  user.staffRole?.toLowerCase() === "management";
+const role =
+  user.staffRole?.toLowerCase() ||
+  user.role?.toLowerCase() ||
+  "";
+
+const isManagement =
+  role === "management";
+
+const isAdminOffice =
+  role === "admin office";
+
+const canManageAdmissions =
+  isManagement || isAdminOffice;
+
+const canManageVacating =
+  isManagement || isAdminOffice;
 
 const canManageBoysHostel =
   isManagement || user.canManageBoysHostel === true;
@@ -1389,18 +1402,26 @@ await rejectOutpass(
           color: 'bg-teal-500',
           screen: 'leave'
         },
-        {
-          label: 'Applications',
-          icon: <Users size={22} />,
-          color: 'bg-rose-500',
-          screen: 'applications'
-        },
-        {
-          label: 'Vacating',
-          icon: <LogOut size={22} />,
-          color: 'bg-red-500',
-          screen: 'vacating'
-        },
+   ...(canManageAdmissions
+  ? [
+      {
+        label: 'Applications',
+        icon: <Users size={22} />,
+        color: 'bg-rose-500',
+        screen: 'applications'
+      }
+    ]
+  : []),
+  ...(canManageVacating
+  ? [
+      {
+        label: 'Vacating',
+        icon: <LogOut size={22} />,
+        color: 'bg-red-500',
+        screen: 'vacating'
+      }
+    ]
+  : []),
         {
           label: 'History',
           icon: <History size={22} />,

@@ -1,5 +1,6 @@
 using HostelTransportAPI.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using HostelTransportAPI.Data;
 using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
@@ -22,6 +23,60 @@ private readonly IHubContext<NotificationHub> _hub;
 {
     _context = context;
     _hub = hub;
+}
+private async Task<string?> GetAllowedCollegeAsync()
+{
+    var role =
+        User.FindFirst(ClaimTypes.Role)?.Value
+        ?? User.FindFirst("role")?.Value;
+
+    var userId =
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    if (string.IsNullOrWhiteSpace(role) ||
+        string.IsNullOrWhiteSpace(userId))
+    {
+        return null;
+    }
+
+    role = role.Trim();
+
+    // Management = ALL COLLEGES
+    if (role.Equals("Management", StringComparison.OrdinalIgnoreCase))
+    {
+        return null;
+    }
+
+    // Find logged-in staff user
+    var staffUser = await _context.Users
+        .Include(u => u.Role)
+        .FirstOrDefaultAsync(u =>
+            u.UserId == userId);
+
+    if (staffUser == null)
+        return null;
+
+    // Admin Office with CollegeId = 0 = ALL COLLEGES
+    if (role.Equals("Admin Office", StringComparison.OrdinalIgnoreCase))
+    {
+        if (staffUser.CollegeId == null ||
+            staffUser.CollegeId == 0)
+        {
+            return null;
+        }
+
+        var college = await _context.Colleges
+            .Where(c => c.Id == staffUser.CollegeId)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync();
+
+        return college;
+    }
+
+    // Everyone else has no access to admissions
+    return "__NO_ACCESS__";
 }
 
     [HttpPost]
@@ -62,17 +117,24 @@ await _hub.Clients.All.SendAsync(
 return Ok(registration);
     }
 
- [HttpGet]
-public async Task<IActionResult> GetAll(
-    [FromQuery] string? college)
+[HttpGet]
+public async Task<IActionResult> GetAll()
 {
+    var allowedCollege = await GetAllowedCollegeAsync();
+
+    if (allowedCollege == "__NO_ACCESS__")
+    {
+        return Forbid();
+    }
+
     var query = _context.StudentRegistrations
         .Where(x => x.Status == "Pending");
 
-    if (!string.IsNullOrWhiteSpace(college))
+    // null = ALL COLLEGES
+    if (!string.IsNullOrWhiteSpace(allowedCollege))
     {
         query = query.Where(x =>
-            x.CollegeName == college);
+            x.CollegeName == allowedCollege);
     }
 
     var data = await query
@@ -125,11 +187,28 @@ public async Task<IActionResult> GetApprovedStudents(
 }
     [HttpPost("approve/{id}")]
     public async Task<IActionResult> ApproveStudent(int id)
+    
     {
+
+        var allowedCollege = await GetAllowedCollegeAsync();
+
+if (allowedCollege == "__NO_ACCESS__")
+{
+    return Forbid();
+}
         var registration = await _context.StudentRegistrations.FindAsync(id);
 
         if (registration == null)
             return NotFound("Student Registration Not Found");
+
+
+            if (!string.IsNullOrWhiteSpace(allowedCollege) &&
+    !registration.CollegeName.Equals(
+        allowedCollege,
+        StringComparison.OrdinalIgnoreCase))
+{
+    return Forbid();
+}
 
         if (registration.IsApproved)
             return BadRequest("Already Approved");
@@ -273,12 +352,24 @@ return Ok(new
 
     [HttpPost("reject/{id}")]
 public async Task<IActionResult> RejectStudent(int id)
+{var allowedCollege = await GetAllowedCollegeAsync();
+
+if (allowedCollege == "__NO_ACCESS__")
 {
+    return Forbid();
+}
     var registration =
         await _context.StudentRegistrations.FindAsync(id);
 
     if (registration == null)
         return NotFound("Student Registration Not Found");
+        if (!string.IsNullOrWhiteSpace(allowedCollege) &&
+    !registration.CollegeName.Equals(
+        allowedCollege,
+        StringComparison.OrdinalIgnoreCase))
+{
+    return Forbid();
+}
 
     registration.Status = "Rejected";
     registration.RejectedDate = DateTime.Now;
@@ -294,18 +385,24 @@ return Ok(new
     {
         Message = "Student Rejected Successfully"
     });
-}
-[HttpGet("history")]
-public async Task<IActionResult> GetHistory(
-    [FromQuery] string? college)
+}[HttpGet("history")]
+public async Task<IActionResult> GetHistory()
 {
+    var allowedCollege = await GetAllowedCollegeAsync();
+
+    if (allowedCollege == "__NO_ACCESS__")
+    {
+        return Forbid();
+    }
+
     var query = _context.StudentRegistrations
         .Where(x => x.Status != "Pending");
 
-    if (!string.IsNullOrWhiteSpace(college))
+    // null = ALL COLLEGES
+    if (!string.IsNullOrWhiteSpace(allowedCollege))
     {
         query = query.Where(x =>
-            x.CollegeName == college);
+            x.CollegeName == allowedCollege);
     }
 
     var history = await query

@@ -486,89 +486,162 @@ useEffect(() => {
 const loadHostelStudents = async () => {
   try {
     const data = await getStudentRegistrations(
-  isManagement ? null : user.college
-);
+      isManagement ? null : user.college
+    );
+
+    const allocationsData = await getAllRoomAllocations();
 
     console.log("========== ACTIVE STUDENT API ==========");
-    console.log("RAW DATA:", data);
+    console.log("REGISTRATIONS:", data);
+    console.log("ALLOCATIONS:", allocationsData);
 
     const students = Array.isArray(data)
-      ? data.map((student: any) => ({
-          id:
+      ? data.map((student: any) => {
+
+          const studentId =
             student.studentId ??
             student.StudentId ??
             student.id ??
-            "",
+            "";
 
-          name:
-            student.studentName ??
-            student.StudentName ??
-            student.name ??
-            "",
+          // Find this student's room allocation
+          const allocation = allocationsData.find(
+            (a: any) =>
+              String(a.studentId).trim() ===
+              String(studentId).trim()
+          );
 
-          phone:
-            student.phone ??
-            student.Phone ??
-            "",
-email:
-  student.email ??
-  student.Email ??
-  "",
-          college:
-            student.collegeName ??
-            student.CollegeName ??
-            "",
+          // Find all roommates in the same room
+          const roommates = allocation
+            ? allocationsData
+                .filter(
+                  (a: any) =>
+                    String(a.roomNumber).trim() ===
+                      String(allocation.roomNumber).trim() &&
+                    String(a.studentId).trim() !==
+                      String(studentId).trim()
+                )
+                .map((rm: any) => {
 
-          department:
-            student.department ??
-            student.Department ??
-            "",
+                  const rmRegistration =
+                    data.find(
+                      (r: any) =>
+                        String(
+                          r.studentId ??
+                          r.StudentId ??
+                          ""
+                        ).trim() ===
+                        String(rm.studentId).trim()
+                    );
 
-          year:
-            student.year ??
-            student.Year ??
-            "",
+                  return {
+                    name:
+                      rm.studentName ??
+                      rm.StudentName ??
+                      rmRegistration?.studentName ??
+                      rmRegistration?.StudentName ??
+                      "",
 
-          batch:
-            student.batch ??
-            student.Batch ??
-            "",
+                    phone:
+                      rmRegistration?.phone ??
+                      rmRegistration?.Phone ??
+                      rm.phone ??
+                      "",
 
-          parentName:
-            student.parentName ??
-            student.ParentName ??
-            "",
+                    year:
+                      rmRegistration?.year ??
+                      rmRegistration?.Year ??
+                      "",
 
-          parentPhone:
-            student.parentPhone ??
-            student.ParentPhone ??
-            "",
+                    college:
+                      rmRegistration?.collegeName ??
+                      rmRegistration?.CollegeName ??
+                      ""
+                  };
+                })
+            : [];
 
-          address:
-            student.address ??
-            student.Address ??
-            "",
+          return {
+            id: studentId,
 
-          gender:
-            String(
-              student.gender ??
-              student.Gender ??
-              ""
-            ).toLowerCase() === "male"
-              ? "boys"
-              : "girls",
+            name:
+              student.studentName ??
+              student.StudentName ??
+              student.name ??
+              "",
 
-          roomNumber: "",
+            phone:
+              student.phone ??
+              student.Phone ??
+              "",
 
-          roommates: []
-        }))
+            email:
+              student.email ??
+              student.Email ??
+              "",
+
+            college:
+              student.collegeName ??
+              student.CollegeName ??
+              "",
+
+            department:
+              student.department ??
+              student.Department ??
+              "",
+
+            year:
+              student.year ??
+              student.Year ??
+              "",
+
+            batch:
+              student.batch ??
+              student.Batch ??
+              "",
+
+            parentName:
+              student.parentName ??
+              student.ParentName ??
+              "",
+
+            parentPhone:
+              student.parentPhone ??
+              student.ParentPhone ??
+              "",
+
+            address:
+              student.address ??
+              student.Address ??
+              "",
+
+            gender:
+              String(
+                student.gender ??
+                student.Gender ??
+                ""
+              ).toLowerCase() === "male"
+                ? "boys"
+                : "girls",
+
+            // IMPORTANT
+            roomNumber:
+              allocation?.roomNumber ?? "",
+
+            roommates
+          };
+        })
       : [];
 
-    console.log("NORMALIZED STUDENTS:", students);
+    console.log(
+      "NORMALIZED STUDENTS WITH ROOMS:",
+      students
+    );
 
     setHostelStudents(students);
 
   } catch (error) {
+
     console.error(
       "FAILED TO LOAD ACTIVE STUDENTS:",
       error

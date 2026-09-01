@@ -1,1444 +1,1444 @@
-<div align="center">
+     <div align="center">
 
-<img src="docs/images/banner.png" alt="College Hostel & Transport Management System Banner" width="100%">
+     <img src="docs/images/banner.png" alt="College Hostel & Transport Management System Banner" width="100%">
 
-# 🏫 College Hostel & Transport Management System
+     # 🏫 College Hostel & Transport Management System
 
-### Enterprise Digital Campus Management Platform
+     ### Enterprise Digital Campus Management Platform
 
-Designed and Developed for
+     Designed and Developed for
 
-## **Madha Group of Institutions**
-### Madha Dental College & Hospital
+     ## **Madha Group of Institutions**
+     ### Madha Dental College & Hospital
 
----
+     ---
 
-### 🚀 Designed, Developed & Maintained by
+     ### 🚀 Designed, Developed & Maintained by
 
-# **Kishore Kumar P**
+     # **Kishore Kumar P**
 
-**Software Development Engineer (SDE)**
+     **Software Development Engineer (SDE)**
 
----
+     ---
 
-![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
+     ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)
 
-![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)
+     ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)
 
-![ASP.NET](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet)
+     ![ASP.NET](https://img.shields.io/badge/ASP.NET_Core-10-512BD4?style=for-the-badge&logo=dotnet)
 
-![SQL Server](https://img.shields.io/badge/SQL_Server-Database-CC2927?style=for-the-badge&logo=microsoftsqlserver)
+     ![SQL Server](https://img.shields.io/badge/SQL_Server-Database-CC2927?style=for-the-badge&logo=microsoftsqlserver)
 
-![SignalR](https://img.shields.io/badge/SignalR-Real_Time-00BCF2?style=for-the-badge)
+     ![SignalR](https://img.shields.io/badge/SignalR-Real_Time-00BCF2?style=for-the-badge)
 
-![JWT](https://img.shields.io/badge/JWT-Authentication-orange?style=for-the-badge)
+     ![JWT](https://img.shields.io/badge/JWT-Authentication-orange?style=for-the-badge)
 
-![Capacitor](https://img.shields.io/badge/Capacitor-Android-119EFF?style=for-the-badge)
+     ![Capacitor](https://img.shields.io/badge/Capacitor-Android-119EFF?style=for-the-badge)
 
-![License](https://img.shields.io/badge/License-Institutional-success?style=for-the-badge)
+     ![License](https://img.shields.io/badge/License-Institutional-success?style=for-the-badge)
 
----
+     ---
 
-![GitHub stars](https://img.shields.io/github/stars/Kishoreex/college-hostel-transport-management?style=social)
+     ![GitHub stars](https://img.shields.io/github/stars/Kishoreex/college-hostel-transport-management?style=social)
 
-![GitHub forks](https://img.shields.io/github/forks/Kishoreex/college-hostel-transport-management?style=social)
+     ![GitHub forks](https://img.shields.io/github/forks/Kishoreex/college-hostel-transport-management?style=social)
 
-![GitHub issues](https://img.shields.io/github/issues/Kishoreex/college-hostel-transport-management)
+     ![GitHub issues](https://img.shields.io/github/issues/Kishoreex/college-hostel-transport-management)
 
-![GitHub last commit](https://img.shields.io/github/last-commit/Kishoreex/college-hostel-transport-management)
+     ![GitHub last commit](https://img.shields.io/github/last-commit/Kishoreex/college-hostel-transport-management)
 
-</div>
+     </div>
 
----
+     ---
 
-# 📑 Table of Contents
+     # 📑 Table of Contents
 
-- Overview
-- Project Highlights
-- Key Features
-- Technology Stack
-- Architecture
-- Modules
-- Screenshots
-- Workflow
-- API Documentation
-- Installation
-- Deployment
-- Mobile Application
-- Security
-- Future Roadmap
-- Developer
+     - Overview
+     - Project Highlights
+     - Key Features
+     - Technology Stack
+     - Architecture
+     - Modules
+     - Screenshots
+     - Workflow
+     - API Documentation
+     - Installation
+     - Deployment
+     - Mobile Application
+     - Security
+     - Future Roadmap
+     - Developer
 
----
+     ---
 
-# 📖 Overview
+     # 📖 Overview
 
-The **College Hostel & Transport Management System** is a full-stack enterprise web application developed for **Madha Group of Institutions – Madha Dental College & Hospital**.
+     The **College Hostel & Transport Management System** is a full-stack enterprise web application developed for **Madha Group of Institutions – Madha Dental College & Hospital**.
 
-The platform digitizes the complete hostel and transport management lifecycle, replacing manual paperwork with secure, role-based digital workflows.
+     The platform digitizes the complete hostel and transport management lifecycle, replacing manual paperwork with secure, role-based digital workflows.
 
-The application is actively designed to streamline operations across students, wardens, hostel administrators, transport administrators, security staff, and institutional management.
+     The application is actively designed to streamline operations across students, wardens, hostel administrators, transport administrators, security staff, and institutional management.
 
----
+     ---
 
-# ⭐ Project Highlights
+     # ⭐ Project Highlights
 
-✔ Enterprise Grade Architecture
+     ✔ Enterprise Grade Architecture
 
-✔ Role Based Authentication
+     ✔ Role Based Authentication
 
-✔ Digital QR Outpass
+     ✔ Digital QR Outpass
 
-✔ GPS Based Geofencing
+     ✔ GPS Based Geofencing
 
-✔ SignalR Real-time Notifications
+     ✔ SignalR Real-time Notifications
 
-✔ Mobile Responsive Design
+     ✔ Mobile Responsive Design
 
-✔ Android Application
+     ✔ Android Application
 
-✔ SQL Server Database
+     ✔ SQL Server Database
 
-✔ RESTful API Architecture
+     ✔ RESTful API Architecture
 
-✔ IIS Production Deployment
+     ✔ IIS Production Deployment
 
-✔ Excel Report Generation
+     ✔ Excel Report Generation
 
-✔ Profile Photo Management
+     ✔ Profile Photo Management
 
-✔ Room Allocation System
+     ✔ Room Allocation System
 
-✔ Leave Management
+     ✔ Leave Management
 
-✔ Vacating Management
+     ✔ Vacating Management
 
-✔ Transport Registration
+     ✔ Transport Registration
 
-✔ Transport Cancellation
+     ✔ Transport Cancellation
 
-✔ Dashboard Analytics
+     ✔ Dashboard Analytics
 
-✔ QR Verification
+     ✔ QR Verification
 
-✔ GPS Exit & Return Tracking
+     ✔ GPS Exit & Return Tracking
 
----
+     ---
 
-# 🎯 Objective
+     # 🎯 Objective
 
-The primary objective of this platform is to eliminate paper-based hostel and transport operations by providing a secure, scalable and centralized digital ecosystem.
+     The primary objective of this platform is to eliminate paper-based hostel and transport operations by providing a secure, scalable and centralized digital ecosystem.
 
-The system enables efficient communication between students and administrators while maintaining transparency, security and operational efficiency.
+     The system enables efficient communication between students and administrators while maintaining transparency, security and operational efficiency.
 
----
+     ---
 
-# 🏛 Institution
+     # 🏛 Institution
 
-**Madha Group of Institutions**
+     **Madha Group of Institutions**
 
-Project Deployed For
+     Project Deployed For
 
-**Madha Dental College & Hospital**
+     **Madha Dental College & Hospital**
 
----
+     ---
 
-# 👨‍💻 My Role
+     # 👨‍💻 My Role
 
-**Software Development Engineer (SDE)**
+     **Software Development Engineer (SDE)**
 
-This application was independently designed and implemented by **Kishore Kumar P** as part of his responsibilities as a Software Development Engineer.
+     This application was independently designed and implemented by **Kishore Kumar P** as part of his responsibilities as a Software Development Engineer.
 
-### Responsibilities
+     ### Responsibilities
 
-- Solution Architecture
-- UI / UX Design
-- Frontend Development
-- Backend Development
-- SQL Server Database Design
-- Entity Framework Core
-- REST API Development
-- Authentication & Authorization
-- SignalR Integration
-- GPS Geofencing
-- QR Code Generation
-- Android Application Development
-- IIS Deployment
-- Testing
-- Bug Fixing
-- Production Support
+     - Solution Architecture
+     - UI / UX Design
+     - Frontend Development
+     - Backend Development
+     - SQL Server Database Design
+     - Entity Framework Core
+     - REST API Development
+     - Authentication & Authorization
+     - SignalR Integration
+     - GPS Geofencing
+     - QR Code Generation
+     - Android Application Development
+     - IIS Deployment
+     - Testing
+     - Bug Fixing
+     - Production Support
 
----
+     ---
 
-# 🚀 Key Features
+     # 🚀 Key Features
 
-## Student Portal
+     ## Student Portal
 
-- Hostel Registration
-- Transport Registration
-- Student Dashboard
-- QR Digital Outpass
-- Leave Request
-- Vacating Request
-- Transport Cancellation
-- Profile Photo Upload
-- Password Management
-- Live Notifications
-- GPS Tracking
+     - Hostel Registration
+     - Transport Registration
+     - Student Dashboard
+     - QR Digital Outpass
+     - Leave Request
+     - Vacating Request
+     - Transport Cancellation
+     - Profile Photo Upload
+     - Password Management
+     - Live Notifications
+     - GPS Tracking
 
----
+     ---
 
-## Hostel Administration
+     ## Hostel Administration
 
-- Student Verification
-- Room Allocation
-- Room Transfer
-- Remove Student
-- Outpass Approval
-- Leave Approval
-- Vacating Approval
-- Dashboard Analytics
-- Excel Reports
+     - Student Verification
+     - Room Allocation
+     - Room Transfer
+     - Remove Student
+     - Outpass Approval
+     - Leave Approval
+     - Vacating Approval
+     - Dashboard Analytics
+     - Excel Reports
 
----
+     ---
 
-## Transport Administration
+     ## Transport Administration
 
-- Route Management
-- Bus Management
-- Stop Management
-- Student Approval
-- Transport Cancellation
-- Reports
-- Dashboard
+     - Route Management
+     - Bus Management
+     - Stop Management
+     - Student Approval
+     - Transport Cancellation
+     - Reports
+     - Dashboard
 
----
+     ---
 
-## Security
+     ## Security
 
-- QR Verification
-- Student Verification
-- Exit Tracking
-- Return Tracking
-- Late Detection
-- GPS Validation
+     - QR Verification
+     - Student Verification
+     - Exit Tracking
+     - Return Tracking
+     - Late Detection
+     - GPS Validation
 
----
-
-# 📸 Application Preview
-
-| Landing | Student Login |
-|----------|---------------|
-| ![](docs/screenshots/landing.png) | ![](docs/screenshots/student-login.png) |
+     ---
 
-| Hostel Dashboard | Transport Dashboard |
-|------------------|---------------------|
-| ![](docs/screenshots/hostel-dashboard.png) | ![](docs/screenshots/transport-dashboard.png) |
+     # 📸 Application Preview
 
-| Admin Login | QR Outpass |
-|-------------|------------|
-| ![](docs/screenshots/admin-login.png) | ![](docs/screenshots/qr-outpass.png) |
-
----
-
-# ⚡ Technology Stack
-
-| Layer | Technology |
-|--------|------------|
-| Frontend | React 19 |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| UI | Material UI |
-| Backend | ASP.NET Core Web API |
-| ORM | Entity Framework Core |
-| Database | SQL Server |
-| Authentication | JWT |
-| Realtime | SignalR |
-| QR | React QR Code |
-| Mobile | Capacitor Android |
-| Deployment | IIS + Vercel |
-
----
-
-# 🏗 Enterprise System Architecture
-
-```text
-                                     Users
-                                       │
-          ┌────────────────────────────┼────────────────────────────┐
-          │                            │                            │
-          ▼                            ▼                            ▼
-     Students                  Hostel Administration       Transport Administration
-          │                            │                            │
-          └────────────────────────────┼────────────────────────────┘
-                                       │
-                                       ▼
-                              React + TypeScript
-                           (Vite + Tailwind + MUI)
-                                       │
-                               REST API / SignalR
-                                       │
-                                       ▼
-                         ASP.NET Core Web API (.NET 10)
-                                       │
-         ┌─────────────────────────────┼──────────────────────────────┐
-         │                             │                              │
-         ▼                             ▼                              ▼
- JWT Authentication            Business Logic                 SignalR Hub
-         │                             │                              │
-         └─────────────────────────────┼──────────────────────────────┘
-                                       │
-                                       ▼
-                             Entity Framework Core
-                                       │
-                                       ▼
-                               Microsoft SQL Server
-                                       │
-                                       ▼
-                              IIS Production Server
-```
-
----
-
-# 🗄 Database Architecture
-
-The backend uses **Microsoft SQL Server** with **Entity Framework Core**.
-
-## Primary Entities
-
-```text
-Users
- │
- ├── Student Registration
- │
- ├── Hostel Registration
- │
- ├── Hostel Room Allocation
- │
- ├── Transport Registration
- │
- ├── Leave Requests
- │
- ├── Outpass Requests
- │
- ├── Vacating Requests
- │
- ├── Transport Cancellation
- │
- └── Notifications
-```
-
----
-
-# 🗺 Database ER Diagram
-
-```text
-User
- │
- ├──────────────┐
- │              │
- ▼              ▼
-Hostel      Transport
-Registration Registration
- │              │
- ▼              ▼
-Room        Route
-Allocation  Allocation
- │              │
- └──────┐  ┌────┘
-        ▼  ▼
-      Student
-         │
- ┌───────┼─────────────────────────┐
- ▼       ▼          ▼              ▼
-Leave  Outpass  Vacating   Cancellation
-```
-
----
-
-# 🔄 System Workflow
-
-```text
-Student
+     | Landing | Student Login |
+     |----------|---------------|
+     | ![](docs/screenshots/landing.png) | ![](docs/screenshots/student-login.png) |
 
+     | Hostel Dashboard | Transport Dashboard |
+     |------------------|---------------------|
+     | ![](docs/screenshots/hostel-dashboard.png) | ![](docs/screenshots/transport-dashboard.png) |
+
+     | Admin Login | QR Outpass |
+     |-------------|------------|
+     | ![](docs/screenshots/admin-login.png) | ![](docs/screenshots/qr-outpass.png) |
+
+     ---
+
+     # ⚡ Technology Stack
+
+     | Layer | Technology |
+     |--------|------------|
+     | Frontend | React 19 |
+     | Language | TypeScript |
+     | Styling | Tailwind CSS |
+     | UI | Material UI |
+     | Backend | ASP.NET Core Web API |
+     | ORM | Entity Framework Core |
+     | Database | SQL Server |
+     | Authentication | JWT |
+     | Realtime | SignalR |
+     | QR | React QR Code |
+     | Mobile | Capacitor Android |
+     | Deployment | IIS + Vercel |
+
+     ---
+
+     # 🏗 Enterprise System Architecture
+
+     ```text
+                                        Users
+                                        │
+               ┌────────────────────────────┼────────────────────────────┐
+               │                            │                            │
+               ▼                            ▼                            ▼
+          Students                  Hostel Administration       Transport Administration
+               │                            │                            │
+               └────────────────────────────┼────────────────────────────┘
+                                        │
+                                        ▼
+                                   React + TypeScript
+                              (Vite + Tailwind + MUI)
+                                        │
+                                   REST API / SignalR
+                                        │
+                                        ▼
+                              ASP.NET Core Web API (.NET 10)
+                                        │
+          ┌─────────────────────────────┼──────────────────────────────┐
+          │                             │                              │
+          ▼                             ▼                              ▼
+     JWT Authentication            Business Logic                 SignalR Hub
+          │                             │                              │
+          └─────────────────────────────┼──────────────────────────────┘
+                                        │
+                                        ▼
+                              Entity Framework Core
+                                        │
+                                        ▼
+                                   Microsoft SQL Server
+                                        │
+                                        ▼
+                                   IIS Production Server
+     ```
+
+     ---
+
+     # 🗄 Database Architecture
+
+     The backend uses **Microsoft SQL Server** with **Entity Framework Core**.
+
+     ## Primary Entities
+
+     ```text
+     Users
      │
-
-     ▼
-
-Authentication
-
+     ├── Student Registration
      │
-
-     ▼
-
-Dashboard
-
+     ├── Hostel Registration
      │
-
-     ├─────────────┐
-     │             │
-     ▼             ▼
-
-Hostel         Transport
-
-     │             │
-
-     ▼             ▼
-
-Registration   Registration
-
-     │             │
-
-     ▼             ▼
-
-Admin Approval
-
+     ├── Hostel Room Allocation
      │
-
-     ▼
-
-Student Dashboard Updated
-
+     ├── Transport Registration
      │
-
-     ▼
-
-QR Outpass
-
+     ├── Leave Requests
      │
-
-     ▼
-
-Security Verification
-
+     ├── Outpass Requests
      │
-
-     ▼
-
-GPS Exit Detection
-
+     ├── Vacating Requests
      │
-
-     ▼
-
-GPS Return Detection
-
+     ├── Transport Cancellation
      │
+     └── Notifications
+     ```
 
-     ▼
+     ---
 
-Outpass Closed
-```
+     # 🗺 Database ER Diagram
 
----
-
-# 🔐 Authentication Flow
-
-```text
-Login Request
-
-        │
-
-        ▼
-
-Validate Credentials
-
-        │
-
-        ▼
-
-JWT Token Generated
-
-        │
-
-        ▼
-
-Role Verification
-
-        │
-
-        ▼
-
-Protected APIs
-
-        │
-
-        ▼
-
-Dashboard Access
-```
-
----
-
-# 📡 API Architecture
-
-```text
-React Frontend
-
-        │
-
-HTTP REST APIs
-
-        │
-
-        ▼
-
-ASP.NET Core Controllers
-
-        │
-
-        ▼
-
-Services
-
-        │
-
-        ▼
-
-Entity Framework Core
-
-        │
-
-        ▼
-
-SQL Server
-```
-
----
-
-# 📁 Project Structure
-
-```text
-College Hostel Transport Management
-
-├── android
-│
-├── backend
-│   └── HostelTransportAPI
-│       ├── Controllers
-│       ├── DTOs
-│       ├── Models
-│       ├── Data
-│       ├── Hubs
-│       ├── Migrations
-│       ├── Properties
-│       ├── wwwroot
-│       ├── Program.cs
-│       └── appsettings.json
-│
-├── src
-│   ├── api
-│   ├── app
-│   │   ├── components
-│   │   ├── dashboards
-│   │   ├── hostel
-│   │   ├── transport
-│   │   ├── outpass
-│   │   ├── leave
-│   │   ├── auth
-│   │   └── common
-│   │
-│   ├── services
-│   ├── config
-│   ├── utils
-│   └── types
-│
-├── public
-│
-├── docs
-│
-├── android
-│
-├── package.json
-│
-└── README.md
-```
-
----
-
-# 🌐 Deployment Architecture
-
-```text
-                    Internet
-
-                        │
-
-                        ▼
-
-                 Vercel Frontend
-
-                        │
-
-HTTPS REST API
-
-                        │
-
-                        ▼
-
-                  IIS Web Server
-
-                        │
-
-ASP.NET Core Web API
-
-                        │
-
-Entity Framework Core
-
-                        │
-
-                        ▼
-
-              Microsoft SQL Server
-```
-
----
-
-# 🔄 QR Digital Outpass Workflow
-
-```text
-Student
-
+     ```text
+     User
      │
+     ├──────────────┐
+     │              │
+     ▼              ▼
+     Hostel      Transport
+     Registration Registration
+     │              │
+     ▼              ▼
+     Room        Route
+     Allocation  Allocation
+     │              │
+     └──────┐  ┌────┘
+          ▼  ▼
+          Student
+          │
+     ┌───────┼─────────────────────────┐
+     ▼       ▼          ▼              ▼
+     Leave  Outpass  Vacating   Cancellation
+     ```
 
-Create Outpass
+     ---
 
+     # 🔄 System Workflow
+
+     ```text
+     Student
+
+          │
+
+          ▼
+
+     Authentication
+
+          │
+
+          ▼
+
+     Dashboard
+
+          │
+
+          ├─────────────┐
+          │             │
+          ▼             ▼
+
+     Hostel         Transport
+
+          │             │
+
+          ▼             ▼
+
+     Registration   Registration
+
+          │             │
+
+          ▼             ▼
+
+     Admin Approval
+
+          │
+
+          ▼
+
+     Student Dashboard Updated
+
+          │
+
+          ▼
+
+     QR Outpass
+
+          │
+
+          ▼
+
+     Security Verification
+
+          │
+
+          ▼
+
+     GPS Exit Detection
+
+          │
+
+          ▼
+
+     GPS Return Detection
+
+          │
+
+          ▼
+
+     Outpass Closed
+     ```
+
+     ---
+
+     # 🔐 Authentication Flow
+
+     ```text
+     Login Request
+
+          │
+
+          ▼
+
+     Validate Credentials
+
+          │
+
+          ▼
+
+     JWT Token Generated
+
+          │
+
+          ▼
+
+     Role Verification
+
+          │
+
+          ▼
+
+     Protected APIs
+
+          │
+
+          ▼
+
+     Dashboard Access
+     ```
+
+     ---
+
+     # 📡 API Architecture
+
+     ```text
+     React Frontend
+
+          │
+
+     HTTP REST APIs
+
+          │
+
+          ▼
+
+     ASP.NET Core Controllers
+
+          │
+
+          ▼
+
+     Services
+
+          │
+
+          ▼
+
+     Entity Framework Core
+
+          │
+
+          ▼
+
+     SQL Server
+     ```
+
+     ---
+
+     # 📁 Project Structure
+
+     ```text
+     College Hostel Transport Management
+
+     ├── android
      │
-
-     ▼
-
-Warden Approval
-
+     ├── backend
+     │   └── HostelTransportAPI
+     │       ├── Controllers
+     │       ├── DTOs
+     │       ├── Models
+     │       ├── Data
+     │       ├── Hubs
+     │       ├── Migrations
+     │       ├── Properties
+     │       ├── wwwroot
+     │       ├── Program.cs
+     │       └── appsettings.json
      │
-
-     ▼
-
-QR Code Generated
-
+     ├── src
+     │   ├── api
+     │   ├── app
+     │   │   ├── components
+     │   │   ├── dashboards
+     │   │   ├── hostel
+     │   │   ├── transport
+     │   │   ├── outpass
+     │   │   ├── leave
+     │   │   ├── auth
+     │   │   └── common
+     │   │
+     │   ├── services
+     │   ├── config
+     │   ├── utils
+     │   └── types
      │
-
-     ▼
-
-Security Scan
-
+     ├── public
      │
-
-     ▼
-
-GPS Exit
-
+     ├── docs
      │
-
-     ▼
-
-GPS Return
-
+     ├── android
      │
-
-     ▼
-
-Late Detection
-
+     ├── package.json
      │
+     └── README.md
+     ```
 
-     ▼
+     ---
 
-Completed
-```
+     # 🌐 Deployment Architecture
 
----
+     ```text
+                         Internet
 
-# 📍 GPS Geofencing
+                         │
 
-The application automatically tracks
+                         ▼
 
-- Student Exit
-- Student Return
-- Hostel Radius
-- Latitude
-- Longitude
-- Exit Timestamp
-- Return Timestamp
-- Late Return Duration
+                    Vercel Frontend
 
-without requiring manual attendance.
+                         │
 
----
+     HTTPS REST API
 
-# 🔔 Real-Time Communication
+                         │
 
-SignalR is integrated to synchronize data across all connected users.
+                         ▼
 
-### Live Events
+                    IIS Web Server
 
-- Hostel Registration Status
-- Transport Registration Status
-- Leave Approval
-- Outpass Approval
-- Vacating Approval
-- Transport Cancellation
-- Dashboard Refresh
-- Notifications
+                         │
 
----
+     ASP.NET Core Web API
 
-# 📊 Reporting Module
+                         │
 
-The platform supports exporting reports to Microsoft Excel.
+     Entity Framework Core
 
-Available reports include:
+                         │
 
-- Student Report
-- Hostel Report
-- Transport Report
-- Leave Report
-- Outpass Report
-- Vacating Report
-- Room Allocation Report
-- Transport Cancellation Report
----
+                         ▼
 
-# 🚀 Getting Started
+               Microsoft SQL Server
+     ```
 
-## System Requirements
+     ---
 
-### Frontend
+     # 🔄 QR Digital Outpass Workflow
 
-- Node.js 20+
-- npm 10+
-- React 19
-- Vite
+     ```text
+     Student
 
-### Backend
+          │
 
-- .NET 10 SDK
-- ASP.NET Core Web API
-- Entity Framework Core
+     Create Outpass
 
-### Database
+          │
 
-- Microsoft SQL Server 2022+
+          ▼
 
-### IDE
+     Warden Approval
 
-- Visual Studio 2022
-- Visual Studio Code
+          │
 
----
+          ▼
 
-# 📥 Clone Repository
+     QR Code Generated
 
-```bash
-git clone https://github.com/Kishoreex/college-hostel-transport-management.git
+          │
 
-cd college-hostel-transport-management
-```
+          ▼
 
----
+     Security Scan
 
-# 📦 Frontend Setup
+          │
 
-```bash
-npm install
+          ▼
 
-npm run dev
-```
+     GPS Exit
 
-Frontend runs at
+          │
 
-```
-http://localhost:5173
-```
+          ▼
 
----
+     GPS Return
 
-# ⚙ Backend Setup
+          │
 
-```bash
-cd backend/HostelTransportAPI
+          ▼
 
-dotnet restore
+     Late Detection
 
-dotnet build
+          │
 
-dotnet ef database update
+          ▼
 
-dotnet run
-```
+     Completed
+     ```
 
-Backend runs at
+     ---
 
-```
-https://localhost:5001
-```
+     # 📍 GPS Geofencing
 
----
+     The application automatically tracks
 
-# 🗄 Database Configuration
+     - Student Exit
+     - Student Return
+     - Hostel Radius
+     - Latitude
+     - Longitude
+     - Exit Timestamp
+     - Return Timestamp
+     - Late Return Duration
 
-Update **appsettings.json**
+     without requiring manual attendance.
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "YOUR_SQL_SERVER_CONNECTION_STRING"
-  }
-}
-```
+     ---
 
-Then execute
+     # 🔔 Real-Time Communication
 
-```bash
-dotnet ef database update
-```
+     SignalR is integrated to synchronize data across all connected users.
 
----
+     ### Live Events
 
-# 🌐 Production Deployment
+     - Hostel Registration Status
+     - Transport Registration Status
+     - Leave Approval
+     - Outpass Approval
+     - Vacating Approval
+     - Transport Cancellation
+     - Dashboard Refresh
+     - Notifications
 
-## Frontend
+     ---
 
-Platform
+     # 📊 Reporting Module
 
-```
-Vercel
-```
+     The platform supports exporting reports to Microsoft Excel.
 
-Build Command
+     Available reports include:
 
-```bash
-npm run build
-```
+     - Student Report
+     - Hostel Report
+     - Transport Report
+     - Leave Report
+     - Outpass Report
+     - Vacating Report
+     - Room Allocation Report
+     - Transport Cancellation Report
+     ---
 
-Output Directory
+     # 🚀 Getting Started
 
-```
-dist
-```
+     ## System Requirements
 
----
+     ### Frontend
 
-## Backend
+     - Node.js 20+
+     - npm 10+
+     - React 19
+     - Vite
 
-Platform
+     ### Backend
 
-```
-Microsoft IIS
-```
+     - .NET 10 SDK
+     - ASP.NET Core Web API
+     - Entity Framework Core
 
-Deployment Steps
+     ### Database
 
-- Publish ASP.NET Core API
-- Configure IIS Website
-- Configure HTTPS
-- Install .NET Hosting Bundle
-- Configure Reverse Proxy
-- Enable WebSockets
-- Deploy Production Build
+     - Microsoft SQL Server 2022+
 
----
+     ### IDE
 
-## Database
+     - Visual Studio 2022
+     - Visual Studio Code
 
-Platform
+     ---
 
-```
-Microsoft SQL Server
-```
+     # 📥 Clone Repository
 
-Management Tool
+     ```bash
+     git clone https://github.com/Kishoreex/college-hostel-transport-management.git
 
-```
-SQL Server Management Studio (SSMS)
-```
+     cd college-hostel-transport-management
+     ```
 
----
+     ---
 
-# 📱 Android Application
+     # 📦 Frontend Setup
 
-Built using
+     ```bash
+     npm install
 
-- Capacitor
-- Android Studio
+     npm run dev
+     ```
 
-Target Platform
+     Frontend runs at
 
-- Android
+     ```
+     http://localhost:5173
+     ```
 
-Distribution
+     ---
 
-- Google Play Store (Planned)
+     # ⚙ Backend Setup
 
----
+     ```bash
+     cd backend/HostelTransportAPI
 
-# 🔐 Authentication
+     dotnet restore
 
-Authentication is implemented using **JWT (JSON Web Tokens)**.
+     dotnet build
 
-Flow
+     dotnet ef database update
 
-```text
-Login
+     dotnet run
+     ```
 
-↓
+     Backend runs at
 
-Credential Validation
+     ```
+     https://localhost:5001
+     ```
 
-↓
+     ---
 
-JWT Generation
+     # 🗄 Database Configuration
 
-↓
+     Update **appsettings.json**
 
-Role Validation
+     ```json
+     {
+     "ConnectionStrings": {
+     "DefaultConnection": "YOUR_SQL_SERVER_CONNECTION_STRING"
+     }
+     }
+     ```
 
-↓
+     Then execute
 
-Protected APIs
+     ```bash
+     dotnet ef database update
+     ```
 
-↓
+     ---
 
-Dashboard Access
-```
+     # 🌐 Production Deployment
 
----
+     ## Frontend
 
-# 👥 Authorization
+     Platform
 
-Supported Roles
+     ```
+     Vercel
+     ```
 
-- Super Admin
-- Hostel Administrator
-- Boys Hostel Warden
-- Girls Hostel Warden
-- Transport Administrator
-- Student
+     Build Command
 
----
+     ```bash
+     npm run build
+     ```
 
-# 📡 REST API Overview
+     Output Directory
 
-Base URL
+     ```
+     dist
+     ```
 
-```
-https://202.61.121.102:8443/api
-```
+     ---
 
----
+     ## Backend
 
-## Authentication
+     Platform
 
-| Method | Endpoint |
-|---------|----------|
-| POST | /auth/login |
-| POST | /auth/change-password |
-| GET | /users/profile |
+     ```
+     Microsoft IIS
+     ```
 
----
+     Deployment Steps
 
-## Student
+     - Publish ASP.NET Core API
+     - Configure IIS Website
+     - Configure HTTPS
+     - Install .NET Hosting Bundle
+     - Configure Reverse Proxy
+     - Enable WebSockets
+     - Deploy Production Build
 
-| Method | Endpoint |
-|---------|----------|
-| GET | /students |
-| GET | /students/{id} |
-| PUT | /students/{id} |
+     ---
 
----
+     ## Database
 
-## Hostel
+     Platform
 
-| Method | Endpoint |
-|---------|----------|
-| POST | /studentregistrations |
-| GET | /hostelrooms |
-| POST | /hostelroomallocation |
+     ```
+     Microsoft SQL Server
+     ```
 
----
+     Management Tool
 
-## Transport
+     ```
+     SQL Server Management Studio (SSMS)
+     ```
 
-| Method | Endpoint |
-|---------|----------|
-| POST | /transportregistrations |
-| GET | /transportroutes |
-| GET | /transportstops |
+     ---
 
----
+     # 📱 Android Application
 
-## Leave
+     Built using
 
-| Method | Endpoint |
-|---------|----------|
-| POST | /leaverequests |
-| GET | /leaverequests |
+     - Capacitor
+     - Android Studio
 
----
+     Target Platform
 
-## Outpass
+     - Android
 
-| Method | Endpoint |
-|---------|----------|
-| POST | /outpasses |
-| GET | /outpasses |
-| PUT | /outpasses/{id} |
+     Distribution
 
----
+     - Google Play Store (Planned)
 
-## Vacating
+     ---
 
-| Method | Endpoint |
-|---------|----------|
-| POST | /vacating |
-| GET | /vacating |
+     # 🔐 Authentication
 
----
+     Authentication is implemented using **JWT (JSON Web Tokens)**.
 
-## Reports
+     Flow
 
-| Method | Endpoint |
-|---------|----------|
-| GET | /reports |
-| GET | /transportreports |
+     ```text
+     Login
 
----
+     ↓
 
-# 📲 QR Digital Outpass
+     Credential Validation
 
-Each approved outpass contains
+     ↓
 
-- Student Information
-- Student Photo
-- QR Code
-- Outpass ID
-- Destination
-- Reason
-- Valid From
-- Valid To
-- Exit Time
-- Return Time
-- GPS Tracking
-- Current Status
+     JWT Generation
 
-The QR Code is scanned by security personnel to verify the student's authorization.
+     ↓
 
----
+     Role Validation
 
-# 📍 GPS Tracking
+     ↓
 
-Automatically captures
+     Protected APIs
 
-- Exit Latitude
-- Exit Longitude
-- Return Latitude
-- Return Longitude
-- Exit Timestamp
-- Return Timestamp
-- Late Return Duration
+     ↓
 
----
+     Dashboard Access
+     ```
 
-# 🔔 SignalR Integration
+     ---
 
-Real-time events include
+     # 👥 Authorization
 
-- Hostel Registration Updates
-- Transport Registration Updates
-- Leave Approval
-- Outpass Approval
-- Vacating Approval
-- Transport Cancellation
-- Live Dashboard Refresh
-- Notification Updates
+     Supported Roles
 
----
+     - Super Admin
+     - Hostel Administrator
+     - Boys Hostel Warden
+     - Girls Hostel Warden
+     - Transport Administrator
+     - Student
 
-# 🧪 Testing
+     ---
 
-Testing performed during development
+     # 📡 REST API Overview
 
-✅ Authentication Testing
+     Base URL
 
-✅ API Testing
+     ```
+     https://202.61.121.102:8443/api
+     ```
 
-✅ Database Validation
+     ---
 
-✅ QR Verification
+     ## Authentication
 
-✅ GPS Validation
+     | Method | Endpoint |
+     |---------|----------|
+     | POST | /auth/login |
+     | POST | /auth/change-password |
+     | GET | /users/profile |
 
-✅ Role-Based Authorization
+     ---
 
-✅ Responsive UI Testing
+     ## Student
 
-✅ Android Testing
+     | Method | Endpoint |
+     |---------|----------|
+     | GET | /students |
+     | GET | /students/{id} |
+     | PUT | /students/{id} |
 
-✅ IIS Deployment Testing
+     ---
 
----
+     ## Hostel
 
-# 🔒 Security Features
+     | Method | Endpoint |
+     |---------|----------|
+     | POST | /studentregistrations |
+     | GET | /hostelrooms |
+     | POST | /hostelroomallocation |
 
-- JWT Authentication
-- Password Hashing
-- Role-Based Authorization
-- Protected REST APIs
-- Secure HTTPS Communication
-- Input Validation
-- SQL Injection Protection (Entity Framework Core)
-- Route Protection
-- QR Verification
-- GPS Validation
+     ---
 
----
+     ## Transport
 
-# ⚡ Performance Optimizations
+     | Method | Endpoint |
+     |---------|----------|
+     | POST | /transportregistrations |
+     | GET | /transportroutes |
+     | GET | /transportstops |
 
-- Lazy Loaded Components
-- Optimized REST Calls
-- Efficient Entity Framework Queries
-- Responsive UI
-- SignalR Real-Time Updates
-- Production Build Optimization
+     ---
 
----
+     ## Leave
 
-# 🛠 Maintenance
+     | Method | Endpoint |
+     |---------|----------|
+     | POST | /leaverequests |
+     | GET | /leaverequests |
 
-Current maintenance includes
+     ---
 
-- Feature Enhancements
-- Bug Fixes
-- Security Updates
-- Performance Improvements
-- Production Monitoring
----
+     ## Outpass
 
-# 📸 Application Gallery
+     | Method | Endpoint |
+     |---------|----------|
+     | POST | /outpasses |
+     | GET | /outpasses |
+     | PUT | /outpasses/{id} |
 
-> Replace the placeholder images below with the latest screenshots from the application.
+     ---
 
-## 🌐 Landing Page
+     ## Vacating
 
-<p align="center">
-<img src="docs/screenshots/landing.png" width="90%">
-</p>
+     | Method | Endpoint |
+     |---------|----------|
+     | POST | /vacating |
+     | GET | /vacating |
 
----
+     ---
 
-## 🔐 Student Login
+     ## Reports
 
-<p align="center">
-<img src="docs/screenshots/student-login.png" width="90%">
-</p>
+     | Method | Endpoint |
+     |---------|----------|
+     | GET | /reports |
+     | GET | /transportreports |
 
----
+     ---
 
-## 🛡 Administrator Login
+     # 📲 QR Digital Outpass
 
-<p align="center">
-<img src="docs/screenshots/admin-login.png" width="90%">
-</p>
+     Each approved outpass contains
 
----
+     - Student Information
+     - Student Photo
+     - QR Code
+     - Outpass ID
+     - Destination
+     - Reason
+     - Valid From
+     - Valid To
+     - Exit Time
+     - Return Time
+     - GPS Tracking
+     - Current Status
 
-## 🏠 Hostel Dashboard
+     The QR Code is scanned by security personnel to verify the student's authorization.
 
-<p align="center">
-<img src="docs/screenshots/hostel-dashboard.png" width="90%">
-</p>
+     ---
 
----
+     # 📍 GPS Tracking
 
-## 🚌 Transport Dashboard
+     Automatically captures
 
-<p align="center">
-<img src="docs/screenshots/transport-dashboard.png" width="90%">
-</p>
+     - Exit Latitude
+     - Exit Longitude
+     - Return Latitude
+     - Return Longitude
+     - Exit Timestamp
+     - Return Timestamp
+     - Late Return Duration
 
----
+     ---
 
-## 📱 Digital QR Outpass
+     # 🔔 SignalR Integration
 
-<p align="center">
-<img src="docs/screenshots/qr-outpass.png" width="60%">
-</p>
+     Real-time events include
 
----
+     - Hostel Registration Updates
+     - Transport Registration Updates
+     - Leave Approval
+     - Outpass Approval
+     - Vacating Approval
+     - Transport Cancellation
+     - Live Dashboard Refresh
+     - Notification Updates
 
-## 📊 Reports
+     ---
 
-<p align="center">
-<img src="docs/screenshots/reports.png" width="90%">
-</p>
+     # 🧪 Testing
 
----
+     Testing performed during development
 
-## 📱 Android Application
+     ✅ Authentication Testing
 
-<p align="center">
-<img src="docs/screenshots/mobile-app.png" width="35%">
-</p>
+     ✅ API Testing
 
----
+     ✅ Database Validation
 
-# 🎥 Demonstration
+     ✅ QR Verification
 
-## Web Application
+     ✅ GPS Validation
 
-<p align="center">
+     ✅ Role-Based Authorization
 
-Coming Soon
+     ✅ Responsive UI Testing
 
-</p>
+     ✅ Android Testing
 
----
+     ✅ IIS Deployment Testing
 
-## Android Application
+     ---
 
-<p align="center">
+     # 🔒 Security Features
 
-Coming Soon
+     - JWT Authentication
+     - Password Hashing
+     - Role-Based Authorization
+     - Protected REST APIs
+     - Secure HTTPS Communication
+     - Input Validation
+     - SQL Injection Protection (Entity Framework Core)
+     - Route Protection
+     - QR Verification
+     - GPS Validation
 
-</p>
+     ---
 
----
+     # ⚡ Performance Optimizations
 
-# 📈 Roadmap
+     - Lazy Loaded Components
+     - Optimized REST Calls
+     - Efficient Entity Framework Queries
+     - Responsive UI
+     - SignalR Real-Time Updates
+     - Production Build Optimization
 
-## Version 1.0
+     ---
 
-- Student Authentication
-- Hostel Registration
-- Transport Registration
-- QR Outpass
-- Leave Management
-- Vacating Management
-- GPS Tracking
-- SignalR Notifications
-- Room Allocation
-- Reports
+     # 🛠 Maintenance
 
----
+     Current maintenance includes
 
-## Version 2.0
+     - Feature Enhancements
+     - Bug Fixes
+     - Security Updates
+     - Performance Improvements
+     - Production Monitoring
+     ---
 
-- Parent Portal
-- Security Guard Mobile Application
-- Push Notifications
-- Visitor Management
-- Analytics Dashboard
-- Attendance Management
+     # 📸 Application Gallery
 
----
+     > Replace the placeholder images below with the latest screenshots from the application.
 
-## Version 3.0
+     ## 🌐 Landing Page
 
-- AI Chat Assistant
-- Face Recognition
-- RFID Integration
-- Smart Attendance
-- Student Analytics
-- Predictive Reports
+     <p align="center">
+     <img src="docs/screenshots/landing.png" width="90%">
+     </p>
 
----
+     ---
 
-# 📋 Coding Standards
+     ## 🔐 Student Login
 
-This project follows
+     <p align="center">
+     <img src="docs/screenshots/student-login.png" width="90%">
+     </p>
 
-- Clean Architecture
-- REST API Principles
-- SOLID Principles
-- Repository Pattern
-- Dependency Injection
-- Entity Framework Core Best Practices
-- Responsive UI Design
-- Modular Component Architecture
+     ---
 
----
+     ## 🛡 Administrator Login
 
-# 📦 Major Modules
+     <p align="center">
+     <img src="docs/screenshots/admin-login.png" width="90%">
+     </p>
 
-✔ Authentication
+     ---
 
-✔ Student Management
+     ## 🏠 Hostel Dashboard
 
-✔ Hostel Registration
+     <p align="center">
+     <img src="docs/screenshots/hostel-dashboard.png" width="90%">
+     </p>
 
-✔ Hostel Room Allocation
+     ---
 
-✔ Transport Registration
+     ## 🚌 Transport Dashboard
 
-✔ Transport Route Management
+     <p align="center">
+     <img src="docs/screenshots/transport-dashboard.png" width="90%">
+     </p>
 
-✔ Leave Management
+     ---
 
-✔ QR Outpass Management
+     ## 📱 Digital QR Outpass
 
-✔ GPS Geofencing
+     <p align="center">
+     <img src="docs/screenshots/qr-outpass.png" width="60%">
+     </p>
 
-✔ Vacating Management
+     ---
 
-✔ Transport Cancellation
+     ## 📊 Reports
 
-✔ Reports
+     <p align="center">
+     <img src="docs/screenshots/reports.png" width="90%">
+     </p>
 
-✔ Notifications
+     ---
 
-✔ Android Application
+     ## 📱 Android Application
 
----
+     <p align="center">
+     <img src="docs/screenshots/mobile-app.png" width="35%">
+     </p>
 
-# 🌍 Production Environment
+     ---
 
-| Component | Platform |
-|------------|----------|
-| Frontend | Vercel |
-| Backend | Microsoft IIS |
-| Database | Microsoft SQL Server |
-| Mobile | Android |
-| Real-Time | SignalR |
-| Authentication | JWT |
+     # 🎥 Demonstration
 
----
+     ## Web Application
 
-# 📊 Project Statistics
+     <p align="center">
 
-| Category | Details |
-|-----------|----------|
-| Architecture | Enterprise Full Stack |
-| Frontend | React + TypeScript |
-| Backend | ASP.NET Core Web API |
-| Database | SQL Server |
-| Mobile | Capacitor Android |
-| Authentication | JWT |
-| Real-Time | SignalR |
-| Deployment | IIS + Vercel |
-| Reports | Excel Export |
-| GPS | Supported |
-| QR | Supported |
+     Coming Soon
 
----
+     </p>
 
-# 👨‍💻 About the Developer
+     ---
 
-## Kishore Kumar P
+     ## Android Application
 
-**Software Development Engineer (SDE)**
+     <p align="center">
 
-**Madha Group of Institutions**
+     Coming Soon
 
-**Madha Dental College & Hospital**
+     </p>
 
----
+     ---
 
-### Professional Summary
+     # 📈 Roadmap
 
-Software Development Engineer with experience designing and developing enterprise web applications for educational institutions.
+     ## Version 1.0
 
-Specialized in full-stack application development using React, ASP.NET Core Web API, SQL Server, and modern software engineering practices.
+     - Student Authentication
+     - Hostel Registration
+     - Transport Registration
+     - QR Outpass
+     - Leave Management
+     - Vacating Management
+     - GPS Tracking
+     - SignalR Notifications
+     - Room Allocation
+     - Reports
 
-Experienced in designing scalable architectures, implementing secure REST APIs, building responsive user interfaces, integrating real-time communication with SignalR, developing Android applications using Capacitor, and deploying production applications on Microsoft IIS.
+     ---
 
----
+     ## Version 2.0
 
-### Responsibilities
+     - Parent Portal
+     - Security Guard Mobile Application
+     - Push Notifications
+     - Visitor Management
+     - Analytics Dashboard
+     - Attendance Management
 
-- Solution Architecture
-- Database Design
-- UI / UX Design
-- Frontend Development
-- Backend Development
-- REST API Development
-- Entity Framework Core
-- JWT Authentication
-- SignalR Integration
-- QR Code System
-- GPS Geofencing
-- Android Development
-- IIS Deployment
-- SQL Server Administration
-- Testing & Quality Assurance
-- Production Support
+     ---
 
----
+     ## Version 3.0
 
-### Education
+     - AI Chat Assistant
+     - Face Recognition
+     - RFID Integration
+     - Smart Attendance
+     - Student Analytics
+     - Predictive Reports
 
-**Bachelor of Engineering**
+     ---
 
-Computer Science and Engineering
+     # 📋 Coding Standards
 
-**St. Lourdes Engineering College**
+     This project follows
 
-2022 – 2026
+     - Clean Architecture
+     - REST API Principles
+     - SOLID Principles
+     - Repository Pattern
+     - Dependency Injection
+     - Entity Framework Core Best Practices
+     - Responsive UI Design
+     - Modular Component Architecture
 
----
+     ---
 
-### Current Position
+     # 📦 Major Modules
 
-Software Development Engineer (SDE)
+     ✔ Authentication
 
-Madha Group of Institutions
+     ✔ Student Management
 
-Madha Dental College & Hospital
+     ✔ Hostel Registration
 
----
+     ✔ Hostel Room Allocation
 
-### Contact
+     ✔ Transport Registration
 
-GitHub
+     ✔ Transport Route Management
 
-https://github.com/Kishoreex
+     ✔ Leave Management
 
-LinkedIn
+     ✔ QR Outpass Management
 
-https://www.linkedin.com/in/kishorekumar-cse
+     ✔ GPS Geofencing
 
-Email
+     ✔ Vacating Management
 
-kishore1kumar4@gmail.com
+     ✔ Transport Cancellation
 
----
+     ✔ Reports
 
-# 🤝 Contributing
+     ✔ Notifications
 
-Contributions, suggestions, and feedback are welcome.
+     ✔ Android Application
 
-Please open an Issue or submit a Pull Request for improvements.
+     ---
 
----
+     # 🌍 Production Environment
 
-# 🙏 Acknowledgements
+     | Component | Platform |
+     |------------|----------|
+     | Frontend | Vercel |
+     | Backend | Microsoft IIS |
+     | Database | Microsoft SQL Server |
+     | Mobile | Android |
+     | Real-Time | SignalR |
+     | Authentication | JWT |
 
-Special thanks to
+     ---
 
-- Madha Group of Institutions
-- Madha Dental College & Hospital
+     # 📊 Project Statistics
 
-for providing the opportunity to design and develop this enterprise application.
+     | Category | Details |
+     |-----------|----------|
+     | Architecture | Enterprise Full Stack |
+     | Frontend | React + TypeScript |
+     | Backend | ASP.NET Core Web API |
+     | Database | SQL Server |
+     | Mobile | Capacitor Android |
+     | Authentication | JWT |
+     | Real-Time | SignalR |
+     | Deployment | IIS + Vercel |
+     | Reports | Excel Export |
+     | GPS | Supported |
+     | QR | Supported |
 
----
+     ---
 
-# 📄 License
+     # 👨‍💻 About the Developer
 
-Copyright © 2026 Kishore Kumar P.
+     ## Kishore Kumar P
 
-This repository showcases software engineering work completed for professional and portfolio purposes. Please ensure you have appropriate permission before reusing or redistributing the source code. Refer to the repository's license for usage terms.
+     **Software Development Engineer (SDE)**
 
----
+     **Madha Group of Institutions**
 
-<div align="center">
+     **Madha Dental College & Hospital**
 
-## ⭐ If you found this project useful, please consider giving it a Star.
+     ---
 
-Made with ❤️ by **Kishore Kumar P**
+     ### Professional Summary
 
-Software Development Engineer
+     Software Development Engineer with experience designing and developing enterprise web applications for educational institutions.
 
-Madha Group of Institutions
+     Specialized in full-stack application development using React, ASP.NET Core Web API, SQL Server, and modern software engineering practices.
 
-Madha Dental College & Hospital
+     Experienced in designing scalable architectures, implementing secure REST APIs, building responsive user interfaces, integrating real-time communication with SignalR, developing Android applications using Capacitor, and deploying production applications on Microsoft IIS.
 
-</div>
+     ---
+
+     ### Responsibilities
+
+     - Solution Architecture
+     - Database Design
+     - UI / UX Design
+     - Frontend Development
+     - Backend Development
+     - REST API Development
+     - Entity Framework Core
+     - JWT Authentication
+     - SignalR Integration
+     - QR Code System
+     - GPS Geofencing
+     - Android Development
+     - IIS Deployment
+     - SQL Server Administration
+     - Testing & Quality Assurance
+     - Production Support
+
+     ---
+
+     ### Education
+
+     **Bachelor of Engineering**
+
+     Computer Science and Engineering
+
+     **St. Lourdes Engineering College**
+
+     2022 – 2026
+
+     ---
+
+     ### Current Position
+
+     Software Development Engineer (SDE)
+
+     Madha Group of Institutions
+
+     Madha Dental College & Hospital
+
+     ---
+
+     ### Contact
+
+     GitHub
+
+     https://github.com/Kishoreex
+
+     LinkedIn
+
+     https://www.linkedin.com/in/kishorekumar-cse
+
+     Email
+
+     kishore1kumar4@gmail.com
+
+     ---
+
+     # 🤝 Contributing
+
+     Contributions, suggestions, and feedback are welcome.
+
+     Please open an Issue or submit a Pull Request for improvements.
+
+     ---
+
+     # 🙏 Acknowledgements
+
+     Special thanks to
+
+     - Madha Group of Institutions
+     - Madha Dental College & Hospital
+
+     for providing the opportunity to design and develop this enterprise application.
+
+     ---
+
+     # 📄 License
+
+     Copyright © 2026 Kishore Kumar P.
+
+     This repository showcases software engineering work completed for professional and portfolio purposes. Please ensure you have appropriate permission before reusing or redistributing the source code. Refer to the repository's license for usage terms.
+
+     ---
+
+     <div align="center">
+
+     ## ⭐ If you found this project useful, please consider giving it a Star.
+
+     Made with ❤️ by **Kishore Kumar P**
+
+     Software Development Engineer
+
+     Madha Group of Institutions
+
+     Madha Dental College & Hospital
+
+     </div>

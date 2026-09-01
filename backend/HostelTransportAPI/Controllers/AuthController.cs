@@ -256,7 +256,6 @@ public class AuthController : ControllerBase
                 user.Module,
 
                 user.StudentId,
-
                 // NEW COLLEGE INFORMATION
                 user.CollegeId,
 

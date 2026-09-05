@@ -482,7 +482,7 @@ const [hostelStudents, setHostelStudents] = useState<any[]>([]);
 useEffect(() => {
   loadRooms();
   loadHostelStudents();
-}, []);
+}, [user.college, isManagement]);
 const loadHostelStudents = async () => {
   try {
     const data = await getStudentRegistrations(
@@ -652,121 +652,219 @@ const loadHostelStudents = async () => {
 };
 
 const loadRooms = async () => {
-      try {
-        const roomsData = await getAllRooms();
-        const allocationsData =
-    await getAllRoomAllocations();
+  try {
+    // Get all rooms
+    const roomsData = await getAllRooms();
 
-  const registrationsData =
-  await getStudentRegistrations(
-    isManagement ? null : user.college
-  );
+    // Get all room allocations
+    const allocationsData = await getAllRoomAllocations();
 
-        const rooms = roomsData.map(
-          (room: any) => ({
-            roomNumber: room.roomNumber,
-            capacity: room.capacity,
-            gender:
-              room.gender?.toLowerCase() === "male"
-                ? "boys"
-                : "girls",
+    // Get students only for the logged-in college.
+    // Management can see students from all colleges.
+    const registrationsData = await getStudentRegistrations(
+      isManagement ? null : user.college
+    );
 
-            students: allocationsData
-              .filter(
-                (a: any) =>
-                  a.roomNumber === room.roomNumber
-              ).map((a: any) => {
-
-  console.log("Allocation StudentId:", a.studentId);
-console.log("Registrations:", registrationsData);
-
-const registration =
-  registrationsData.find(
-    (r: any) =>
-      String(r.studentId).trim() ===
-      String(a.studentId).trim()
-  );
-
-console.log("Matched Registration:", registration);
-
-    const roommates =
-    allocationsData
-      .filter(
-        (x: any) =>
-          x.roomNumber === a.roomNumber &&
-          x.studentId !== a.studentId
+    // Create a Set of students allowed for this user.
+    const allowedStudentIds = new Set(
+      registrationsData.map((s: any) =>
+        String(
+          s.studentId ??
+          s.StudentId ??
+          s.id ??
+          ""
+        ).trim()
       )
-      .map((x: any) => {
+    );
 
-        const rmRegistration =
-          registrationsData.find(
-            (r: any) =>
-              r.studentId === x.studentId
-          );
-
-        return {
-          name: x.studentName,
-          phone:
-            rmRegistration?.phone || "",
-          year:
-            rmRegistration?.year || "",
-          college:
-            rmRegistration?.collegeName || ""
-        };
-      });
-
-    return {
-      id: a.studentId,
-      name: a.studentName,
-
-      phone:
-        registration?.phone || "",
-        email:
-  registration?.email ||
-  registration?.Email ||
-  "",
-
-      college:
-        registration?.collegeName || "",
-
-      department:
-        registration?.department || "",
-
-      year:
-        registration?.year || "",
-
-      batch:
-        registration?.batch || "",
-
-      parentName:
-        registration?.parentName || "",
-
-      parentPhone:
-        registration?.parentPhone || "",
-
-      address:
-        registration?.address || "",
-
-      roomNumber: a.roomNumber,
+    const rooms = roomsData.map((room: any) => ({
+      roomNumber: room.roomNumber,
+      capacity: room.capacity,
 
       gender:
-        a.gender?.toLowerCase() === "male"
+        room.gender?.toLowerCase() === "male"
           ? "boys"
           : "girls",
 
-      roommates
-    };
-  })
-          })
-        );
+      students: allocationsData
+        .filter(
+          (a: any) =>
+            String(a.roomNumber).trim() ===
+              String(room.roomNumber).trim() &&
+            (
+              // Management sees everyone
+              isManagement ||
 
-        console.log("ROOMS:", rooms);
+              // Other staff see only their college students
+              allowedStudentIds.has(
+                String(a.studentId).trim()
+              )
+            )
+        )
+        .map((a: any) => {
 
-        setRooms(rooms);
-      } catch (error) {
-        console.error(error);
-      }
-    };
+          // Find registration details for this student
+          const registration = registrationsData.find(
+            (r: any) =>
+              String(
+                r.studentId ??
+                r.StudentId ??
+                r.id ??
+                ""
+              ).trim() ===
+              String(a.studentId).trim()
+          );
+
+          // Find roommates
+          const roommates = allocationsData
+            .filter(
+              (x: any) =>
+                String(x.roomNumber).trim() ===
+                  String(a.roomNumber).trim() &&
+                String(x.studentId).trim() !==
+                  String(a.studentId).trim() &&
+
+                (
+                  // Management sees all roommates
+                  isManagement ||
+
+                  // Other staff see only roommates
+                  // belonging to their college
+                  allowedStudentIds.has(
+                    String(x.studentId).trim()
+                  )
+                )
+            )
+            .map((x: any) => {
+
+              const rmRegistration =
+                registrationsData.find(
+                  (r: any) =>
+                    String(
+                      r.studentId ??
+                      r.StudentId ??
+                      r.id ??
+                      ""
+                    ).trim() ===
+                    String(x.studentId).trim()
+                );
+
+              return {
+                name:
+                  x.studentName ??
+                  x.StudentName ??
+                  rmRegistration?.studentName ??
+                  rmRegistration?.StudentName ??
+                  "",
+
+                phone:
+                  rmRegistration?.phone ??
+                  rmRegistration?.Phone ??
+                  x.phone ??
+                  "",
+
+                year:
+                  rmRegistration?.year ??
+                  rmRegistration?.Year ??
+                  x.year ??
+                  "",
+
+                college:
+                  rmRegistration?.collegeName ??
+                  rmRegistration?.CollegeName ??
+                  ""
+              };
+            });
+
+          return {
+            id: a.studentId,
+
+            name:
+              a.studentName ??
+              a.StudentName ??
+              registration?.studentName ??
+              registration?.StudentName ??
+              "",
+
+            phone:
+              registration?.phone ??
+              registration?.Phone ??
+              a.phone ??
+              "",
+
+            email:
+              registration?.email ??
+              registration?.Email ??
+              a.email ??
+              "",
+
+            college:
+              registration?.collegeName ??
+              registration?.CollegeName ??
+              "",
+
+            department:
+              registration?.department ??
+              registration?.Department ??
+              "",
+
+            year:
+              registration?.year ??
+              registration?.Year ??
+              "",
+
+            batch:
+              registration?.batch ??
+              registration?.Batch ??
+              "",
+
+            parentName:
+              registration?.parentName ??
+              registration?.ParentName ??
+              "",
+
+            parentPhone:
+              registration?.parentPhone ??
+              registration?.ParentPhone ??
+              "",
+
+            address:
+              registration?.address ??
+              registration?.Address ??
+              "",
+
+            roomNumber:
+              a.roomNumber,
+
+            gender:
+              String(
+                a.gender ??
+                a.Gender ??
+                room.gender ??
+                ""
+              ).toLowerCase() === "male"
+                ? "boys"
+                : "girls",
+
+            roommates
+          };
+        })
+    }));
+
+    console.log("========== ROOMS ==========");
+    console.log("COLLEGE:", user.college);
+    console.log("IS MANAGEMENT:", isManagement);
+    console.log("REGISTRATIONS:", registrationsData);
+    console.log("ALLOCATIONS:", allocationsData);
+    console.log("ROOMS:", rooms);
+
+    setRooms(rooms);
+
+  } catch (error) {
+    console.error("FAILED TO LOAD ROOMS:", error);
+    setRooms([]);
+  }
+};
       const [outpasses, setOutpasses] =
       useState<any[]>([]);
 const [leaveRequests, setLeaveRequests] = useState<any[]>([]);

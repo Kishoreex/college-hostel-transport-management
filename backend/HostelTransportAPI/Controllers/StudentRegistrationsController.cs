@@ -312,6 +312,8 @@ LOGIN DETAILS :-
 
   Use The Link : https://play.google.com/store/apps/details?id=com.mdch.hosteltransport
 
+  web portal : https://campus.madhapharma.in/
+
     The link is valid only if u download the app from playstore using the email id used for registration. 
     Make sure on play store u have loged in with the same email id used for registration.before using the link. 
     If you have any issues and doubts, please contact the Hostel Administration.

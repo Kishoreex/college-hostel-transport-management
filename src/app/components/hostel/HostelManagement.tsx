@@ -654,7 +654,9 @@ const loadHostelStudents = async () => {
 const loadRooms = async () => {
   try {
     // Get all rooms
-    const roomsData = await getAllRooms();
+  const roomsData = await getAllRooms(
+  isManagement ? null : user.college
+);
 
     // Get all room allocations
     const allocationsData = await getAllRoomAllocations();
@@ -1500,37 +1502,48 @@ await rejectOutpass(
 
   setRejectRemark("");
 };
-    const handleAddRoom = async () => {
-      try {
-        await createRoom({
-          gender:
-            roomGender === "boys"
-              ? "Male"
-              : "Female",
+   const handleAddRoom = async () => {
+  try {
 
-          block:
-            roomGender === "boys"
-              ? "B"
-              : "G",
+    await createRoom({
+      gender:
+        roomGender === "boys"
+          ? "Male"
+          : "Female",
 
-          roomNumber: newRoomNum,
-          capacity: Number(newRoomCap),
-          status: "Available"
-        });
+      block:
+        roomGender === "boys"
+          ? "B"
+          : "G",
 
-        await loadRooms();
+      roomNumber: newRoomNum,
 
-        setNewRoomNum("");
-        setNewRoomCap("");
-        setAddRoomSheet(false);
+      capacity: Number(newRoomCap),
 
-        toast.success("Room Added Successfully");
-      } catch (error) {
-        console.error(error);
+      status: "Available",
 
-        toast.error("Failed To Add Room");
-      }
-    };
+      // IMPORTANT
+      collegeName: user.college
+    });
+
+    await loadRooms();
+
+    setNewRoomNum("");
+    setNewRoomCap("");
+    setAddRoomSheet(false);
+
+    toast.success(
+      "Room Added Successfully"
+    );
+
+  } catch (error) {
+    console.error(error);
+
+    toast.error(
+      "Failed To Add Room"
+    );
+  }
+};
 
      const handleEditRoom = async () => {
   if (!editRoomSheet.room) return;

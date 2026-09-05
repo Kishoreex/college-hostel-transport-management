@@ -13,4 +13,7 @@ public class HostelRoom
     public int Capacity { get; set; }
 
     public string Status { get; set; } = "Available";
+
+    // College that owns this room
+    public string CollegeName { get; set; } = "";
 }

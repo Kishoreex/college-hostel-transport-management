@@ -47,12 +47,13 @@ public async Task<IActionResult> GetUsers()
     var users = await _context.Users
         .Include(x => x.Role)
         .Include(x => x.College)
-        .Where(x =>
-            x.RoleId == 3 ||      // Principal
-            x.RoleId == 4 ||      // Hostel Incharge
-            x.RoleId == 5 ||      // Admin Office
-            x.RoleId == 1002     // Management
-        )
+    .Where(x =>
+    x.RoleId == 3 ||      // Principal
+    x.RoleId == 4 ||      // Hostel Incharge
+    x.RoleId == 5 ||      // Admin Office
+    x.RoleId == 6 ||      // Class Incharge
+    x.RoleId == 1002     // Management
+)
         .Select(x => new
         {
             x.Id,

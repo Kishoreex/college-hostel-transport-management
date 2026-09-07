@@ -126,11 +126,12 @@ public class AuthController : ControllerBase
 
 
             // Staff roles
-      if (
+if (
     user.Role?.Name == "System Admin" ||
     user.Role?.Name == "Management" ||
     user.Role?.Name == "Principal" ||
     user.Role?.Name == "Hostel Incharge" ||
+    user.Role?.Name == "Class Incharge" ||
     user.Role?.Name == "Admin Office"
 )
             {

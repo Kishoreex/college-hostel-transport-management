@@ -356,7 +356,6 @@ const colleges = [
     name: 'Madha College of Nursing'
   }
 ];
-
 const staffRoles = [
   {
     id: 3,
@@ -369,6 +368,10 @@ const staffRoles = [
   {
     id: 5,
     name: 'Admin Office'
+  },
+  {
+    id: 6,
+    name: 'Class Incharge'
   }
 ];
 

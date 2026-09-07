@@ -337,7 +337,7 @@ Thank you for being a part of our hostel community.
 Kind Regards,
 
 Hostel Administration
-Madha College of Nursing
+MADHA CAMPUS
 ");
 
 return Ok(new

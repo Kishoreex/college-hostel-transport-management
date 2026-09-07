@@ -134,6 +134,7 @@ const staffRoles = [
   "Management",
   "Principal",
   "Hostel Incharge",
+  "Class Incharge",
   "Admin Office"
 ];
 

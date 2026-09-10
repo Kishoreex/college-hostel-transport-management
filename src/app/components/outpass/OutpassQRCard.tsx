@@ -210,7 +210,7 @@ Validity
 
 <p className="text-sm">
 
-<b>State :</b>
+
 
 {" "}
 

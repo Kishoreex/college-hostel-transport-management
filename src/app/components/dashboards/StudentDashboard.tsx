@@ -1148,10 +1148,11 @@ if (activeLeave) {
   try {
 
   await createLeaveRequest({
+
   studentId: user.studentId,
 
   studentName: user.name,
-
+CollegeName: user.college,
   leaveType: leaveForm.type,
 
   campus:
@@ -2005,18 +2006,6 @@ outpass.outpassState==="Outside Hostel"
 {linkedOutpass && (
 
 <>
-
-<p className="text-xs mt-2">
-<b>State :</b> {linkedOutpass.outpassState}
-</p>
-
-
-
-
-
-
-
-
 
 
 

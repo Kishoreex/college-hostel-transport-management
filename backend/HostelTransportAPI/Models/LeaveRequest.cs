@@ -7,7 +7,7 @@ public class LeaveRequest
     public string StudentId { get; set; } = string.Empty;
 
     public string StudentName { get; set; } = string.Empty;
-
+    public string CollegeName { get; set; } = string.Empty;
     public string LeaveNumber { get; set; } = string.Empty;
 
     public string LeaveType { get; set; } = string.Empty;

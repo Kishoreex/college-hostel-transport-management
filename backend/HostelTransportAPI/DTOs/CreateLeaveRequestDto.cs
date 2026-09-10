@@ -3,7 +3,7 @@ public class CreateLeaveRequestDto
     public string StudentId { get; set; } = "";
 
     public string StudentName { get; set; } = "";
-
+ public string CollegeName { get; set; } = "";
     public string LeaveType { get; set; } = "";
 
     public string Campus { get; set; } = "";

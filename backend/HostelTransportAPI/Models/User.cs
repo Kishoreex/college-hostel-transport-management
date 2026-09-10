@@ -64,7 +64,7 @@ public string? HostelApprovalLevel { get; set; }
         // =========================
         // ACCOUNT STATUS
         // =========================
-
+public string? AssignedYear { get; set; }
         public bool IsActive { get; set; } = true;
 
         public string? DeviceId { get; set; }

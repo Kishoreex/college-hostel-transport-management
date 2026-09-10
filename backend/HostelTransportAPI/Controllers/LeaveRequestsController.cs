@@ -379,10 +379,11 @@ _context.SaveChanges();
 
          from outpass in op.DefaultIfEmpty()
 
-        where leave.Status == "Approved"
+    where leave.Status == "Approved"
    || leave.Status == "Completed"
    || leave.Status == "Expired"
-      || leave.Status == "Cancelled"
+   || leave.Status == "Cancelled"
+   || leave.Status == "Rejected"
    || leave.Status == "Not Accepted By Hostel Incharge"
          orderby leave.CreatedDate descending
 

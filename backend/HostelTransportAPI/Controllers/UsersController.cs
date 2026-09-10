@@ -51,7 +51,7 @@ public async Task<IActionResult> GetUsers()
     x.RoleId == 3 ||      // Principal
     x.RoleId == 4 ||      // Hostel Incharge
     x.RoleId == 5 ||      // Admin Office
-    x.RoleId == 6 ||      // Class Incharge
+   x.RoleId == 1003 ||     // Class Incharge
     x.RoleId == 1002     // Management
 )
         .Select(x => new
@@ -77,11 +77,12 @@ public async Task<IActionResult> GetUsers()
             x.CanManageBoysHostel,
             x.CanManageGirlsHostel,
 
-            x.HostelApprovalLevel,
+          x.HostelApprovalLevel,
+x.AssignedYear,
 
-            x.IsActive,
-            x.LastLogin,
-            x.ProfilePhoto
+x.IsActive,
+x.LastLogin,
+x.ProfilePhoto
         })
         .ToListAsync();
 
@@ -107,7 +108,21 @@ public async Task<IActionResult> GetUsers()
             return BadRequest("Invalid role selected.");
         }
 
+// -------------------------------------------------
+// Class Incharge - Assigned Year
+// -------------------------------------------------
 
+if (role.Name.Equals("Class Incharge", StringComparison.OrdinalIgnoreCase))
+{
+    if (string.IsNullOrWhiteSpace(user.AssignedYear))
+    {
+        return BadRequest("Assigned Year is required for Class Incharge.");
+    }
+}
+else
+{
+    user.AssignedYear = null;
+}
         // Students cannot be created from Settings → Users
       if (
     role.Name == "Student" ||
@@ -371,32 +386,33 @@ foreach (var manager in managementUsers)
 
         await _context.SaveChangesAsync();
 
+return Ok(new
+{
+    user.Id,
+    user.UserId,
+    user.FullName,
+    user.Email,
+    user.PhoneNumber,
 
-        return Ok(new
-        {
-            user.Id,
-            user.UserId,
-            user.FullName,
-            user.Email,
-            user.PhoneNumber,
+    user.RoleId,
+    Role = role.Name,
 
-            user.RoleId,
-            Role = role.Name,
+    user.CollegeId,
 
-            user.CollegeId,
+    College = user.CollegeId.HasValue
+        ? (
+            await _context.Colleges
+                .Where(x =>
+                    x.Id == user.CollegeId.Value)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync()
+          )
+        : "All Colleges",
 
-            College = user.CollegeId.HasValue
-                ? (
-                    await _context.Colleges
-                        .Where(x =>
-                            x.Id == user.CollegeId.Value)
-                        .Select(x => x.Name)
-                        .FirstOrDefaultAsync()
-                  )
-                : "All Colleges",
+    user.AssignedYear,
 
-            user.IsActive
-        });
+    user.IsActive
+});
     }
 
 
@@ -535,7 +551,23 @@ else
             updatedUser.RoleId;
 
 
+// =====================================================
+// UPDATE ASSIGNED YEAR
+// =====================================================
 
+if (role.Name.Equals("Class Incharge", StringComparison.OrdinalIgnoreCase))
+{
+    if (string.IsNullOrWhiteSpace(updatedUser.AssignedYear))
+    {
+        return BadRequest("Assigned Year is required for Class Incharge.");
+    }
+
+    user.AssignedYear = updatedUser.AssignedYear;
+}
+else
+{
+    user.AssignedYear = null;
+}
  // =====================================================
 // UPDATE COLLEGE
 // =====================================================
@@ -689,31 +721,33 @@ else
         await _context.SaveChangesAsync();
 
 
-        return Ok(new
-        {
-            user.Id,
-            user.UserId,
-            user.FullName,
-            user.Email,
-            user.PhoneNumber,
+     return Ok(new
+{
+    user.Id,
+    user.UserId,
+    user.FullName,
+    user.Email,
+    user.PhoneNumber,
 
-            user.RoleId,
-            Role = role.Name,
+    user.RoleId,
+    Role = role.Name,
 
-            user.CollegeId,
+    user.CollegeId,
 
-            College =
-                user.CollegeId.HasValue
-                    ? await _context.Colleges
-                        .Where(x =>
-                            x.Id ==
-                            user.CollegeId.Value)
-                        .Select(x => x.Name)
-                        .FirstOrDefaultAsync()
-                    : "All Colleges",
+    College =
+        user.CollegeId.HasValue
+            ? await _context.Colleges
+                .Where(x =>
+                    x.Id ==
+                    user.CollegeId.Value)
+                .Select(x => x.Name)
+                .FirstOrDefaultAsync()
+            : "All Colleges",
 
-            user.IsActive
-        });
+    user.AssignedYear,
+
+    user.IsActive
+});
     }
 
 
@@ -800,24 +834,26 @@ else
             return NotFound();
         }
 
-        return Ok(new
-        {
-            user.Id,
-            user.UserId,
-            user.FullName,
-            user.Email,
-            user.PhoneNumber,
+       return Ok(new
+{
+    user.Id,
+    user.UserId,
+    user.FullName,
+    user.Email,
+    user.PhoneNumber,
 
-            user.RoleId,
-            Role = user.Role?.Name,
+    user.RoleId,
+    Role = user.Role?.Name,
 
-            user.CollegeId,
-            College = user.College?.Name ??
-                      "All Colleges",
+    user.CollegeId,
+    College = user.College?.Name ??
+              "All Colleges",
 
-            user.IsActive,
-            user.LastLogin
-        });
+    user.AssignedYear,
+
+    user.IsActive,
+    user.LastLogin
+});
     }
 
 

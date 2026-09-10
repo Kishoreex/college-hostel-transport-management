@@ -49,7 +49,6 @@ interface SettingsProps {
   user: User;
   onLogout: () => void;
 }
-
 interface SystemUser {
   id: number;
   userId: string;
@@ -71,6 +70,8 @@ interface SystemUser {
   canManageGirlsHostel: boolean;
 
   hostelApprovalLevel: string | null;
+
+  assignedYear: string | null;
 
   status: 'active' | 'inactive';
 }
@@ -221,12 +222,13 @@ const loadUsers = async () => {
   try {
     const data = await getUsers();
 
-    const allowedRoles = [
-      "Management",
-      "Principal",
-      "Hostel Incharge",
-      "Admin Office"
-    ];
+const allowedRoles = [
+  "Management",
+  "Principal",
+  "Hostel Incharge",
+  "Admin Office",
+  "Class Incharge"
+];
 
     const staffUsers = data.filter(
       (u: any) =>
@@ -263,13 +265,16 @@ const loadUsers = async () => {
         canManageGirlsHostel:
           u.canManageGirlsHostel ?? false,
 
-        hostelApprovalLevel:
-          u.hostelApprovalLevel ?? null,
+      hostelApprovalLevel:
+  u.hostelApprovalLevel ?? null,
 
-        status:
-          u.isActive
-            ? 'active'
-            : 'inactive'
+assignedYear:
+  u.assignedYear ?? null,
+
+status:
+  u.isActive
+    ? 'active'
+    : 'inactive'
       }))
     );
 
@@ -318,6 +323,8 @@ const [newGirlsHostel, setNewGirlsHostel] =
 
 const [newHostelApprovalLevel, setNewHostelApprovalLevel] =
   useState('');
+  const [newAssignedYear, setNewAssignedYear] =
+  useState('');
   // Edit User sheet
   const [editSheet, setEditSheet] = useState<{ open: boolean; u: SystemUser | null }>({ open: false, u: null });
   const [editName, setEditName] = useState('');
@@ -337,6 +344,8 @@ const [editGirlsHostel, setEditGirlsHostel] =
   useState(false);
 
 const [editHostelApprovalLevel, setEditHostelApprovalLevel] =
+  useState('');
+  const [editAssignedYear, setEditAssignedYear] =
   useState('');
 const colleges = [
   {
@@ -369,10 +378,10 @@ const staffRoles = [
     id: 5,
     name: 'Admin Office'
   },
-  {
-    id: 6,
-    name: 'Class Incharge'
-  }
+{
+  id: 1003,
+  name: 'Class Incharge'
+}
 ];
 
 const toggleModule = (
@@ -407,12 +416,13 @@ const openAdd = () => {
 
   setNewModule('');
 
-  setNewBoysHostel(false);
-  setNewGirlsHostel(false);
+setNewBoysHostel(false);
+setNewGirlsHostel(false);
 
-  setNewHostelApprovalLevel('');
+setNewHostelApprovalLevel('');
+setNewAssignedYear('');
 
-  setAddSheet(true);
+setAddSheet(true);
 };
 
 const handleAdd = async () => {
@@ -511,8 +521,13 @@ hostelApprovalLevel:
     .split(',')
     .includes("Hostel")
     ? newHostelApprovalLevel
+    : null,
+
+assignedYear:
+  selectedRole.name === "Class Incharge"
+    ? newAssignedYear
     : null
-    });
+});
 
     await loadUsers();
 
@@ -532,7 +547,7 @@ hostelApprovalLevel:
     setNewGirlsHostel(false);
 
     setNewHostelApprovalLevel('');
-
+    setNewAssignedYear('');
   } catch (error: any) {
 
     console.error(error);
@@ -579,6 +594,9 @@ const openEdit = (u: SystemUser) => {
   setEditHostelApprovalLevel(
     u.hostelApprovalLevel || ''
   );
+  setEditAssignedYear(
+  u.assignedYear || ''
+);
 };const handleEdit = async () => {
   if (!editSheet.u) {
     return;
@@ -602,7 +620,13 @@ const openEdit = (u: SystemUser) => {
     alert('Please select a valid role.');
     return;
   }
-
+if (
+  selectedRole.name === "Class Incharge" &&
+  !newAssignedYear
+) {
+  alert("Please select an Assigned Year for Class Incharge.");
+  return;
+}
   const hasHostel =
     editModule
       .split(',')
@@ -1236,9 +1260,12 @@ const openEdit = (u: SystemUser) => {
                   .includes("Hostel")
               ) {
 
-                setNewBoysHostel(false);
-                setNewGirlsHostel(false);
-                setNewHostelApprovalLevel('');
+          setNewBoysHostel(false);
+setNewGirlsHostel(false);
+
+setNewHostelApprovalLevel('');
+setNewAssignedYear('');
+
 
               }
 

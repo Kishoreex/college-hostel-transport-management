@@ -874,6 +874,7 @@ const [leaveHistory, setLeaveHistory] =
   useState<any[]>([]);
       useEffect(() => {
       loadOutpasses();
+        loadOutpassHistory();
     }, []);
 useEffect(() => {
   loadLeaveRequests();
@@ -2531,26 +2532,31 @@ if (!canManageHostel) {
 
                     {historyType === 'outpass' && (
                       <>
-             {outpasses
-    .filter(h => {
-      const gender = h.gender?.toLowerCase();
+        {outpassHistory
+.filter(h => {
+  const gender = h.gender?.toLowerCase();
+  const status = h.status?.toLowerCase();
 
-      const matchesGender =
-        historyGender === "boys"
-          ? gender === "male"
-          : gender === "female";
+  const matchesGender =
+    historyGender === "boys"
+      ? gender === "male"
+      : gender === "female";
 
-return (
-    matchesGender &&
-    (
-        h.status?.toLowerCase() === "approved" ||
-        h.status?.toLowerCase() === "completed" ||
-        h.status?.toLowerCase() === "cancelled" ||
-        h.status?.toLowerCase() === "Not Accepted By Hostel Incharge"
-    ) &&
+  const matchesStatus =
+    status === "approved" ||
+    status === "completed" ||
+    status === "cancelled" ||
+    status === "rejected" ||
+    status === "not accepted by hostel incharge";
+
+  // Management can see both boys and girls.
+  // College staff are restricted by their selected hostel gender.
+  return (
+    (isManagement || matchesGender) &&
+    matchesStatus &&
     !h.leaveRequestId
-);
-    })
+  );
+})
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() -

@@ -406,9 +406,42 @@ outpass.OutpassState = "Cancelled";
 public async Task<IActionResult> GetHistory(
     [FromQuery] string? college)
 {
+    var now = DateTime.Now;
+
+    // First mark old active/pending outpasses as expired/not accepted
+    var expiredOutpasses = await _context.Outpasses
+        .Where(x =>
+            x.ValidTo < now &&
+            x.ActualExitTime == null &&
+            (
+                x.Status == "Pending" ||
+                x.Status == "Approved" ||
+                x.OutpassState == "Active" ||
+                x.OutpassState == "Waiting For Exit"
+            )
+        )
+        .ToListAsync();
+
+    foreach (var item in expiredOutpasses)
+    {
+        if (item.Status == "Pending")
+        {
+            item.Status = "Not Accepted By Hostel Incharge";
+        }
+        else
+        {
+            item.Status = "Completed";
+            item.OutpassState = "Expired";
+        }
+    }
+
+    await _context.SaveChangesAsync();
+
+    // Build query
     var query = _context.Outpasses
         .AsQueryable();
 
+    // College filter
     if (!string.IsNullOrWhiteSpace(college))
     {
         query = query.Where(x =>
@@ -419,15 +452,19 @@ public async Task<IActionResult> GetHistory(
         );
     }
 
-    var history = await query
-        .Where(x =>
-            x.Status == "Completed" ||
-            x.Status == "Rejected" ||
-            x.Status == "Cancelled" ||
-            x.OutpassState == "Expired"
-        )
-        .OrderByDescending(x => x.Id)
-        .ToListAsync();
+    // History records
+ var history = await query
+    .Where(x =>
+        x.Status == "Approved" ||
+        x.Status == "Completed" ||
+        x.Status == "Rejected" ||
+        x.Status == "Cancelled" ||
+        x.Status == "Not Accepted By Hostel Incharge" ||
+        x.Status == "Not Accepted By Warden" ||
+        x.OutpassState == "Expired"
+    )
+    .OrderByDescending(x => x.Id)
+    .ToListAsync();
 
     return Ok(history);
 }

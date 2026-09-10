@@ -9,7 +9,7 @@ public class Outpass
     public string StudentId { get; set; } = string.Empty;
 
     public string StudentName { get; set; } = string.Empty;
-
+    public string? CollegeName { get; set; }
     public string Gender { get; set; } = string.Empty;
 
     public string Destination { get; set; } = string.Empty;

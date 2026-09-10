@@ -7,6 +7,7 @@
     Clock,
     FileText
   } from "lucide-react";
+ import { useEffect, useState } from "react";
   import QRCode from "react-qr-code";
   import type { OutpassRequest, User } from '../../types';
 
@@ -18,9 +19,22 @@
   }
 
 
-  export default function OutpassQRCard({ open, onClose, outpass, student }: OutpassQRCardProps) {if (!open || !outpass || !student) {
+ export default function OutpassQRCard({ open, onClose, outpass, student }: OutpassQRCardProps) {
+
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
+
+  if (!open || !outpass || !student) {
     return null;
-}
+  }
+
   const qrCodeData = JSON.stringify({
 
 outpassId: outpass.id,
@@ -59,13 +73,53 @@ state: outpass.outpassState
               </div>
               <h3 className="text-lg font-bold text-gray-800">Hostel Outpass</h3>
             </div>
-            <div className="mb-4 bg-green-50 border border-green-300 rounded-xl p-4 text-center">
-    <p className="font-semibold text-green-800">
-      ✓ Approved by Warden
-    </p>
+       <div className="mb-4 bg-green-50 border border-green-300 rounded-xl p-4 text-center">
 
-   
+  {/* Approval Status */}
+  <div className="flex items-center justify-center gap-2">
+    <div className="w-7 h-7 rounded-full bg-green-600 flex items-center justify-center">
+      <span className="text-white text-sm font-bold">
+        ✓
+      </span>
+    </div>
+
+    <p className="font-semibold text-green-800">
+      Approved by Principal & In-charge
+    </p>
   </div>
+
+  {/* Current Date */}
+  <div className="flex items-center justify-center gap-2 mt-3 text-green-700">
+    <Calendar size={15} />
+
+    <span className="text-sm font-medium">
+      {currentDateTime.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })}
+    </span>
+  </div>
+
+  {/* Running Current Time */}
+  <div className="flex items-center justify-center gap-2 mt-1 text-green-700">
+    <Clock size={15} />
+
+    <span className="text-sm font-mono font-semibold">
+      {currentDateTime.toLocaleTimeString("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      })}
+    </span>
+  </div>
+
+  <p className="text-[11px] text-green-600 mt-2">
+    Digital Outpass Approved
+  </p>
+
+</div>
     
 
             {/* Student Info */}

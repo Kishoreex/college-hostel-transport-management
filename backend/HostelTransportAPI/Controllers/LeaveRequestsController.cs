@@ -394,54 +394,48 @@ public IActionResult GetHistory([FromQuery] string? college)
     // ---------------------------------------------------------
     // 3. Build result and find college from StudentRegistration
     // ---------------------------------------------------------
-    var history = leaves.Select(leave =>
+  var history = leaves.Select(leave =>
+{
+    var outpass = _context.Outpasses
+        .FirstOrDefault(o =>
+            o.LeaveRequestId == leave.Id
+        );
+
+    return new
     {
-        var student = _context.StudentRegistrations
-            .FirstOrDefault(s =>
-                s.StudentId == leave.StudentId
-            );
+        leave.Id,
+        leave.StudentId,
+        leave.StudentName,
+        leave.Gender,
+        leave.LeaveType,
+        leave.Campus,
 
-        var outpass = _context.Outpasses
-            .FirstOrDefault(o =>
-                o.LeaveRequestId == leave.Id
-            );
+        // GET COLLEGE DIRECTLY FROM LEAVE REQUEST
+        College = leave.CollegeName,
 
-        return new
-        {
-            leave.Id,
-            leave.StudentId,
-            leave.StudentName,
-            leave.Gender,
-            leave.LeaveType,
-            leave.Campus,
+        leave.Department,
+        leave.Year,
+        leave.Reason,
+        leave.Destination,
+        leave.FromDate,
+        leave.ToDate,
+        leave.ExitTime,
+        leave.ReturnTime,
+        leave.Status,
 
-            College = student?.CollegeName ?? "Unknown College",
+        ActualExitTime =
+            outpass?.ActualExitTime,
 
-            leave.Department,
-            leave.Year,
-            leave.Reason,
-            leave.Destination,
-            leave.FromDate,
-            leave.ToDate,
-            leave.ExitTime,
-            leave.ReturnTime,
-            leave.Status,
+        ActualReturnTime =
+            outpass?.ActualReturnTime,
 
-            ActualExitTime =
-                outpass?.ActualExitTime,
+        EarlyExitMinutes =
+            outpass?.EarlyExitMinutes ?? 0,
 
-            ActualReturnTime =
-                outpass?.ActualReturnTime,
-
-            EarlyExitMinutes =
-                outpass?.EarlyExitMinutes ?? 0,
-
-            LateMinutes =
-                outpass?.LateMinutes ?? 0
-        };
-    }).ToList();
-
-
+        LateMinutes =
+            outpass?.LateMinutes ?? 0
+    };
+}).ToList();
     // ---------------------------------------------------------
     // 4. College filtering
     // ---------------------------------------------------------

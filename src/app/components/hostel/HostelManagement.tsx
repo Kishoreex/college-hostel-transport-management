@@ -3054,13 +3054,17 @@ isManagement && expiredWithoutExit && (
         ))}
     </>
   )}
-                    {historyType === 'leave' && (
-                      <>
-                        {leaveHistory.filter(h =>
-    historyGender === "boys"
-        ? h.gender?.toLowerCase() === "male"
-        : h.gender?.toLowerCase() === "female"
-).map(h => {
+        {historyType === 'leave' && (
+  <>
+    {leaveHistory
+      .filter(h =>
+        isManagement
+          ? true
+          : historyGender === "boys"
+            ? h.gender?.toLowerCase() === "male"
+            : h.gender?.toLowerCase() === "female"
+      )
+      .map(h => {
                          const now = new Date();
 
 const exitTime = new Date(

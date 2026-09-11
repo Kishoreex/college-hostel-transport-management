@@ -3088,10 +3088,16 @@ const waitingForExit =
   !h.actualExitTime &&
   now < exitTime;
 
+const activeNotExited =
+  isOutCampus &&
+  !h.actualExitTime &&
+  now >= exitTime &&
+  now <= returnTime;
+
 const expiredWithoutExit =
   isOutCampus &&
   !h.actualExitTime &&
-  now >= exitTime;
+  now > returnTime;
 const outsideCampus =
   isOutCampus &&
   h.actualExitTime &&
@@ -3214,10 +3220,12 @@ className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
       ? now <= returnTime
         ? "🟢 Active Leave"
         : "✅ Leave Completed"
-      : waitingForExit
-      ? "🟡 Waiting For Exit"
-      : expiredWithoutExit
-      ? "❌ Not Exited"
+    : waitingForExit
+? "🟡 Waiting For Exit"
+: activeNotExited
+? "🟢 Active Leave"
+: expiredWithoutExit
+? "❌ Not Exited"
       : exitedEarly
       ? `🔴 Exited Early (${h.earlyExitMinutes} min)`
       : outsideCampus

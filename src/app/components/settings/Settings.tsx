@@ -77,7 +77,6 @@ interface SystemUser {
 }
 
 
-
 // Bottom sheet component
 function BottomSheet({ open, onClose, title, children }: { open: boolean; onClose: () => void; title: string; children: React.ReactNode }) {
   return (
@@ -449,7 +448,13 @@ const handleAdd = async () => {
     alert('Please select a valid role.');
     return;
   }
-
+if (
+  selectedRole.name === "Class Incharge" &&
+  !newAssignedYear
+) {
+  alert("Please select an Assigned Year for Class Incharge.");
+  return;
+}
   // Hostel validation
 if (newModule.split(',').includes("Hostel")) {
 
@@ -685,15 +690,21 @@ if (
           hasHostel && editGirlsHostel,
 
         // APPROVAL LEVEL
-        hostelApprovalLevel:
-          hasHostel
-            ? editHostelApprovalLevel
-            : null,
+      hostelApprovalLevel:
+  hasHostel
+    ? editHostelApprovalLevel
+    : null,
 
-        // PASSWORD
-        ...(editPassword
-          ? { passwordHash: editPassword }
-          : {})
+// ASSIGNED YEAR
+assignedYear:
+  selectedRole.name === "Class Incharge"
+    ? editAssignedYear
+    : null,
+
+// PASSWORD
+...(editPassword
+  ? { passwordHash: editPassword }
+  : {})
       }
     );
 
@@ -876,7 +887,12 @@ if (
   <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-blue-100 text-blue-700">
     {u.college}
   </span>
-
+{/* ASSIGNED YEAR */}
+{u.role === "Class Incharge" && u.assignedYear && (
+  <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-amber-100 text-amber-700">
+    📚 {u.assignedYear}
+  </span>
+)}
   {/* TRANSPORT */}
   {u.canManageTransport && (
     <span className="text-xs px-2.5 py-1 rounded-full font-semibold bg-cyan-100 text-cyan-700">
@@ -1222,7 +1238,39 @@ if (
 
     </div>
 
+{/* =====================================================
+    ASSIGNED YEAR
+   ===================================================== */}
 
+{staffRoles.find(
+  role => role.id === Number(newRoleId)
+)?.name === "Class Incharge" && (
+
+  <div>
+    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+      Assigned Year
+    </label>
+
+    <select
+      value={newAssignedYear}
+      onChange={e =>
+        setNewAssignedYear(e.target.value)
+      }
+      className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
+    >
+      <option value="">
+        Select Assigned Year
+      </option>
+
+      <option value="1st Year">1st Year</option>
+      <option value="2nd Year">2nd Year</option>
+      <option value="3rd Year">3rd Year</option>
+      <option value="4th Year">4th Year</option>
+      <option value="5th Year">5th Year</option>
+      <option value="Intern">Intern</option>
+    </select>
+  </div>
+)}
     {/* =====================================================
         MODULE
        ===================================================== */}
@@ -1512,6 +1560,13 @@ newCollegeId === '' ||
               .includes("Hostel") &&
             !newHostelApprovalLevel
           )
+          ||
+(
+  staffRoles.find(
+    role => role.id === Number(newRoleId)
+  )?.name === "Class Incharge" &&
+  !newAssignedYear
+)
         }
         className="flex-1 py-3 rounded-2xl bg-blue-600 disabled:bg-blue-200 text-white text-sm font-semibold active:scale-95 transition-transform"
       >
@@ -1757,7 +1812,39 @@ newCollegeId === '' ||
           </select>
 
         </div>
+{/* =====================================================
+    ASSIGNED YEAR
+   ===================================================== */}
 
+{staffRoles.find(
+  role => role.id === Number(editRoleId)
+)?.name === "Class Incharge" && (
+
+  <div>
+    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+      Assigned Year
+    </label>
+
+    <select
+      value={editAssignedYear}
+      onChange={e =>
+        setEditAssignedYear(e.target.value)
+      }
+      className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
+    >
+      <option value="">
+        Select Assigned Year
+      </option>
+
+      <option value="1st Year">1st Year</option>
+      <option value="2nd Year">2nd Year</option>
+      <option value="3rd Year">3rd Year</option>
+      <option value="4th Year">4th Year</option>
+      <option value="5th Year">5th Year</option>
+      <option value="Intern">Intern</option>
+    </select>
+  </div>
+)}
 {/* =====================================================
     MODULE
    ===================================================== */}

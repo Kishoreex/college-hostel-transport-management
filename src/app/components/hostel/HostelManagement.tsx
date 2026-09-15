@@ -1438,23 +1438,57 @@ const filteredVacatingRequests =
 ];
 
 const getHistoryDate = (item: any) => {
+
+  // OUTPASS
+  if (historyType === "outpass") {
+    return (
+      item.validFrom ??
+      item.ValidFrom ??
+      item.createdAt ??
+      item.CreatedAt ??
+      null
+    );
+  }
+
+  // LEAVE
+  if (historyType === "leave") {
+    return (
+      item.fromDate ??
+      item.FromDate ??
+      item.createdAt ??
+      item.CreatedAt ??
+      null
+    );
+  }
+
+  // APPLICATIONS
+  if (historyType === "applications") {
+    return (
+      item.createdAt ??
+      item.CreatedAt ??
+      item.requestDate ??
+      item.RequestDate ??
+      null
+    );
+  }
+
+  // VACATING
+  if (historyType === "vacating") {
+    return (
+      item.requestDate ??
+      item.RequestDate ??
+      item.createdAt ??
+      item.CreatedAt ??
+      null
+    );
+  }
+
   return (
     item.createdAt ??
     item.CreatedAt ??
-    item.requestDate ??
-    item.RequestDate ??
-    item.approvedDate ??
-    item.ApprovedDate ??
-    item.rejectedDate ??
-    item.RejectedDate ??
-    item.fromDate ??
-    item.FromDate ??
-    item.validFrom ??
-    item.ValidFrom ??
     null
   );
 };
-
 const matchesHistoryFilters = (item: any) => {
 
   // =========================
@@ -1498,115 +1532,202 @@ const matchesHistoryFilters = (item: any) => {
   // COLLEGE
   // =========================
 
-  const college =
-    item.collegeName ??
-    item.CollegeName ??
-    "";
+const college =
+  item.collegeName ??
+  item.CollegeName ??
+  item.college ??
+  item.College ??
+  "";
 
-  if (
-    historyCollege !== "All" &&
-    college !== historyCollege
-  ) {
+if (historyCollege !== "All") {
+
+  const selectedCollege =
+    historyCollege
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
+  const recordCollege =
+    String(college)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
+  if (recordCollege !== selectedCollege) {
     return false;
   }
+}
+
+// =========================
+// DATE FILTER
+// =========================
+
+const rawDate = getHistoryDate(item);
+
+if (!rawDate) {
+  return historyPeriod === "all";
+}
+
+const itemDate = new Date(rawDate);
+
+if (isNaN(itemDate.getTime())) {
+  return historyPeriod === "all";
+}
+
+if (historyPeriod === "all") {
+  return true;
+}
 
 
-  // =========================
-  // DATE
-  // =========================
+// =========================
+// TODAY
+// =========================
 
-  const rawDate = getHistoryDate(item);
+if (historyPeriod === "today") {
 
-  if (!rawDate) {
-    return historyPeriod === "all";
+  const start = new Date();
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date();
+  end.setHours(23, 59, 59, 999);
+
+  return (
+    itemDate >= start &&
+    itemDate <= end
+  );
+}
+
+
+// =========================
+// LAST 7 DAYS
+// =========================
+
+if (historyPeriod === "7days") {
+
+  const start = new Date();
+
+  start.setDate(
+    start.getDate() - 7
+  );
+
+  start.setHours(0, 0, 0, 0);
+
+  return itemDate >= start;
+}
+
+
+// =========================
+// LAST 30 DAYS
+// =========================
+
+if (historyPeriod === "30days") {
+
+  const start = new Date();
+
+  start.setDate(
+    start.getDate() - 30
+  );
+
+  start.setHours(0, 0, 0, 0);
+
+  return itemDate >= start;
+}
+
+
+// =========================
+// LAST 3 MONTHS
+// =========================
+
+if (historyPeriod === "3months") {
+
+  const start = new Date();
+
+  start.setMonth(
+    start.getMonth() - 3
+  );
+
+  start.setHours(0, 0, 0, 0);
+
+  return itemDate >= start;
+}
+
+
+// =========================
+// LAST 6 MONTHS
+// =========================
+
+if (historyPeriod === "6months") {
+
+  const start = new Date();
+
+  start.setMonth(
+    start.getMonth() - 6
+  );
+
+  start.setHours(0, 0, 0, 0);
+
+  return itemDate >= start;
+}
+
+
+// =========================
+// LAST 1 YEAR
+// =========================
+
+if (historyPeriod === "1year") {
+
+  const start = new Date();
+
+  start.setFullYear(
+    start.getFullYear() - 1
+  );
+
+  start.setHours(0, 0, 0, 0);
+
+  return itemDate >= start;
+}
+
+
+// =========================
+// CUSTOM RANGE
+// =========================
+
+if (historyPeriod === "custom") {
+
+  // No dates selected
+  if (!historyFromDate && !historyToDate) {
+    return true;
   }
 
-  const itemDate = new Date(rawDate);
+  // FROM DATE
+  if (historyFromDate) {
 
-  if (isNaN(itemDate.getTime())) {
-    return historyPeriod === "all";
+    const fromDate = new Date(
+      `${historyFromDate}T00:00:00`
+    );
+
+    if (itemDate < fromDate) {
+      return false;
+    }
   }
 
-  const now = new Date();
+  // TO DATE
+  if (historyToDate) {
 
-  let startDate: Date | null = null;
+    const toDate = new Date(
+      `${historyToDate}T23:59:59.999`
+    );
 
-  switch (historyPeriod) {
-
-    case "today":
-      startDate = new Date();
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case "7days":
-      startDate = new Date();
-      startDate.setDate(
-        startDate.getDate() - 7
-      );
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case "30days":
-      startDate = new Date();
-      startDate.setDate(
-        startDate.getDate() - 30
-      );
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case "3months":
-      startDate = new Date();
-      startDate.setMonth(
-        startDate.getMonth() - 3
-      );
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case "6months":
-      startDate = new Date();
-      startDate.setMonth(
-        startDate.getMonth() - 6
-      );
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case "1year":
-      startDate = new Date();
-      startDate.setFullYear(
-        startDate.getFullYear() - 1
-      );
-      startDate.setHours(0, 0, 0, 0);
-      break;
-
-    case "custom":
-      if (historyFromDate) {
-        const from = new Date(
-          `${historyFromDate}T00:00:00`
-        );
-
-        if (itemDate < from) {
-          return false;
-        }
-      }
-
-      if (historyToDate) {
-        const to = new Date(
-          `${historyToDate}T23:59:59`
-        );
-
-        if (itemDate > to) {
-          return false;
-        }
-      }
-
-      return true;
-
-    case "all":
-    default:
-      return true;
+    if (itemDate > toDate) {
+      return false;
+    }
   }
 
-  return !startDate || itemDate >= startDate;
+  return true;
+}
+
+return true;
+
 };
       const filteredRooms = rooms.filter(r => r.gender === roomGender);
 const dashboardStudents = hostelStudents.filter(

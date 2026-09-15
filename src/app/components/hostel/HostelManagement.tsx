@@ -1533,54 +1533,72 @@ const matchesHistoryFilters = (item: any) => {
 
 if (historyCollege !== "All") {
 
+  const normalizeCollege = (value: any) => {
+    return String(value ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/&/g, "and")
+      .replace(/[^a-z0-9]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  };
+
   const selectedCollege =
-    historyCollege
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
+    normalizeCollege(historyCollege);
 
-  const recordCollege =
-    String(
-      item.collegeName ??
-      item.CollegeName ??
-      item.college ??
-      item.College ??
-      ""
-    )
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, " ");
+  // ---------------------------------
+  // 1. Try actual college field
+  // ---------------------------------
 
-  const studentId =
-    String(
-      item.studentId ??
-      item.StudentId ??
-      item.registerNumber ??
-      item.RegisterNumber ??
-      ""
-    )
-      .trim()
-      .toUpperCase();
+  const recordCollege = normalizeCollege(
+    item.collegeName ??
+    item.CollegeName ??
+    item.college ??
+    item.College ??
+    item.studentCollege ??
+    item.StudentCollege ??
+    item.college?.name ??
+    item.College?.name ??
+    ""
+  );
 
-  // =========================
-  // COLLEGE ID PREFIX
-  // =========================
+  // ---------------------------------
+  // 2. Try Student ID / Register No
+  // ---------------------------------
+
+  const studentId = String(
+    item.studentId ??
+    item.StudentId ??
+    item.registerNumber ??
+    item.RegisterNumber ??
+    item.student?.studentId ??
+    item.student?.StudentId ??
+    ""
+  )
+    .trim()
+    .toUpperCase();
 
   let idCollege = "";
 
   if (studentId.startsWith("MDC")) {
-    idCollege = "madha dental college & hospital";
+    idCollege = normalizeCollege(
+      "Madha Dental College & Hospital"
+    );
   }
   else if (studentId.startsWith("MCN")) {
-    idCollege = "madha college of nursing";
+    idCollege = normalizeCollege(
+      "Madha College of Nursing"
+    );
   }
   else if (studentId.startsWith("MCP")) {
-    idCollege = "madha college of physiotherapy";
+    idCollege = normalizeCollege(
+      "Madha College of Physiotherapy"
+    );
   }
 
-  // =========================
-  // MATCH COLLEGE NAME OR ID
-  // =========================
+  // ---------------------------------
+  // 3. Match
+  // ---------------------------------
 
   const collegeMatch =
     recordCollege === selectedCollege ||

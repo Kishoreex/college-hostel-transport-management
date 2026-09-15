@@ -1092,10 +1092,15 @@ const [outpassHistory, setOutpassHistory] =
           );
         }
       };
-      const loadApplicationHistory = async () => {
+const loadApplicationHistory = async () => {
     try {
       const response = await fetch(
-        `${API_URL}/StudentRegistrations/history`
+        `${API_URL}/StudentRegistrations/history`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
       );
 
       const data = await response.json();
@@ -1105,11 +1110,15 @@ const [outpassHistory, setOutpassHistory] =
       console.error(error);
     }
   };
-
-  const loadVacatingHistory = async () => {
+const loadVacatingHistory = async () => {
     try {
       const response = await fetch(
-        `${API_URL}/Vacating/history`
+        `${API_URL}/Vacating/history`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          },
+        }
       );
 
       const data = await response.json();
@@ -1364,12 +1373,18 @@ const loadApplications = async () => {
             user.college || ""
           )}`;
 
+    const authHeader = {
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+    };
+
     const appResponse = await fetch(
-      `${API_URL}/StudentRegistrations/history${collegeParam}`
+      `${API_URL}/StudentRegistrations/history${collegeParam}`,
+      { headers: authHeader }
     );
 
     const vacResponse = await fetch(
-      `${API_URL}/Vacating/history${collegeParam}`
+      `${API_URL}/Vacating/history${collegeParam}`,
+      { headers: authHeader }
     );
 
     const appData =
@@ -1377,22 +1392,6 @@ const loadApplications = async () => {
 
     const vacData =
       await vacResponse.json();
-
-    console.log("========== HISTORY ==========");
-    console.log("COLLEGE:", user.college);
-    console.log("IS MANAGEMENT:", isManagement);
-    console.log("APPLICATION HISTORY:", appData);
-    console.log("VACATING HISTORY:", vacData);
-
-    setApplicationHistory(appData);
-    setVacatingHistory(vacData);
-  } catch (error) {
-    console.error(
-      "FAILED TO LOAD HISTORY:",
-      error
-    );
-  }
-};
      const filteredVacatingRequests =
   vacatingRequests.filter(req => {
 
@@ -1547,7 +1546,15 @@ const displayStudents =
         );
       })
     : dashboardStudents;
+    setApplicationHistory(appData);
+    setVacatingHistory(vacData);
 
+  } catch (error) {
+    console.error("FAILED TO LOAD HISTORY:", error);
+    setApplicationHistory([]);
+    setVacatingHistory([]);
+  }
+};
 
     const confirmReject = async () => {
   if (rejectSheet.type === "leave") {
@@ -4033,11 +4040,14 @@ return applicationGender==="boys"
                         {app.status?.toLowerCase() === 'pending' && (
                           <div className="flex gap-2">
                             <button
-                            onClick={async () => {
+           onClick={async () => {
         await fetch(
           `${API_URL}/StudentRegistrations/approve/${app.id}`,
           {
-            method: "POST"
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
           }
         );
 
@@ -4048,11 +4058,14 @@ return applicationGender==="boys"
                               <CheckCircle2 size={15} /><span>Accept</span>
                             </button>
                             <button 
-                            onClick={async () => {
+           onClick={async () => {
         await fetch(
           `${API_URL}/StudentRegistrations/reject/${app.id}`,
           {
-            method: "POST"
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
           }
         );
 

@@ -470,6 +470,19 @@ const downloadReport = async () => {
       'applications' |
       'vacating'
     >('outpass');
+    const [historySearch, setHistorySearch] = useState("");
+
+const [historyCollege, setHistoryCollege] =
+  useState("All");
+
+const [historyPeriod, setHistoryPeriod] =
+  useState("all");
+
+const [historyFromDate, setHistoryFromDate] =
+  useState("");
+
+const [historyToDate, setHistoryToDate] =
+  useState("");
 const [searchQuery, setSearchQuery] = useState('');
 const [outpassSearch, setOutpassSearch] = useState('');
 const [leaveSearch, setLeaveSearch] = useState('');
@@ -1416,6 +1429,185 @@ const filteredVacatingRequests =
       req.status?.toLowerCase() === "pending"
     );
   });
+
+  const historyColleges = [
+  "All",
+  "Madha Dental College & Hospital",
+  "Madha College of Nursing",
+  "Madha College of Physiotherapy"
+];
+
+const getHistoryDate = (item: any) => {
+  return (
+    item.createdAt ??
+    item.CreatedAt ??
+    item.requestDate ??
+    item.RequestDate ??
+    item.approvedDate ??
+    item.ApprovedDate ??
+    item.rejectedDate ??
+    item.RejectedDate ??
+    item.fromDate ??
+    item.FromDate ??
+    item.validFrom ??
+    item.ValidFrom ??
+    null
+  );
+};
+
+const matchesHistoryFilters = (item: any) => {
+
+  // =========================
+  // SEARCH
+  // =========================
+
+  const search =
+    historySearch.trim().toLowerCase();
+
+  const searchText = [
+    item.studentName,
+    item.StudentName,
+    item.studentId,
+    item.StudentId,
+    item.registerNumber,
+    item.RegisterNumber,
+    item.phone,
+    item.Phone,
+    item.reason,
+    item.Reason,
+    item.collegeName,
+    item.CollegeName,
+    item.department,
+    item.Department,
+    item.destination,
+    item.Destination
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  if (
+    search &&
+    !searchText.includes(search)
+  ) {
+    return false;
+  }
+
+
+  // =========================
+  // COLLEGE
+  // =========================
+
+  const college =
+    item.collegeName ??
+    item.CollegeName ??
+    "";
+
+  if (
+    historyCollege !== "All" &&
+    college !== historyCollege
+  ) {
+    return false;
+  }
+
+
+  // =========================
+  // DATE
+  // =========================
+
+  const rawDate = getHistoryDate(item);
+
+  if (!rawDate) {
+    return historyPeriod === "all";
+  }
+
+  const itemDate = new Date(rawDate);
+
+  if (isNaN(itemDate.getTime())) {
+    return historyPeriod === "all";
+  }
+
+  const now = new Date();
+
+  let startDate: Date | null = null;
+
+  switch (historyPeriod) {
+
+    case "today":
+      startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
+      break;
+
+    case "7days":
+      startDate = new Date();
+      startDate.setDate(
+        startDate.getDate() - 7
+      );
+      startDate.setHours(0, 0, 0, 0);
+      break;
+
+    case "30days":
+      startDate = new Date();
+      startDate.setDate(
+        startDate.getDate() - 30
+      );
+      startDate.setHours(0, 0, 0, 0);
+      break;
+
+    case "3months":
+      startDate = new Date();
+      startDate.setMonth(
+        startDate.getMonth() - 3
+      );
+      startDate.setHours(0, 0, 0, 0);
+      break;
+
+    case "6months":
+      startDate = new Date();
+      startDate.setMonth(
+        startDate.getMonth() - 6
+      );
+      startDate.setHours(0, 0, 0, 0);
+      break;
+
+    case "1year":
+      startDate = new Date();
+      startDate.setFullYear(
+        startDate.getFullYear() - 1
+      );
+      startDate.setHours(0, 0, 0, 0);
+      break;
+
+    case "custom":
+      if (historyFromDate) {
+        const from = new Date(
+          `${historyFromDate}T00:00:00`
+        );
+
+        if (itemDate < from) {
+          return false;
+        }
+      }
+
+      if (historyToDate) {
+        const to = new Date(
+          `${historyToDate}T23:59:59`
+        );
+
+        if (itemDate > to) {
+          return false;
+        }
+      }
+
+      return true;
+
+    case "all":
+    default:
+      return true;
+  }
+
+  return !startDate || itemDate >= startDate;
+};
       const filteredRooms = rooms.filter(r => r.gender === roomGender);
 const dashboardStudents = hostelStudents.filter(
   (student: any) => {
@@ -2653,6 +2845,170 @@ if (!canManageHostel) {
                 </div>
                 <CardContent className="p-4">
                   <div className="space-y-3">
+                  {/* =========================
+    HISTORY FILTERS
+========================= */}
+
+<div className="space-y-3">
+
+  {/* Search */}
+  <div className="relative">
+
+    <Search
+      size={18}
+      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+    />
+
+    <input
+      type="text"
+      placeholder="Search name, ID, register number, phone..."
+      value={historySearch}
+      onChange={(e) =>
+        setHistorySearch(e.target.value)
+      }
+      className="w-full bg-gray-100 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200 transition-all"
+    />
+
+    {historySearch && (
+      <button
+        onClick={() => setHistorySearch("")}
+        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+      >
+        <X size={16} />
+      </button>
+    )}
+
+  </div>
+
+
+  {/* College */}
+  <div>
+
+    <label className="block text-sm font-semibold text-gray-700 mb-2">
+      🏫 Select College
+    </label>
+
+    <select
+      value={historyCollege}
+      onChange={(e) =>
+        setHistoryCollege(e.target.value)
+      }
+      className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200"
+    >
+
+      {historyColleges.map(college => (
+        <option
+          key={college}
+          value={college}
+        >
+          {college === "All"
+            ? "All Colleges"
+            : college}
+        </option>
+      ))}
+
+    </select>
+
+  </div>
+
+
+  {/* Time Period */}
+  <div>
+
+    <label className="block text-sm font-semibold text-gray-700 mb-2">
+      📅 Time Period
+    </label>
+
+    <select
+      value={historyPeriod}
+      onChange={(e) =>
+        setHistoryPeriod(e.target.value)
+      }
+      className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200"
+    >
+
+      <option value="all">
+        All Time
+      </option>
+
+      <option value="today">
+        Today
+      </option>
+
+      <option value="7days">
+        Last 7 Days
+      </option>
+
+      <option value="30days">
+        Last 30 Days
+      </option>
+
+      <option value="3months">
+        Last 3 Months
+      </option>
+
+      <option value="6months">
+        Last 6 Months
+      </option>
+
+      <option value="1year">
+        Last 1 Year
+      </option>
+
+      <option value="custom">
+        Custom Range
+      </option>
+
+    </select>
+
+  </div>
+
+
+  {/* Custom Range */}
+
+  {historyPeriod === "custom" && (
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+      <div>
+
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          From Date
+        </label>
+
+        <input
+          type="date"
+          value={historyFromDate}
+          onChange={(e) =>
+            setHistoryFromDate(e.target.value)
+          }
+          className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200"
+        />
+
+      </div>
+
+      <div>
+
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          To Date
+        </label>
+
+        <input
+          type="date"
+          value={historyToDate}
+          onChange={(e) =>
+            setHistoryToDate(e.target.value)
+          }
+          className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200"
+        />
+
+      </div>
+
+    </div>
+
+  )}
+
+</div>
                     {/* Gender toggle */}
                 <div className="flex bg-gray-100 rounded-2xl p-1">
   {(
@@ -2687,7 +3043,7 @@ if (!canManageHostel) {
 
                     {historyType === 'outpass' && (
                       <>
-        {outpassHistory
+{outpassHistory
 .filter(h => {
   const gender = h.gender?.toLowerCase();
   const status = h.status?.toLowerCase();
@@ -2705,6 +3061,10 @@ if (!canManageHostel) {
     status === "not accepted by hostel incharge";
 
   // Management can see both boys and girls.
+
+  if (!matchesHistoryFilters(h)) {
+    return false;
+  }
   // College staff are restricted by their selected hostel gender.
   return (
     (isManagement || matchesGender) &&
@@ -2995,12 +3355,20 @@ isManagement && expiredWithoutExit && (
                     )}
                 {historyType === "applications" && (
     <>
-      {applicationHistory
-        .filter((item: any) =>
-          historyGender === "boys"
-            ? item.gender?.toLowerCase() === "male"
-            : item.gender?.toLowerCase() === "female"
-        )
+    {applicationHistory
+  .filter((item: any) => {
+
+    if (
+      !matchesHistoryFilters(item)
+    ) {
+      return false;
+    }
+
+    return historyGender === "boys"
+      ? item.gender?.toLowerCase() === "male"
+      : item.gender?.toLowerCase() === "female";
+
+  })
         .map((item: any) => (
           <div
             key={item.id}
@@ -3102,12 +3470,20 @@ isManagement && expiredWithoutExit && (
   )}
   {historyType === "vacating" && (
     <>
-      {vacatingHistory
-        .filter((item: any) =>
-          historyGender === "boys"
-            ? item.gender?.toLowerCase() === "male"
-            : item.gender?.toLowerCase() === "female"
-        )
+ {vacatingHistory
+  .filter((item: any) => {
+
+    if (
+      !matchesHistoryFilters(item)
+    ) {
+      return false;
+    }
+
+    return historyGender === "boys"
+      ? item.gender?.toLowerCase() === "male"
+      : item.gender?.toLowerCase() === "female";
+
+  })
         .map((item: any) => (
           <div
             key={item.id}
@@ -3217,14 +3593,22 @@ isManagement && expiredWithoutExit && (
   )}
         {historyType === 'leave' && (
   <>
-    {leaveHistory
-      .filter(h =>
-        isManagement
-          ? true
-          : historyGender === "boys"
-            ? h.gender?.toLowerCase() === "male"
-            : h.gender?.toLowerCase() === "female"
-      )
+{leaveHistory
+  .filter(h => {
+
+    if (
+      !matchesHistoryFilters(h)
+    ) {
+      return false;
+    }
+
+    return isManagement
+      ? true
+      : historyGender === "boys"
+        ? h.gender?.toLowerCase() === "male"
+        : h.gender?.toLowerCase() === "female";
+
+  })
       .map(h => {
                          const now = new Date();
 

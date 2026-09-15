@@ -23,7 +23,7 @@
 
         public Role? Role { get; set; }
 
-
+public string? StaffRole { get; set; }
         // =========================
         // COLLEGE
         // =========================

@@ -30,28 +30,27 @@ private async Task<string?> GetAllowedCollegeAsync()
     var role =
         User.FindFirst(ClaimTypes.Role)?.Value
         ?? User.FindFirst("role")?.Value;
-
-    var userId =
-        User.FindFirst(ClaimTypes.Name)?.Value
-        ?? User.FindFirst("userId")?.Value
-        ?? User.FindFirst("UserId")?.Value;
+var userId =
+    User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+    ?? User.FindFirst("sub")?.Value
+    ?? User.FindFirst("userId")?.Value
+    ?? User.FindFirst("UserId")?.Value;
 
     if (string.IsNullOrWhiteSpace(role) ||
         string.IsNullOrWhiteSpace(userId))
     {
         return "__NO_ACCESS__";
-    }
+    }       
 
     role = role.Trim();
     userId = userId.Trim();
 
     // Management = ALL COLLEGES
-    if (role.Equals(
-        "Management",
-        StringComparison.OrdinalIgnoreCase))
-    {
-        return null;
-    }
+if (role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
+    role.Equals("admin", StringComparison.OrdinalIgnoreCase))
+{
+    return null;
+}
 
     // Find logged-in staff user
     var staffUser = await _context.Users
@@ -204,11 +203,14 @@ public async Task<IActionResult> GetAll()
     return Ok(data);
 }
 [HttpGet("approved")]
-public async Task<IActionResult> GetApprovedStudents(
-    [FromQuery] string? college)
+public async Task<IActionResult> GetApprovedStudents([FromQuery] string? college)
 {
     var allowedCollege = await GetAllowedCollegeAsync();
     var allowedYear = await GetAllowedYearAsync();
+
+    // TEMP MARKER — prove this build is live
+    Console.WriteLine("[MARKER-V2] role=" + (User.FindFirst(ClaimTypes.Role)?.Value ?? "NULL")
+        + " allowedCollege=" + (allowedCollege ?? "NULL"));
 
     if (allowedCollege == "__NO_ACCESS__")
     {

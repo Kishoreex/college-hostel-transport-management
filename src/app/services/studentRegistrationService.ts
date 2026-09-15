@@ -1,13 +1,14 @@
 import API_URL from "../../api/api";
-
-export const getStudentRegistrations = async (
-  college?: string | null
-) => {
+export const getStudentRegistrations = async (college?: string | null) => {
   const url = college
     ? `${API_URL}/StudentRegistrations/approved?college=${encodeURIComponent(college)}`
     : `${API_URL}/StudentRegistrations/approved`;
 
-  const response = await fetch(url);
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+    },
+  });
 
   if (!response.ok) {
     throw new Error("Failed to load students");
@@ -16,20 +17,20 @@ export const getStudentRegistrations = async (
   return await response.json();
 };
 
-export const getAllStudentRegistrations =
-  async (college?: string | null) => {
+export const getAllStudentRegistrations = async (college?: string | null) => {
+  const url = college
+    ? `${API_URL}/StudentRegistrations?college=${encodeURIComponent(college)}`
+    : `${API_URL}/StudentRegistrations`;
 
-    const url = college
-      ? `${API_URL}/StudentRegistrations?college=${encodeURIComponent(college)}`
-      : `${API_URL}/StudentRegistrations`;
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+    },
+  });
 
-    const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error("Failed to load registrations");
+  }
 
-    if (!response.ok) {
-      throw new Error(
-        "Failed to load registrations"
-      );
-    }
-
-    return await response.json();
-  };
+  return await response.json();
+};

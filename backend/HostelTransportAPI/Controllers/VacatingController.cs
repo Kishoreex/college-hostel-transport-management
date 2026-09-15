@@ -27,10 +27,11 @@ private async Task<string?> GetAllowedCollegeAsync()
         User.FindFirst(ClaimTypes.Role)?.Value
         ?? User.FindFirst("role")?.Value;
 
-    var userId =
-        User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-        ?? User.FindFirst("userId")?.Value
-        ?? User.FindFirst("UserId")?.Value;
+var userId =
+    User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+    ?? User.FindFirst("sub")?.Value
+    ?? User.FindFirst("userId")?.Value
+    ?? User.FindFirst("UserId")?.Value;
 
     if (string.IsNullOrWhiteSpace(role) ||
         string.IsNullOrWhiteSpace(userId))
@@ -41,13 +42,11 @@ private async Task<string?> GetAllowedCollegeAsync()
     role = role.Trim();
 
     // Management = ALL COLLEGES
-    if (role.Equals(
-        "Management",
-        StringComparison.OrdinalIgnoreCase))
-    {
-        return null;
-    }
-
+ if (role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
+    role.Equals("admin", StringComparison.OrdinalIgnoreCase))
+{
+    return null;
+}
     var staffUser = await _context.Users
         .FirstOrDefaultAsync(u =>
             u.UserId == userId);

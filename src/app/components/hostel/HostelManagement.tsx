@@ -1387,12 +1387,21 @@ const loadApplications = async () => {
       { headers: authHeader }
     );
 
-    const appData =
-      await appResponse.json();
+   const appData =
+  await appResponse.json();
 
-    const vacData =
-      await vacResponse.json();
-     const filteredVacatingRequests =
+const vacData =
+  await vacResponse.json();
+
+setApplicationHistory(appData);
+setVacatingHistory(vacData);
+
+  } catch (error) {
+    console.error("FAILED TO LOAD HISTORY:", error);
+  }
+};
+
+const filteredVacatingRequests =
   vacatingRequests.filter(req => {
 
     const gender = req.gender?.toLowerCase();

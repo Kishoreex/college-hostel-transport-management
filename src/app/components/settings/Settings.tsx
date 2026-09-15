@@ -627,7 +627,7 @@ const openEdit = (u: SystemUser) => {
   }
 if (
   selectedRole.name === "Class Incharge" &&
-  !newAssignedYear
+  !editAssignedYear
 ) {
   alert("Please select an Assigned Year for Class Incharge.");
   return;

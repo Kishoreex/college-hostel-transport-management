@@ -168,7 +168,8 @@ const adminUser = {
 
   college:
     result.college ?? result.College,
-
+assignedYear:
+  result.assignedYear ?? result.AssignedYear,
   isSystemAdmin:
     result.isSystemAdmin ?? result.IsSystemAdmin,
 

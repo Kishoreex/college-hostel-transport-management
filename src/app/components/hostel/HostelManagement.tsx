@@ -470,8 +470,11 @@ const downloadReport = async () => {
       'applications' |
       'vacating'
     >('outpass');
-      const [searchQuery, setSearchQuery] = useState('');
-      const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(null);
+const [searchQuery, setSearchQuery] = useState('');
+const [outpassSearch, setOutpassSearch] = useState('');
+const [leaveSearch, setLeaveSearch] = useState('');
+
+const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(null);
       const closeStudentSheet = () => {
     setStudentSheetOpen(false);
   };
@@ -1120,19 +1123,91 @@ const [outpassHistory, setOutpassHistory] =
   };
       const [applications, setApplications] = useState([]);
       
-      const pendingOutpasses = outpasses.filter(o => {
-      const gender = o.gender?.toLowerCase();
+  const pendingOutpasses = outpasses.filter(o => {
+  const gender = o.gender?.toLowerCase();
 
-      const matchesGender =
-        outpassGender === "boys"
-          ? gender === "male"
-          : gender === "female";
+  const matchesGender =
+    outpassGender === "boys"
+      ? gender === "male"
+      : gender === "female";
 
-      return (
-        matchesGender &&
-        o.status?.toLowerCase() === "pending"
-      );
-    });
+  const search = outpassSearch.trim().toLowerCase();
+
+  const matchesSearch =
+    !search ||
+    String(
+      o.studentName ??
+      o.StudentName ??
+      ""
+    ).toLowerCase().includes(search) ||
+
+    String(
+      o.studentId ??
+      o.StudentId ??
+      ""
+    ).toLowerCase().includes(search) ||
+
+    String(
+      o.registerNumber ??
+      o.RegisterNumber ??
+      ""
+    ).toLowerCase().includes(search) ||
+
+    String(
+      o.phone ??
+      o.Phone ??
+      ""
+    ).toLowerCase().includes(search);
+
+  return (
+    matchesGender &&
+    o.status?.toLowerCase() === "pending" &&
+    matchesSearch
+  );
+});
+
+const pendingLeaves = leaveRequests.filter(o => {
+  const gender = o.gender?.toLowerCase();
+
+  const matchesGender =
+    outpassGender === "boys"
+      ? gender === "male"
+      : gender === "female";
+
+  const search = leaveSearch.trim().toLowerCase();
+
+  const matchesSearch =
+    !search ||
+    String(
+      o.studentName ??
+      o.StudentName ??
+      ""
+    ).toLowerCase().includes(search) ||
+
+    String(
+      o.studentId ??
+      o.StudentId ??
+      ""
+    ).toLowerCase().includes(search) ||
+
+    String(
+      o.registerNumber ??
+      o.RegisterNumber ??
+      ""
+    ).toLowerCase().includes(search) ||
+
+    String(
+      o.phone ??
+      o.Phone ??
+      ""
+    ).toLowerCase().includes(search);
+
+  return (
+    matchesGender &&
+    o.status?.toLowerCase() === "pending" &&
+    matchesSearch
+  );
+});
       useEffect(() => {
 
       loadRooms();
@@ -2209,6 +2284,30 @@ if (!canManageHostel) {
                 </div>
                 <CardContent className="p-4">
                   <div className="space-y-3">
+                  {/* Search Student */}
+<div className="relative">
+  <Search
+    size={18}
+    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+  />
+
+  <input
+    type="text"
+    placeholder="Search student name, ID or register number"
+    value={outpassSearch}
+    onChange={(e) => setOutpassSearch(e.target.value)}
+    className="w-full bg-gray-100 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:bg-orange-50 focus:ring-2 focus:ring-orange-200 transition-all"
+  />
+
+  {outpassSearch && (
+    <button
+      onClick={() => setOutpassSearch("")}
+      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    >
+      <X size={16} />
+    </button>
+  )}
+</div>
                     <div className="flex bg-gray-100 rounded-2xl p-1">
                       {allowedHostelGenders.map(g => (
                         <button key={g} onClick={() => setOutpassGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${outpassGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
@@ -2292,6 +2391,30 @@ if (!canManageHostel) {
                 </div>
                 <CardContent className="p-4">
                   <div className="space-y-3">
+                  {/* Search Student */}
+<div className="relative">
+  <Search
+    size={18}
+    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+  />
+
+  <input
+    type="text"
+    placeholder="Search student name, ID or register number"
+    value={leaveSearch}
+    onChange={(e) => setLeaveSearch(e.target.value)}
+    className="w-full bg-gray-100 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:bg-teal-50 focus:ring-2 focus:ring-teal-200 transition-all"
+  />
+
+  {leaveSearch && (
+    <button
+      onClick={() => setLeaveSearch("")}
+      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    >
+      <X size={16} />
+    </button>
+  )}
+</div>
                     <div className="flex bg-gray-100 rounded-2xl p-1">
                   {allowedHostelGenders.map(g => (
                         <button key={g} onClick={() => setOutpassGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${outpassGender === g ? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>
@@ -2417,6 +2540,30 @@ if (!canManageHostel) {
                 </div>
                 <CardContent className="p-4">
                   <div className="space-y-3">
+                  {/* Search Student */}
+<div className="relative">
+  <Search
+    size={18}
+    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+  />
+
+  <input
+    type="text"
+    placeholder="Search student name, ID or register number"
+    value={leaveSearch}
+    onChange={(e) => setLeaveSearch(e.target.value)}
+    className="w-full bg-gray-100 rounded-2xl pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-400 outline-none focus:bg-teal-50 focus:ring-2 focus:ring-teal-200 transition-all"
+  />
+
+  {leaveSearch && (
+    <button
+      onClick={() => setLeaveSearch("")}
+      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    >
+      <X size={16} />
+    </button>
+  )}
+</div>
                     <div className="flex bg-gray-100 rounded-2xl p-1">
                      {allowedHostelGenders.map(g => (
                         <button key={g} onClick={() => setVacatingGender(g)} className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${ vacatingGender === g? (g === 'boys' ? 'bg-blue-600 text-white shadow' : 'bg-pink-500 text-white shadow') : 'text-gray-500'}`}>

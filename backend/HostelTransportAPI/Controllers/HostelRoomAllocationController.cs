@@ -5,6 +5,8 @@ using HostelTransportAPI.Models;
 using HostelTransportAPI.DTOs;
 using Microsoft.AspNetCore.SignalR;
 using HostelTransportAPI.Hubs;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
@@ -21,7 +23,52 @@ public HostelRoomAllocationController(
     _context = context;
     _hub = hub;
 }
+private async Task<(string? College, string? AssignedYear)> GetStaffScopeAsync()
+{
+    var role =
+        User.FindFirst(ClaimTypes.Role)?.Value
+        ?? User.FindFirst("role")?.Value;
 
+    var userId =
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    if (string.IsNullOrWhiteSpace(role) ||
+        string.IsNullOrWhiteSpace(userId))
+    {
+        return (null, null);
+    }
+
+    var staffUser = await _context.Users
+        .FirstOrDefaultAsync(x =>
+            x.UserId == userId);
+
+    if (staffUser == null)
+        return (null, null);
+
+    string? college = null;
+
+    if (staffUser.CollegeId.HasValue &&
+        staffUser.CollegeId.Value != 0)
+    {
+        college = await _context.Colleges
+            .Where(x => x.Id == staffUser.CollegeId.Value)
+            .Select(x => x.Name)
+            .FirstOrDefaultAsync();
+    }
+
+    string? assignedYear = null;
+
+    if (role.Equals(
+        "Class Incharge",
+        StringComparison.OrdinalIgnoreCase))
+    {
+        assignedYear = staffUser.AssignedYear;
+    }
+
+    return (college, assignedYear);
+}
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -115,11 +162,16 @@ return Ok(allocation);
     }    
 
     
- [HttpGet("available-students/{gender}")]
+[HttpGet("available-students/{gender}")]
 public async Task<IActionResult> GetAvailableStudents(
     string gender,
     [FromQuery] string? college)
 {
+    var scope = await GetStaffScopeAsync();
+
+    var allowedCollege = scope.College;
+    var assignedYear = scope.AssignedYear;
+
     var allocatedStudentIds =
         await _context.HostelRoomAllocations
             .Where(x => x.Status == "Allocated")
@@ -134,12 +186,30 @@ public async Task<IActionResult> GetAvailableStudents(
             x.StudentId != null &&
             !allocatedStudentIds.Contains(x.StudentId));
 
-    // College filter
-    // Management sends no college -> sees all colleges
-    if (!string.IsNullOrWhiteSpace(college))
+    // ---------------------------------------------------------
+    // COLLEGE SECURITY
+    // ---------------------------------------------------------
+
+    if (!string.IsNullOrWhiteSpace(allowedCollege))
     {
         query = query.Where(x =>
+            x.CollegeName == allowedCollege);
+    }
+    else if (!string.IsNullOrWhiteSpace(college))
+    {
+        // Management can filter by selected college
+        query = query.Where(x =>
             x.CollegeName == college);
+    }
+
+    // ---------------------------------------------------------
+    // CLASS INCHARGE YEAR SECURITY
+    // ---------------------------------------------------------
+
+    if (!string.IsNullOrWhiteSpace(assignedYear))
+    {
+        query = query.Where(x =>
+            x.Year == assignedYear);
     }
 
     var students = await query
@@ -160,7 +230,6 @@ public async Task<IActionResult> GetAvailableStudents(
 
     return Ok(students);
 }
-
 [HttpDelete("student/{studentId}")]
 public async Task<IActionResult> RemoveStudent(string studentId)
 {

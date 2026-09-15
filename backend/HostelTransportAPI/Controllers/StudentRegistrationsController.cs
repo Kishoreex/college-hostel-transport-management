@@ -7,6 +7,7 @@ using HostelTransportAPI.Models;
 using Microsoft.AspNetCore.SignalR;
 using HostelTransportAPI.Hubs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HostelTransportAPI.Controllers;
 
@@ -31,9 +32,80 @@ private async Task<string?> GetAllowedCollegeAsync()
         ?? User.FindFirst("role")?.Value;
 
     var userId =
-        User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+        User.FindFirst(ClaimTypes.Name)?.Value
         ?? User.FindFirst("userId")?.Value
         ?? User.FindFirst("UserId")?.Value;
+
+    if (string.IsNullOrWhiteSpace(role) ||
+        string.IsNullOrWhiteSpace(userId))
+    {
+        return "__NO_ACCESS__";
+    }
+
+    role = role.Trim();
+    userId = userId.Trim();
+
+    // Management = ALL COLLEGES
+    if (role.Equals(
+        "Management",
+        StringComparison.OrdinalIgnoreCase))
+    {
+        return null;
+    }
+
+    // Find logged-in staff user
+    var staffUser = await _context.Users
+        .FirstOrDefaultAsync(x =>
+            x.UserId == userId);
+
+    if (staffUser == null)
+    {
+        return "__NO_ACCESS__";
+    }
+
+    // Class Incharge / Hostel Incharge /
+    // Admin Office / Principal
+    // are restricted to their assigned college.
+    if (
+        role.Equals("Class Incharge",
+            StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Hostel Incharge",
+            StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Admin Office",
+            StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Principal",
+            StringComparison.OrdinalIgnoreCase)
+    )
+    {
+        if (!staffUser.CollegeId.HasValue ||
+            staffUser.CollegeId.Value == 0)
+        {
+            return "__NO_ACCESS__";
+        }
+
+        var college = await _context.Colleges
+            .Where(c => c.Id == staffUser.CollegeId.Value)
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync();
+
+        if (string.IsNullOrWhiteSpace(college))
+        {
+            return "__NO_ACCESS__";
+        }
+
+        return college;
+    }
+
+    return "__NO_ACCESS__";
+}private async Task<string?> GetAllowedYearAsync()
+{
+    var role =
+        User.FindFirst(ClaimTypes.Role)?.Value
+        ?? User.FindFirst("role")?.Value;
+var userId =
+    User.FindFirst(ClaimTypes.Name)?.Value
+    ?? User.FindFirst("userId")?.Value
+    ?? User.FindFirst("UserId")?.Value;
 
     if (string.IsNullOrWhiteSpace(role) ||
         string.IsNullOrWhiteSpace(userId))
@@ -43,42 +115,23 @@ private async Task<string?> GetAllowedCollegeAsync()
 
     role = role.Trim();
 
-    // Management = ALL COLLEGES
-    if (role.Equals("Management", StringComparison.OrdinalIgnoreCase))
+    // Only Class Incharge has year restriction
+    if (!role.Equals(
+        "Class Incharge",
+        StringComparison.OrdinalIgnoreCase))
     {
         return null;
     }
 
-    // Find logged-in staff user
     var staffUser = await _context.Users
-        .Include(u => u.Role)
-        .FirstOrDefaultAsync(u =>
-            u.UserId == userId);
+        .FirstOrDefaultAsync(x =>
+            x.UserId == userId);
 
     if (staffUser == null)
         return null;
 
-    // Admin Office with CollegeId = 0 = ALL COLLEGES
-    if (role.Equals("Admin Office", StringComparison.OrdinalIgnoreCase))
-    {
-        if (staffUser.CollegeId == null ||
-            staffUser.CollegeId == 0)
-        {
-            return null;
-        }
-
-        var college = await _context.Colleges
-            .Where(c => c.Id == staffUser.CollegeId)
-            .Select(c => c.Name)
-            .FirstOrDefaultAsync();
-
-        return college;
-    }
-
-    // Everyone else has no access to admissions
-    return "__NO_ACCESS__";
+    return staffUser.AssignedYear;
 }
-
     [HttpPost]
     public async Task<IActionResult> Create(
         CreateStudentRegistrationDto dto)
@@ -116,11 +169,11 @@ await _hub.Clients.All.SendAsync(
 
 return Ok(registration);
     }
-
 [HttpGet]
 public async Task<IActionResult> GetAll()
 {
     var allowedCollege = await GetAllowedCollegeAsync();
+    var allowedYear = await GetAllowedYearAsync();
 
     if (allowedCollege == "__NO_ACCESS__")
     {
@@ -130,11 +183,18 @@ public async Task<IActionResult> GetAll()
     var query = _context.StudentRegistrations
         .Where(x => x.Status == "Pending");
 
-    // null = ALL COLLEGES
+    // College restriction
     if (!string.IsNullOrWhiteSpace(allowedCollege))
     {
         query = query.Where(x =>
             x.CollegeName == allowedCollege);
+    }
+
+    // Class Incharge year restriction
+    if (!string.IsNullOrWhiteSpace(allowedYear))
+    {
+        query = query.Where(x =>
+            x.Year == allowedYear);
     }
 
     var data = await query
@@ -147,17 +207,50 @@ public async Task<IActionResult> GetAll()
 public async Task<IActionResult> GetApprovedStudents(
     [FromQuery] string? college)
 {
+    var allowedCollege = await GetAllowedCollegeAsync();
+    var allowedYear = await GetAllowedYearAsync();
+
+    if (allowedCollege == "__NO_ACCESS__")
+    {
+        return Forbid();
+    }
+
     var query = _context.StudentRegistrations
         .Where(x =>
             x.IsApproved &&
             x.Status == "Active");
 
-    // If college is provided, show only that college.
-    // If college is empty/null, show all colleges.
-    if (!string.IsNullOrWhiteSpace(college))
+    // ---------------------------------------------------------
+    // COLLEGE SECURITY
+    // ---------------------------------------------------------
+    // Management = all colleges
+    // Other allowed staff = their college only
+    // ---------------------------------------------------------
+
+    if (!string.IsNullOrWhiteSpace(allowedCollege))
     {
         query = query.Where(x =>
+            x.CollegeName == allowedCollege);
+    }
+    else if (!string.IsNullOrWhiteSpace(college))
+    {
+        // Management can optionally filter by college
+        query = query.Where(x =>
             x.CollegeName == college);
+    }
+
+    // ---------------------------------------------------------
+    // CLASS INCHARGE YEAR SECURITY
+    // ---------------------------------------------------------
+    // Example:
+    // Class Incharge -> 1st Year
+    // Only 1st Year students are returned.
+    // ---------------------------------------------------------
+
+    if (!string.IsNullOrWhiteSpace(allowedYear))
+    {
+        query = query.Where(x =>
+            x.Year == allowedYear);
     }
 
     var data = await query
@@ -387,10 +480,13 @@ return Ok(new
     {
         Message = "Student Rejected Successfully"
     });
-}[HttpGet("history")]
+}
+
+[HttpGet("history")]
 public async Task<IActionResult> GetHistory()
 {
     var allowedCollege = await GetAllowedCollegeAsync();
+    var allowedYear = await GetAllowedYearAsync();
 
     if (allowedCollege == "__NO_ACCESS__")
     {
@@ -400,11 +496,18 @@ public async Task<IActionResult> GetHistory()
     var query = _context.StudentRegistrations
         .Where(x => x.Status != "Pending");
 
-    // null = ALL COLLEGES
+    // College restriction
     if (!string.IsNullOrWhiteSpace(allowedCollege))
     {
         query = query.Where(x =>
             x.CollegeName == allowedCollege);
+    }
+
+    // Class Incharge year restriction
+    if (!string.IsNullOrWhiteSpace(allowedYear))
+    {
+        query = query.Where(x =>
+            x.Year == allowedYear);
     }
 
     var history = await query

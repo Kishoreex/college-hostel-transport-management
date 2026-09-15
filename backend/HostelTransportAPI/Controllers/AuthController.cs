@@ -257,11 +257,15 @@ if (
                 user.Module,
 
                 user.StudentId,
-                // NEW COLLEGE INFORMATION
-                user.CollegeId,
+         // NEW COLLEGE INFORMATION
+user.CollegeId,
 
-                College = user.College?.Name,
+College = user.College?.Name,
 
+// CLASS INCHARGE ASSIGNED YEAR
+user.AssignedYear,
+
+// KEEPING OLD VALUES TEMPORARILY
                 // KEEPING OLD VALUES TEMPORARILY
                 // so existing frontend code does not break.
                IsSystemAdmin = user.Role?.Name == "System Admin",

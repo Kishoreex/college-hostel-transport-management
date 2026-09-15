@@ -1527,17 +1527,9 @@ const matchesHistoryFilters = (item: any) => {
     return false;
   }
 
-
-  // =========================
-  // COLLEGE
-  // =========================
-
-const college =
-  item.collegeName ??
-  item.CollegeName ??
-  item.college ??
-  item.College ??
-  "";
+// =========================
+// COLLEGE FILTER
+// =========================
 
 if (historyCollege !== "All") {
 
@@ -1548,16 +1540,56 @@ if (historyCollege !== "All") {
       .replace(/\s+/g, " ");
 
   const recordCollege =
-    String(college)
+    String(
+      item.collegeName ??
+      item.CollegeName ??
+      item.college ??
+      item.College ??
+      ""
+    )
       .trim()
       .toLowerCase()
       .replace(/\s+/g, " ");
 
-  if (recordCollege !== selectedCollege) {
+  const studentId =
+    String(
+      item.studentId ??
+      item.StudentId ??
+      item.registerNumber ??
+      item.RegisterNumber ??
+      ""
+    )
+      .trim()
+      .toUpperCase();
+
+  // =========================
+  // COLLEGE ID PREFIX
+  // =========================
+
+  let idCollege = "";
+
+  if (studentId.startsWith("MDC")) {
+    idCollege = "madha dental college & hospital";
+  }
+  else if (studentId.startsWith("MCN")) {
+    idCollege = "madha college of nursing";
+  }
+  else if (studentId.startsWith("MCP")) {
+    idCollege = "madha college of physiotherapy";
+  }
+
+  // =========================
+  // MATCH COLLEGE NAME OR ID
+  // =========================
+
+  const collegeMatch =
+    recordCollege === selectedCollege ||
+    idCollege === selectedCollege;
+
+  if (!collegeMatch) {
     return false;
   }
 }
-
 // =========================
 // DATE FILTER
 // =========================

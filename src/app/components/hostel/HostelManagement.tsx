@@ -1555,15 +1555,7 @@ const displayStudents =
         );
       })
     : dashboardStudents;
-    setApplicationHistory(appData);
-    setVacatingHistory(vacData);
 
-  } catch (error) {
-    console.error("FAILED TO LOAD HISTORY:", error);
-    setApplicationHistory([]);
-    setVacatingHistory([]);
-  }
-};
 
     const confirmReject = async () => {
   if (rejectSheet.type === "leave") {

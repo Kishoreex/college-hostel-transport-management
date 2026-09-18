@@ -132,9 +132,10 @@ var userId =
 
     return staffUser.AssignedYear;
 }
-    [HttpPost]
-    public async Task<IActionResult> Create(
-        CreateStudentRegistrationDto dto)
+[AllowAnonymous]
+[HttpPost]
+public async Task<IActionResult> Create(
+    CreateStudentRegistrationDto dto)
     {
         var registration = new StudentRegistration
 {

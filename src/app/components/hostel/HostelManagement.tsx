@@ -1003,20 +1003,25 @@ const loadLeaveHistory = async () => {
         );
       }
     };
-    const handleApproveLeave = async (
-  id: number
-) => {
+const handleApproveLeave = async (id: number) => {
   try {
-    await approveLeave(id);
+    console.log("APPROVING LEAVE ID:", id);
 
-    toast.success(
-      "Leave Approved"
-    );
+    const result = await approveLeave(id);
 
-    loadLeaveRequests();
-  } catch {
+    console.log("APPROVE LEAVE RESPONSE:", result);
+
+    toast.success("Leave Approved");
+
+    await loadLeaveRequests();
+
+  } catch (error) {
+    console.error("APPROVE LEAVE ERROR:", error);
+
     toast.error(
-      "Approval Failed"
+      error instanceof Error
+        ? error.message
+        : "Approval Failed"
     );
   }
 };

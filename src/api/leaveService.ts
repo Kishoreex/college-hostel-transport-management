@@ -1,14 +1,5 @@
 import API_URL from "./api";
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem("authToken");
-
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {})
-  };
-};
-
 export async function createLeaveRequest(data:any) {
   const response = await fetch(
     `${API_URL}/LeaveRequests`,
@@ -44,59 +35,48 @@ export async function approveLeave(id: number) {
     `${API_URL}/LeaveRequests/approve/${id}`,
     {
       method: "POST",
-      headers: getAuthHeaders()
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+      },
     }
   );
 
+  const data = await response.json().catch(() => null);
+
   if (!response.ok) {
-    const text = await response.text();
+    console.error("APPROVE LEAVE FAILED:", response.status, data);
+
     throw new Error(
-      text || `Failed to approve leave (${response.status})`
+      typeof data === "string"
+        ? data
+        : data?.message || `Approval failed (${response.status})`
     );
   }
 
-  return await response.json();
+  return data;
 }
-
 export async function rejectLeave(
   id: number,
   rejectReason: string
 ) {
-  const response = await fetch(
+  await fetch(
     `${API_URL}/LeaveRequests/reject/${id}`,
     {
       method: "POST",
-      headers: getAuthHeaders(),
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         rejectReason
       })
     }
   );
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(
-      text || `Failed to reject leave (${response.status})`
-    );
-  }
-
-  return await response.json();
 }
 export async function cancelLeave(id: number) {
-  const response = await fetch(
+  await fetch(
     `${API_URL}/LeaveRequests/cancel/${id}`,
     {
-      method: "POST",
-      headers: getAuthHeaders()
+      method: "POST"
     }
   );
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(
-      text || `Failed to cancel leave (${response.status})`
-    );
-  }
-
-  return await response.json();
 }

@@ -508,12 +508,13 @@ const loadHostelStudents = async () => {
   try {
     console.log("========== LOADING DASHBOARD STUDENTS ==========");
 
+    // FIRST: Load students
     const data = await getStudentRegistrations(
       isManagement ? null : user.college
     );
 
     console.log("========== STUDENT API SUCCESS ==========");
-    console.log("STUDENT DATA:", data);
+    console.log("REGISTRATIONS:", data);
     console.log(
       "STUDENT COUNT:",
       Array.isArray(data) ? data.length : "NOT ARRAY"
@@ -525,22 +526,15 @@ const loadHostelStudents = async () => {
       return;
     }
 
-    const allocationsData = await getAllRoomAllocations();
-
-    console.log("ALLOCATIONS:", allocationsData);
-
+    // IMPORTANT:
+    // Show students immediately.
+    // Do NOT wait for room allocations.
     const students = data.map((student: any) => {
       const studentId =
         student.studentId ??
         student.StudentId ??
         student.id ??
         "";
-
-      const allocation = allocationsData.find(
-        (a: any) =>
-          String(a.studentId).trim() ===
-          String(studentId).trim()
-      );
 
       return {
         id: studentId,
@@ -605,18 +599,13 @@ const loadHostelStudents = async () => {
             ? "boys"
             : "girls",
 
-        roomNumber:
-          allocation?.roomNumber ?? "",
+        roomNumber: "",
 
         roommates: []
       };
     });
 
-    console.log(
-      "NORMALIZED STUDENTS:",
-      students
-    );
-
+    // SHOW STUDENTS NOW
     setHostelStudents(students);
 
     console.log(
@@ -624,12 +613,110 @@ const loadHostelStudents = async () => {
       students.length
     );
 
+    // SECOND: Load room allocations in background
+    try {
+      const allocationsData =
+        await getAllRoomAllocations();
+
+      console.log(
+        "ALLOCATIONS:",
+        allocationsData
+      );
+
+      const studentsWithRooms =
+        students.map((student: any) => {
+          const allocation =
+            allocationsData.find(
+              (a: any) =>
+                String(a.studentId).trim() ===
+                String(student.id).trim()
+            );
+
+          if (!allocation) {
+            return student;
+          }
+
+          const roommates =
+            allocationsData
+              .filter(
+                (a: any) =>
+                  String(a.roomNumber).trim() ===
+                    String(
+                      allocation.roomNumber
+                    ).trim() &&
+                  String(a.studentId).trim() !==
+                    String(student.id).trim()
+              )
+              .map((rm: any) => {
+                const rmRegistration =
+                  data.find(
+                    (r: any) =>
+                      String(
+                        r.studentId ??
+                        r.StudentId ??
+                        ""
+                      ).trim() ===
+                      String(
+                        rm.studentId
+                      ).trim()
+                  );
+
+                return {
+                  name:
+                    rm.studentName ??
+                    rm.StudentName ??
+                    rmRegistration?.studentName ??
+                    rmRegistration?.StudentName ??
+                    "",
+
+                  phone:
+                    rmRegistration?.phone ??
+                    rmRegistration?.Phone ??
+                    rm.phone ??
+                    "",
+
+                  year:
+                    rmRegistration?.year ??
+                    rmRegistration?.Year ??
+                    "",
+
+                  college:
+                    rmRegistration?.collegeName ??
+                    rmRegistration?.CollegeName ??
+                    ""
+                };
+              });
+
+          return {
+            ...student,
+            roomNumber:
+              allocation.roomNumber ?? "",
+            roommates
+          };
+        });
+
+      // Update room information after it arrives
+      setHostelStudents(studentsWithRooms);
+
+      console.log(
+        "STUDENTS + ROOMS UPDATED:",
+        studentsWithRooms.length
+      );
+
+    } catch (allocationError) {
+      console.error(
+        "ROOM ALLOCATION LOAD FAILED:",
+        allocationError
+      );
+
+      // Students remain visible even if allocations fail
+    }
+
   } catch (error) {
     console.error(
-      "========== FAILED TO LOAD STUDENTS =========="
+      "========== FAILED TO LOAD STUDENTS ==========",
+      error
     );
-
-    console.error(error);
 
     setHostelStudents([]);
   }

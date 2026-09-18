@@ -5,6 +5,8 @@ using HostelTransportAPI.Models;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using HostelTransportAPI.Hubs;
+using System.Security.Claims;
+
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
@@ -188,7 +190,7 @@ public async Task<IActionResult> GetAll(
             .ToList()
     );
 }
-    [HttpPost("approve/{id}")]
+     [HttpPost("approve/{id}")]
     public async Task<IActionResult> Approve(int id)
     {
         var leave = await _context.LeaveRequests.FindAsync(id);
@@ -196,105 +198,129 @@ public async Task<IActionResult> GetAll(
         if (leave == null)
             return NotFound("Leave Request Not Found");
 
+        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+
+        var staffUser = await _context.Users
+            .FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+
+        var approverName = staffUser?.FullName ?? "Management";
+
+        bool isFullOverride =
+            role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
+            role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+            (staffUser?.HostelApprovalLevel == "All");
+
+        if (!isFullOverride)
+        {
+            var staffLevel = staffUser?.HostelApprovalLevel;
+
+            bool canApprove =
+                (leave.ApprovalStage == "None" && staffLevel == "First Level") ||
+                (leave.ApprovalStage == "FirstApproved" && staffLevel == "Second Level") ||
+                (leave.ApprovalStage == "SecondApproved" && staffLevel == "Final Level");
+
+            if (!canApprove)
+            {
+                return Forbid();
+            }
+        }
+
+        if (leave.ApprovalStage == "None")
+        {
+            leave.ApprovalStage = "FirstApproved";
+            leave.FirstApprovedBy = approverName;
+
+            await _context.SaveChangesAsync();
+            await _hub.Clients.All.SendAsync("LeaveUpdated", leave.StudentId);
+
+            return Ok(new { Message = $"Leave approved at First Level by {approverName}" });
+        }
+
+        if (leave.ApprovalStage == "FirstApproved")
+        {
+            leave.ApprovalStage = "SecondApproved";
+            leave.SecondApprovedBy = approverName;
+
+            await _context.SaveChangesAsync();
+            await _hub.Clients.All.SendAsync("LeaveUpdated", leave.StudentId);
+
+            return Ok(new { Message = $"Leave approved at Second Level by {approverName}" });
+        }
+
+        // Final Level — full approval
+        leave.ApprovalStage = "FinalApproved";
+        leave.FinalApprovedBy = approverName;
         leave.Status = "Approved";
         leave.ApprovedDate = DateTime.UtcNow;
-        leave.ApprovedBy = "Admin";
+        leave.ApprovedBy = approverName;
+
         _context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = 6,
-        UserName = "Main Administrator",
-        Action = $"Approved leave request {leave.Id}",
-        Module = "Leave",
-        CreatedAt = DateTime.Now
-    });
-        _context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = 6,
-        UserName = "Main Administrator",
-        Action = $"Approved leave request #{leave.Id}",
-        Module = "Leave",
-        CreatedAt = DateTime.Now
-    });
-       if (leave.Campus == "Out Campus")
-{DateTime validFrom;
-DateTime validTo;
+            new ActivityLog
+            {
+                UserId = staffUser?.Id ?? 6,
+                UserName = approverName,
+                Action = $"Approved leave request #{leave.Id}",
+                Module = "Leave",
+                CreatedAt = DateTime.Now
+            });
 
-if (leave.FromDate.Date == leave.ToDate.Date)
-{
-    // Same-day leave
-    validFrom = leave.FromDate.Date + TimeSpan.Parse(leave.ExitTime);
-
-    validTo = leave.ToDate.Date + TimeSpan.Parse(leave.ReturnTime);
-}
-else
-{
-    // Multiple-day leave
-    validFrom = leave.FromDate.Date;
-
-    validTo = leave.ToDate.Date
-    .AddHours(23)
-    .AddMinutes(59)
-    .AddSeconds(59);
-}
-  var outpass = new Outpass
-{
-    OutpassNumber = $"OP{DateTime.Now:yyyyMMddHHmmss}",
-
-    StudentId = leave.StudentId,
-
-    StudentName = leave.StudentName,
-
-    Gender = leave.Gender,
-
-    LeaveRequestId = leave.Id,
-
-   ValidFrom = validFrom,
-
-ValidTo = validTo,
-
-    Status = "Approved",
-
-   OutpassState = "Active",
-
-    Reason = leave.Reason,
-
-    Destination = leave.Destination,
-
-    TimeOut = string.IsNullOrWhiteSpace(leave.ExitTime)
-    ? "00:00"
-    : leave.ExitTime,
-
-ReturnTime = string.IsNullOrWhiteSpace(leave.ReturnTime)
-    ? "23:59"
-    : leave.ReturnTime
-};
-    _context.Outpasses.Add(outpass);
-
-    _context.ActivityLogs.Add(
-        new ActivityLog
+        if (leave.Campus == "Out Campus")
         {
-            UserId = 6,
-            UserName = "Main Administrator",
-            Action = $"Created outpass {outpass.OutpassNumber}",
-            Module = "Outpass",
-            CreatedAt = DateTime.Now
-        });
-}
+            DateTime validFrom;
+            DateTime validTo;
 
-       await _context.SaveChangesAsync();
+            if (leave.FromDate.Date == leave.ToDate.Date)
+            {
+                validFrom = leave.FromDate.Date + TimeSpan.Parse(leave.ExitTime);
+                validTo = leave.ToDate.Date + TimeSpan.Parse(leave.ReturnTime);
+            }
+            else
+            {
+                validFrom = leave.FromDate.Date;
+                validTo = leave.ToDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+            }
 
-await _hub.Clients.All.SendAsync(
-    "LeaveUpdated",
-    leave.StudentId
-);
-        return Ok(new
-        {
-            Message = "Leave Approved"
-        });
+            var outpass = new Outpass
+            {
+                OutpassNumber = $"OP{DateTime.Now:yyyyMMddHHmmss}",
+                StudentId = leave.StudentId,
+                StudentName = leave.StudentName,
+                Gender = leave.Gender,
+                LeaveRequestId = leave.Id,
+                ValidFrom = validFrom,
+                ValidTo = validTo,
+                Status = "Approved",
+                ApprovalStage = "FinalApproved",
+                FirstApprovedBy = leave.FirstApprovedBy,
+                SecondApprovedBy = leave.SecondApprovedBy,
+                FinalApprovedBy = leave.FinalApprovedBy,
+                OutpassState = "Active",
+                Reason = leave.Reason,
+                Destination = leave.Destination,
+                TimeOut = string.IsNullOrWhiteSpace(leave.ExitTime) ? "00:00" : leave.ExitTime,
+                ReturnTime = string.IsNullOrWhiteSpace(leave.ReturnTime) ? "23:59" : leave.ReturnTime
+            };
+
+            _context.Outpasses.Add(outpass);
+
+            _context.ActivityLogs.Add(
+                new ActivityLog
+                {
+                    UserId = staffUser?.Id ?? 6,
+                    UserName = approverName,
+                    Action = $"Created outpass {outpass.OutpassNumber}",
+                    Module = "Outpass",
+                    CreatedAt = DateTime.Now
+                });
+        }
+
+        await _context.SaveChangesAsync();
+
+        await _hub.Clients.All.SendAsync("LeaveUpdated", leave.StudentId);
+
+        return Ok(new { Message = $"Leave Approved by {approverName}" });
     }
-
     [HttpPost("reject/{id}")]
     public async Task<IActionResult> Reject(
     int id,

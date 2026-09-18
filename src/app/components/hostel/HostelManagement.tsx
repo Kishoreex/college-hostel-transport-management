@@ -486,7 +486,15 @@ const [historyToDate, setHistoryToDate] =
 const [searchQuery, setSearchQuery] = useState('');
 const [outpassSearch, setOutpassSearch] = useState('');
 const [leaveSearch, setLeaveSearch] = useState('');
+const staffApprovalLevel = user.hostelApprovalLevel;
 
+const canApproveStage = (approvalStage: string) => {
+  if (isManagement || staffApprovalLevel === "All") return true;
+
+  if (approvalStage === "FirstApproved") return staffApprovalLevel === "Second Level";
+  if (approvalStage === "SecondApproved") return staffApprovalLevel === "Final Level";
+  return staffApprovalLevel === "First Level"; // stage is "None"
+};
 const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(null);
       const closeStudentSheet = () => {
     setStudentSheetOpen(false);
@@ -2699,8 +2707,14 @@ if (!canManageHostel) {
                               <p className="text-xs text-gray-400">{req.studentId}</p>
                             </div>
                           </div>
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${req.status === 'approved' ? 'bg-green-100 text-green-700' : req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                        <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${req.status === 'approved' ? 'bg-green-100 text-green-700' : req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {req.status?.toLowerCase() === 'pending'
+                              ? (req.approvalStage === 'FirstApproved'
+                                  ? `✓ ${req.firstApprovedBy ?? "First"} — Waiting: Second Level`
+                                  : req.approvalStage === 'SecondApproved'
+                                  ? `✓ ${req.secondApprovedBy ?? "Second"} — Waiting: Final Level`
+                                  : 'Waiting: First Level')
+                              : req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                           </span>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 mb-3">
@@ -2734,7 +2748,7 @@ if (!canManageHostel) {
                             <p className="text-xs text-red-700"><span className="font-semibold">Remark: </span>{req.remarks}</p>
                           </div>
                         )}
-                        {req.status?.toLowerCase() === 'pending' && (
+               {req.status?.toLowerCase() === 'pending' && canApproveStage(req.approvalStage) && (
                           <div className="flex gap-2">
                             <button onClick={() => handleApprove(Number(req.id))} className="flex-1 flex items-center justify-center space-x-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
                               <CheckCircle2 size={15} /><span>Accept</span>

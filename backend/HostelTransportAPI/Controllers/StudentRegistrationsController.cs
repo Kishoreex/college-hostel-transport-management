@@ -6,13 +6,14 @@ using HostelTransportAPI.DTOs;
 using HostelTransportAPI.Models;
 using Microsoft.AspNetCore.SignalR;
 using HostelTransportAPI.Hubs;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class StudentRegistrationsController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
@@ -53,9 +54,9 @@ if (role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
 }
 
     // Find logged-in staff user
-    var staffUser = await _context.Users
+     var staffUser = await _context.Users
         .FirstOrDefaultAsync(x =>
-            x.UserId == userId);
+            x.Id.ToString() == userId);
 
     if (staffUser == null)
     {
@@ -102,7 +103,7 @@ if (role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
         User.FindFirst(ClaimTypes.Role)?.Value
         ?? User.FindFirst("role")?.Value;
 var userId =
-    User.FindFirst(ClaimTypes.Name)?.Value
+    User.FindFirst(ClaimTypes.NameIdentifier)?.Value
     ?? User.FindFirst("userId")?.Value
     ?? User.FindFirst("UserId")?.Value;
 
@@ -124,7 +125,7 @@ var userId =
 
     var staffUser = await _context.Users
         .FirstOrDefaultAsync(x =>
-            x.UserId == userId);
+            x.Id.ToString() == userId);
 
     if (staffUser == null)
         return null;

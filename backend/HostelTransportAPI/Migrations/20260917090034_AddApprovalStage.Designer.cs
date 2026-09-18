@@ -4,6 +4,7 @@ using HostelTransportAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HostelTransportAPI.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260917090034_AddApprovalStage")]
+    partial class AddApprovalStage
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,12 +224,6 @@ namespace HostelTransportAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("FinalApprovedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FirstApprovedBy")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<DateTime>("FromDate")
                         .HasColumnType("datetime2");
 
@@ -251,9 +248,6 @@ namespace HostelTransportAPI.Migrations
 
                     b.Property<string>("ReturnTime")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SecondApprovedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")
@@ -382,12 +376,6 @@ namespace HostelTransportAPI.Migrations
                     b.Property<bool>("ExitRecorded")
                         .HasColumnType("bit");
 
-                    b.Property<string>("FinalApprovedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("FirstApprovedBy")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Gender")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -426,9 +414,6 @@ namespace HostelTransportAPI.Migrations
 
                     b.Property<string>("ReturnTime")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SecondApprovedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Status")

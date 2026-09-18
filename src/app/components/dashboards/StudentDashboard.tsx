@@ -119,6 +119,20 @@ const getDistanceMeters = (
 type StudentView = 'dashboard' | 'outpass' | 'leave' | 'history' | 'route' | 'announcements' | 'vacate' | 'cancel';
 
 export default function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
+  const getApprovalLabel = (item: any) => {
+  if (item.status?.toLowerCase() !== "pending") {
+    return item.status;
+  }
+
+  switch (item.approvalStage) {
+    case "FirstApproved":
+      return `Approved by ${item.firstApprovedBy ?? "First Level"} — Waiting for Second Level`;
+    case "SecondApproved":
+      return `Approved by ${item.secondApprovedBy ?? "Second Level"} — Waiting for Final Approval`;
+    default:
+      return "Waiting for First Level Approval";
+  }
+};
   const [currentView, setCurrentView] = useState<StudentView>('dashboard');
   const [outpassDialogOpen, setOutpassDialogOpen] = useState(false);
   const [leaveDialogOpen, setLeaveDialogOpen] = useState(false);
@@ -1350,8 +1364,8 @@ outpass.outpassState==="Outside Hostel"
                       <div className="flex-1">
                         <p className="font-semibold text-gray-800 text-sm"> Reason: {outpass.reason}</p>
                         <div className="flex items-center gap-2 mt-1">
-                          <Chip
-                            label={outpass.status}
+                         <Chip
+                            label={getApprovalLabel(outpass)}
                               color={getStatusColor(outpass.status?.toLowerCase())}
                             size="small"
                            icon={getStatusIcon(outpass.status?.toLowerCase())}
@@ -1803,8 +1817,8 @@ outpass.outpassState==="Outside Hostel"
 </p>
 
         <div className="flex items-center gap-2 mt-1">
-          <Chip
-            label={outpass.status}
+    <Chip
+            label={getApprovalLabel(outpass)}
             color={getStatusColor(
               outpass.status?.toLowerCase()
             )}
@@ -1954,9 +1968,8 @@ outpass.outpassState==="Outside Hostel"
 )}
 
                 </div>
-
-                <Chip
-                  label={leave.status}
+<Chip
+                  label={getApprovalLabel(leave)}
                   color={getStatusColor(
                     leave.status.toLowerCase()
                   )}

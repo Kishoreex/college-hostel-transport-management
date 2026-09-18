@@ -272,6 +272,7 @@ user.AssignedYear,
                 user.CanManageTransport,
                 user.CanManageBoysHostel,
                 user.CanManageGirlsHostel,
+                user.HostelApprovalLevel,
 
                 ProfilePhoto = student?.ProfilePhoto
             });

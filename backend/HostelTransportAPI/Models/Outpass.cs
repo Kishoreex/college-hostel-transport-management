@@ -27,7 +27,10 @@ public class Outpass
     public DateTime ValidTo { get; set; }
 
     public string? Status { get; set; }
-
+public string ApprovalStage { get; set; } = "None";
+public string? FirstApprovedBy { get; set; }
+public string? SecondApprovedBy { get; set; }
+public string? FinalApprovedBy { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public string? OutpassState { get; set; }
 

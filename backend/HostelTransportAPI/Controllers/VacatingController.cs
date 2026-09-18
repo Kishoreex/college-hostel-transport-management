@@ -4,11 +4,13 @@ using HostelTransportAPI.Data;
 using HostelTransportAPI.Models;
 using Microsoft.AspNetCore.SignalR;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using HostelTransportAPI.Hubs;
 namespace HostelTransportAPI.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class VacatingController : ControllerBase
 {
   private readonly ApplicationDbContext _context;
@@ -47,22 +49,24 @@ var userId =
 {
     return null;
 }
-    var staffUser = await _context.Users
+      var staffUser = await _context.Users
         .FirstOrDefaultAsync(u =>
-            u.UserId == userId);
+            u.Id.ToString() == userId);
 
     if (staffUser == null)
         return "__NO_ACCESS__";
-
-    // Admin Office
-    if (role.Equals(
-        "Admin Office",
-        StringComparison.OrdinalIgnoreCase))
+    // Class Incharge / Hostel Incharge / Admin Office / Principal
+    if (
+        role.Equals("Admin Office", StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Class Incharge", StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Hostel Incharge", StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Principal", StringComparison.OrdinalIgnoreCase)
+    )
     {
         if (staffUser.CollegeId == null ||
             staffUser.CollegeId == 0)
         {
-            return null;
+            return "__NO_ACCESS__";
         }
 
         var college = await _context.Colleges
@@ -74,6 +78,22 @@ var userId =
     }
 
     return "__NO_ACCESS__";
+}
+private async Task<string?> GetAllowedYearAsync()
+{
+    var role = User.FindFirst(ClaimTypes.Role)?.Value;
+    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    if (string.IsNullOrWhiteSpace(role) ||
+        !role.Equals("Class Incharge", StringComparison.OrdinalIgnoreCase))
+    {
+        return null;
+    }
+
+    var staffUser = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id.ToString() == userId);
+
+    return staffUser?.AssignedYear;
 }
   [HttpGet]
 public async Task<IActionResult> GetAll()

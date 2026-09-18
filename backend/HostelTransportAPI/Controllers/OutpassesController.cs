@@ -4,6 +4,8 @@ using HostelTransportAPI.Models;
 using HostelTransportAPI.DTOs;
 using Microsoft.AspNetCore.SignalR;
 using HostelTransportAPI.Hubs;
+using System.Security.Claims;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 namespace HostelTransportAPI.Controllers;
 
@@ -136,18 +138,63 @@ public async Task<IActionResult> Approve(int id)
     if (outpass == null)
         return NotFound();
 
-outpass.Status = "Approved";
-outpass.OutpassState = "Waiting For Exit";
+    var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
 
-  await _context.SaveChangesAsync();
+    var staffUser = await _context.Users
+        .FirstOrDefaultAsync(u => u.Id.ToString() == userId);
+  var approverName = staffUser?.FullName ?? "Management";
+    // Management / Admin Office with "All" level can approve any stage directly
+    bool isFullOverride =
+    
+        role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
+        (staffUser?.HostelApprovalLevel == "All");
+  
+    if (!isFullOverride)
+    {
+        var staffLevel = staffUser?.HostelApprovalLevel;
 
-await _hub.Clients.All.SendAsync(
-    "OutpassUpdated",
-    outpass.StudentId
-);
+        bool canApprove =
+            (outpass.ApprovalStage == "None" && staffLevel == "First Level") ||
+            (outpass.ApprovalStage == "FirstApproved" && staffLevel == "Second Level") ||
+            (outpass.ApprovalStage == "SecondApproved" && staffLevel == "Final Level");
+
+        if (!canApprove)
+        {
+            return Forbid();
+        }
+    }
+
+    // Advance the stage
+    // Advance the stage
+    if (outpass.ApprovalStage == "None")
+    {
+        outpass.ApprovalStage = "FirstApproved";
+        outpass.FirstApprovedBy = approverName;
+    }
+    else if (outpass.ApprovalStage == "FirstApproved")
+    {
+        outpass.ApprovalStage = "SecondApproved";
+        outpass.SecondApprovedBy = approverName;
+    }
+    else
+    {
+        outpass.ApprovalStage = "FinalApproved";
+        outpass.FinalApprovedBy = approverName;
+        outpass.Status = "Approved";
+        outpass.OutpassState = "Waiting For Exit";
+    }
+
+    await _context.SaveChangesAsync();
+
+    await _hub.Clients.All.SendAsync(
+        "OutpassUpdated",
+        outpass.StudentId
+    );
+
     return Ok(outpass);
 }
-
 [HttpPut("reject/{id}")]
 public async Task<IActionResult> Reject(
     int id,

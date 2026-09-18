@@ -508,24 +508,28 @@ const loadHostelStudents = async () => {
   try {
     console.log("========== LOADING DASHBOARD STUDENTS ==========");
 
-    const [data, allocationsData] = await Promise.all([
-      getStudentRegistrations(
-        isManagement ? null : user.college
-      ),
-      getAllRoomAllocations()
-    ]);
+    const data = await getStudentRegistrations(
+      isManagement ? null : user.college
+    );
 
-    console.log("REGISTRATIONS:", data);
-    console.log("ALLOCATIONS:", allocationsData);
+    console.log("========== STUDENT API SUCCESS ==========");
+    console.log("STUDENT DATA:", data);
+    console.log(
+      "STUDENT COUNT:",
+      Array.isArray(data) ? data.length : "NOT ARRAY"
+    );
 
     if (!Array.isArray(data)) {
-      console.error("Student registrations is not an array:", data);
+      console.error("Student API did not return an array:", data);
       setHostelStudents([]);
       return;
     }
 
-    const students = data.map((student: any) => {
+    const allocationsData = await getAllRoomAllocations();
 
+    console.log("ALLOCATIONS:", allocationsData);
+
+    const students = data.map((student: any) => {
       const studentId =
         student.studentId ??
         student.StudentId ??
@@ -537,54 +541,6 @@ const loadHostelStudents = async () => {
           String(a.studentId).trim() ===
           String(studentId).trim()
       );
-
-      const roommates = allocation
-        ? allocationsData
-            .filter(
-              (a: any) =>
-                String(a.roomNumber).trim() ===
-                  String(allocation.roomNumber).trim() &&
-                String(a.studentId).trim() !==
-                  String(studentId).trim()
-            )
-            .map((rm: any) => {
-
-              const rmRegistration = data.find(
-                (r: any) =>
-                  String(
-                    r.studentId ??
-                    r.StudentId ??
-                    ""
-                  ).trim() ===
-                  String(rm.studentId).trim()
-              );
-
-              return {
-                name:
-                  rm.studentName ??
-                  rm.StudentName ??
-                  rmRegistration?.studentName ??
-                  rmRegistration?.StudentName ??
-                  "",
-
-                phone:
-                  rmRegistration?.phone ??
-                  rmRegistration?.Phone ??
-                  rm.phone ??
-                  "",
-
-                year:
-                  rmRegistration?.year ??
-                  rmRegistration?.Year ??
-                  "",
-
-                college:
-                  rmRegistration?.collegeName ??
-                  rmRegistration?.CollegeName ??
-                  ""
-              };
-            })
-        : [];
 
       return {
         id: studentId,
@@ -652,12 +608,12 @@ const loadHostelStudents = async () => {
         roomNumber:
           allocation?.roomNumber ?? "",
 
-        roommates
+        roommates: []
       };
     });
 
     console.log(
-      "NORMALIZED STUDENTS WITH ROOMS:",
+      "NORMALIZED STUDENTS:",
       students
     );
 
@@ -669,11 +625,11 @@ const loadHostelStudents = async () => {
     );
 
   } catch (error) {
-
     console.error(
-      "FAILED TO LOAD ACTIVE STUDENTS:",
-      error
+      "========== FAILED TO LOAD STUDENTS =========="
     );
+
+    console.error(error);
 
     setHostelStudents([]);
   }

@@ -503,159 +503,158 @@ const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(nul
   useState(false);
     const [rooms, setRooms] = useState<any[]>([]);
 const [hostelStudents, setHostelStudents] = useState<any[]>([]);
-useEffect(() => {
-  loadRooms();
-  loadHostelStudents();
-}, [user.college, isManagement]);
+
 const loadHostelStudents = async () => {
   try {
-    const data = await getStudentRegistrations(
-      isManagement ? null : user.college
-    );
+    console.log("========== LOADING DASHBOARD STUDENTS ==========");
 
-    const allocationsData = await getAllRoomAllocations();
+    const [data, allocationsData] = await Promise.all([
+      getStudentRegistrations(
+        isManagement ? null : user.college
+      ),
+      getAllRoomAllocations()
+    ]);
 
-    console.log("========== ACTIVE STUDENT API ==========");
     console.log("REGISTRATIONS:", data);
     console.log("ALLOCATIONS:", allocationsData);
 
-    const students = Array.isArray(data)
-      ? data.map((student: any) => {
+    if (!Array.isArray(data)) {
+      console.error("Student registrations is not an array:", data);
+      setHostelStudents([]);
+      return;
+    }
 
-          const studentId =
-            student.studentId ??
-            student.StudentId ??
-            student.id ??
-            "";
+    const students = data.map((student: any) => {
 
-          // Find this student's room allocation
-          const allocation = allocationsData.find(
-            (a: any) =>
-              String(a.studentId).trim() ===
-              String(studentId).trim()
-          );
+      const studentId =
+        student.studentId ??
+        student.StudentId ??
+        student.id ??
+        "";
 
-          // Find all roommates in the same room
-          const roommates = allocation
-            ? allocationsData
-                .filter(
-                  (a: any) =>
-                    String(a.roomNumber).trim() ===
-                      String(allocation.roomNumber).trim() &&
-                    String(a.studentId).trim() !==
-                      String(studentId).trim()
-                )
-                .map((rm: any) => {
+      const allocation = allocationsData.find(
+        (a: any) =>
+          String(a.studentId).trim() ===
+          String(studentId).trim()
+      );
 
-                  const rmRegistration =
-                    data.find(
-                      (r: any) =>
-                        String(
-                          r.studentId ??
-                          r.StudentId ??
-                          ""
-                        ).trim() ===
-                        String(rm.studentId).trim()
-                    );
+      const roommates = allocation
+        ? allocationsData
+            .filter(
+              (a: any) =>
+                String(a.roomNumber).trim() ===
+                  String(allocation.roomNumber).trim() &&
+                String(a.studentId).trim() !==
+                  String(studentId).trim()
+            )
+            .map((rm: any) => {
 
-                  return {
-                    name:
-                      rm.studentName ??
-                      rm.StudentName ??
-                      rmRegistration?.studentName ??
-                      rmRegistration?.StudentName ??
-                      "",
+              const rmRegistration = data.find(
+                (r: any) =>
+                  String(
+                    r.studentId ??
+                    r.StudentId ??
+                    ""
+                  ).trim() ===
+                  String(rm.studentId).trim()
+              );
 
-                    phone:
-                      rmRegistration?.phone ??
-                      rmRegistration?.Phone ??
-                      rm.phone ??
-                      "",
+              return {
+                name:
+                  rm.studentName ??
+                  rm.StudentName ??
+                  rmRegistration?.studentName ??
+                  rmRegistration?.StudentName ??
+                  "",
 
-                    year:
-                      rmRegistration?.year ??
-                      rmRegistration?.Year ??
-                      "",
+                phone:
+                  rmRegistration?.phone ??
+                  rmRegistration?.Phone ??
+                  rm.phone ??
+                  "",
 
-                    college:
-                      rmRegistration?.collegeName ??
-                      rmRegistration?.CollegeName ??
-                      ""
-                  };
-                })
-            : [];
+                year:
+                  rmRegistration?.year ??
+                  rmRegistration?.Year ??
+                  "",
 
-          return {
-            id: studentId,
+                college:
+                  rmRegistration?.collegeName ??
+                  rmRegistration?.CollegeName ??
+                  ""
+              };
+            })
+        : [];
 
-            name:
-              student.studentName ??
-              student.StudentName ??
-              student.name ??
-              "",
+      return {
+        id: studentId,
 
-            phone:
-              student.phone ??
-              student.Phone ??
-              "",
+        name:
+          student.studentName ??
+          student.StudentName ??
+          student.name ??
+          "",
 
-            email:
-              student.email ??
-              student.Email ??
-              "",
+        phone:
+          student.phone ??
+          student.Phone ??
+          "",
 
-            college:
-              student.collegeName ??
-              student.CollegeName ??
-              "",
+        email:
+          student.email ??
+          student.Email ??
+          "",
 
-            department:
-              student.department ??
-              student.Department ??
-              "",
+        college:
+          student.collegeName ??
+          student.CollegeName ??
+          "",
 
-            year:
-              student.year ??
-              student.Year ??
-              "",
+        department:
+          student.department ??
+          student.Department ??
+          "",
 
-            batch:
-              student.batch ??
-              student.Batch ??
-              "",
+        year:
+          student.year ??
+          student.Year ??
+          "",
 
-            parentName:
-              student.parentName ??
-              student.ParentName ??
-              "",
+        batch:
+          student.batch ??
+          student.Batch ??
+          "",
 
-            parentPhone:
-              student.parentPhone ??
-              student.ParentPhone ??
-              "",
+        parentName:
+          student.parentName ??
+          student.ParentName ??
+          "",
 
-            address:
-              student.address ??
-              student.Address ??
-              "",
+        parentPhone:
+          student.parentPhone ??
+          student.ParentPhone ??
+          "",
 
-            gender:
-              String(
-                student.gender ??
-                student.Gender ??
-                ""
-              ).toLowerCase() === "male"
-                ? "boys"
-                : "girls",
+        address:
+          student.address ??
+          student.Address ??
+          "",
 
-            // IMPORTANT
-            roomNumber:
-              allocation?.roomNumber ?? "",
+        gender:
+          String(
+            student.gender ??
+            student.Gender ??
+            ""
+          ).toLowerCase() === "male"
+            ? "boys"
+            : "girls",
 
-            roommates
-          };
-        })
-      : [];
+        roomNumber:
+          allocation?.roomNumber ?? "",
+
+        roommates
+      };
+    });
 
     console.log(
       "NORMALIZED STUDENTS WITH ROOMS:",
@@ -663,6 +662,11 @@ const loadHostelStudents = async () => {
     );
 
     setHostelStudents(students);
+
+    console.log(
+      "DASHBOARD STUDENTS LOADED:",
+      students.length
+    );
 
   } catch (error) {
 
@@ -678,18 +682,19 @@ const loadHostelStudents = async () => {
 const loadRooms = async () => {
   try {
     // Get all rooms
-  const roomsData = await getAllRooms(
-  isManagement ? null : user.college
-);
-
-    // Get all room allocations
-    const allocationsData = await getAllRoomAllocations();
-
-    // Get students only for the logged-in college.
-    // Management can see students from all colleges.
-    const registrationsData = await getStudentRegistrations(
-      isManagement ? null : user.college
-    );
+const [
+  roomsData,
+  allocationsData,
+  registrationsData
+] = await Promise.all([
+  getAllRooms(
+    isManagement ? null : user.college
+  ),
+  getAllRoomAllocations(),
+  getStudentRegistrations(
+    isManagement ? null : user.college
+  )
+]);
 
     // Create a Set of students allowed for this user.
     const allowedStudentIds = new Set(
@@ -1238,15 +1243,20 @@ const pendingLeaves = leaveRequests.filter(o => {
     matchesSearch
   );
 });
-      useEffect(() => {
+ useEffect(() => {
 
-      loadRooms();
-    loadApplications();
-    loadVacatingRequests();
+  // Dashboard data
+  loadRooms();
+  loadHostelStudents();
 
-    loadApplicationHistory();
-    loadVacatingHistory();
-    }, []);
+  // Other hostel management data
+  loadApplications();
+  loadVacatingRequests();
+
+  loadApplicationHistory();
+  loadVacatingHistory();
+
+}, []);
     useEffect(() => {
 
   const connection =

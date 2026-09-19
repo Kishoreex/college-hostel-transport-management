@@ -6,7 +6,14 @@ export async function getOutpasses(
     ? `${API_URL}/Outpasses?college=${encodeURIComponent(college)}`
     : `${API_URL}/Outpasses`;
 
-  const response = await fetch(url);
+const token = localStorage.getItem("authToken");
+
+const response = await fetch(url, {
+  headers: {
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  },
+});
 
   if (!response.ok) {
     throw new Error("Failed to load outpasses");
@@ -51,13 +58,27 @@ export const getAllOutpasses = async (
     ? `${API_URL}/Outpasses?college=${encodeURIComponent(college)}`
     : `${API_URL}/Outpasses`;
 
-  const response = await fetch(url);
+  const token = localStorage.getItem("authToken");
+
+  console.log("========== OUTPASS REQUEST ==========");
+  console.log("URL:", url);
+  console.log("TOKEN EXISTS:", !!token);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   if (!response.ok) {
-    throw new Error("Failed to load outpasses");
+    throw new Error(
+      `Failed to load outpasses (${response.status})`
+    );
   }
 
-  return response.json();
+  return await response.json();
 };
 export const approveOutpass = async (
   id: number

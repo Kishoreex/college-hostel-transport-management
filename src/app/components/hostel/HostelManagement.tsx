@@ -2848,9 +2848,8 @@ if (!canManageHostel) {
         : String(req.approvalStage ?? "None").trim() === "SecondApproved"
         ? `✓ ${req.secondApprovedBy ?? "Hostel Incharge"} — Waiting: Principal`
 
-        : "Waiting: Class Incharge / Hostel Incharge / Principal"
+        : "Waiting: Class Incharge"
     )
-
   : req.status?.charAt(0).toUpperCase() +
     req.status?.slice(1)}
                           </span>

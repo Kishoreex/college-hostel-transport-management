@@ -557,8 +557,8 @@ public async Task<IActionResult> Reject(
     outpass.RejectReason =
         dto.RejectReason;
 
-    outpass.RejectedBy =
-        rejectorName;
+  outpass.RejectedBy =
+    $"{rejectorName} — {role}";
 
     await _context.SaveChangesAsync();
 

@@ -26,29 +26,62 @@ const response = await fetch(url, {
 const API_URL = "https://api.madhapharma.in/api";
 
 export const createOutpass = async (data: any) => {
-const response = await fetch(`${API_URL}/Outpasses`, {
+  const token = localStorage.getItem("authToken");
+
+  console.log("========== CREATE OUTPASS ==========");
+  console.log("TOKEN EXISTS:", !!token);
+
+  const response = await fetch(`${API_URL}/Outpasses`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(data),
   });
 
+  const result = await response.json();
+
+  console.log("CREATE OUTPASS RESPONSE:", response.status, result);
+
   if (!response.ok) {
-    throw new Error("Failed to create outpass");
+    throw new Error(
+      result?.message ||
+      result?.title ||
+      `Failed to create outpass (${response.status})`
+    );
   }
 
-  return response.json();
+  return result;
 };
 
-export const getStudentOutpasses =
-async (studentId: string) => {
+export const getStudentOutpasses = async (
+  studentId: string
+) => {
+  const token = localStorage.getItem("authToken");
 
   const response = await fetch(
-    `${API_URL}/Outpasses/${studentId}`
+    `${API_URL}/Outpasses/${studentId}`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
   );
 
-  return response.json();
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      result?.title ||
+      `Failed to load student outpasses (${response.status})`
+    );
+  }
+
+  return result;
 };
 
 export const getAllOutpasses = async (
@@ -200,20 +233,50 @@ export async function hasActiveOutpass(studentId: string) {
     return await response.json();
 }
 export async function expireOldOutpasses() {
-    await fetch(
-        `${API_URL}/Outpasses/expire`,
-        {
-            method: "PUT",
-        }
+  const token = localStorage.getItem("authToken");
+
+  const response = await fetch(
+    `${API_URL}/Outpasses/expire`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+
+    throw new Error(
+      text || `Failed to expire outpasses (${response.status})`
     );
+  }
 }
 export async function cancelOutpass(id: number) {
-    const response = await fetch(
-        `${API_URL}/Outpasses/cancel/${id}`,
-        {
-            method: "PUT",
-        }
-    );
+  const token = localStorage.getItem("authToken");
 
-    return await response.json();
+  const response = await fetch(
+    `${API_URL}/Outpasses/cancel/${id}`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      result?.title ||
+      `Failed to cancel outpass (${response.status})`
+    );
+  }
+
+  return result;
 }

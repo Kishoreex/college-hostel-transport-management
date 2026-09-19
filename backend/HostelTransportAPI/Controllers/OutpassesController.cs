@@ -816,7 +816,10 @@ public async Task<IActionResult> GetHistory(
 {
     var now = DateTime.Now;
 
-    // First mark old active/pending outpasses as expired/not accepted
+    // =====================================================
+    // 1. MARK EXPIRED OUTPASSES
+    // =====================================================
+
     var expiredOutpasses = await _context.Outpasses
         .Where(x =>
             x.ValidTo < now &&
@@ -834,7 +837,8 @@ public async Task<IActionResult> GetHistory(
     {
         if (item.Status == "Pending")
         {
-            item.Status = "Not Accepted By Hostel Incharge";
+            item.Status =
+                "Not Accepted By Hostel Incharge";
         }
         else
         {
@@ -845,35 +849,277 @@ public async Task<IActionResult> GetHistory(
 
     await _context.SaveChangesAsync();
 
-    // Build query
+
+    // =====================================================
+    // 2. GET LOGGED-IN USER FROM JWT
+    // =====================================================
+
+    var userId =
+        User.FindFirst(ClaimTypes.Name)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    var nameIdentifier =
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    User? staffUser = null;
+
+    // Try UserId from JWT
+    if (!string.IsNullOrWhiteSpace(userId))
+    {
+        staffUser = await _context.Users
+            .Include(x => x.Role)
+            .Include(x => x.College)
+            .FirstOrDefaultAsync(
+                x => x.UserId == userId
+            );
+    }
+
+    // Fallback to database Id
+    if (
+        staffUser == null &&
+        int.TryParse(
+            nameIdentifier,
+            out var databaseUserId
+        )
+    )
+    {
+        staffUser = await _context.Users
+            .Include(x => x.Role)
+            .Include(x => x.College)
+            .FirstOrDefaultAsync(
+                x => x.Id == databaseUserId
+            );
+    }
+
+    if (staffUser == null)
+    {
+        return StatusCode(
+            403,
+            "Logged-in staff user could not be identified."
+        );
+    }
+
+
+    // =====================================================
+    // 3. GET ACTUAL DATABASE ROLE
+    // =====================================================
+
+    var role =
+        staffUser.Role?.Name?.Trim()
+        ?? "";
+
+    var staffCollege =
+        staffUser.College?.Name?.Trim();
+
+    var assignedYear =
+        staffUser.AssignedYear?.Trim();
+
+
+    Console.WriteLine(
+        "========== OUTPASS HISTORY =========="
+    );
+
+    Console.WriteLine(
+        $"UserId       : {staffUser.UserId}"
+    );
+
+    Console.WriteLine(
+        $"Name         : {staffUser.FullName}"
+    );
+
+    Console.WriteLine(
+        $"Role         : {role}"
+    );
+
+    Console.WriteLine(
+        $"College      : {staffCollege}"
+    );
+
+    Console.WriteLine(
+        $"AssignedYear : {assignedYear}"
+    );
+
+
+    // =====================================================
+    // 4. ROLE FLAGS
+    // =====================================================
+
+    var isManagement =
+        role.Equals(
+            "Management",
+            StringComparison.OrdinalIgnoreCase
+        )
+        ||
+        role.Equals(
+            "System Admin",
+            StringComparison.OrdinalIgnoreCase
+        )
+        ||
+        role.Equals(
+            "Admin",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+    var isClassIncharge =
+        role.Equals(
+            "Class Incharge",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+    var isHostelIncharge =
+        role.Equals(
+            "Hostel Incharge",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+    var isPrincipal =
+        role.Equals(
+            "Principal",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    // =====================================================
+    // 5. BASE HISTORY QUERY
+    // =====================================================
+
     var query = _context.Outpasses
         .AsQueryable();
 
-    // College filter
-    if (!string.IsNullOrWhiteSpace(college))
+
+    // =====================================================
+    // 6. MANAGEMENT
+    // =====================================================
+
+    if (isManagement)
     {
+        // Management can see all colleges and all years.
+    }
+
+
+    // =====================================================
+    // 7. CLASS INCHARGE
+    // COLLEGE + ASSIGNED YEAR
+    // =====================================================
+
+    else if (isClassIncharge)
+    {
+        if (string.IsNullOrWhiteSpace(staffCollege))
+        {
+            return StatusCode(
+                403,
+                "Class Incharge has no assigned college."
+            );
+        }
+
+        if (string.IsNullOrWhiteSpace(assignedYear))
+        {
+            return StatusCode(
+                403,
+                "Class Incharge has no assigned year."
+            );
+        }
+
         query = query.Where(x =>
             _context.StudentRegistrations.Any(s =>
-                s.StudentId == x.StudentId &&
-                s.CollegeName == college
+                s.StudentId == x.StudentId
+                &&
+                s.CollegeName == staffCollege
+                &&
+                s.Year == assignedYear
             )
         );
     }
 
-    // History records
- var history = await query
-    .Where(x =>
-        x.Status == "Approved" ||
-        x.Status == "Completed" ||
-        x.Status == "Rejected" ||
-        x.Status == "Cancelled" ||
-        x.Status == "Not Accepted By Hostel Incharge" ||
-        x.Status == "Not Accepted By Warden" ||
-        x.OutpassState == "Expired"
-    )
-    .OrderByDescending(x => x.Id)
-    .ToListAsync();
+
+    // =====================================================
+    // 8. HOSTEL INCHARGE
+    // COLLEGE ONLY
+    // =====================================================
+
+    else if (isHostelIncharge)
+    {
+        if (string.IsNullOrWhiteSpace(staffCollege))
+        {
+            return StatusCode(
+                403,
+                "Hostel Incharge has no assigned college."
+            );
+        }
+
+        query = query.Where(x =>
+            _context.StudentRegistrations.Any(s =>
+                s.StudentId == x.StudentId
+                &&
+                s.CollegeName == staffCollege
+            )
+        );
+    }
+
+
+    // =====================================================
+    // 9. PRINCIPAL
+    // COLLEGE ONLY
+    // =====================================================
+
+    else if (isPrincipal)
+    {
+        if (string.IsNullOrWhiteSpace(staffCollege))
+        {
+            return StatusCode(
+                403,
+                "Principal has no assigned college."
+            );
+        }
+
+        query = query.Where(x =>
+            _context.StudentRegistrations.Any(s =>
+                s.StudentId == x.StudentId
+                &&
+                s.CollegeName == staffCollege
+            )
+        );
+    }
+
+
+    // =====================================================
+    // 10. UNKNOWN ROLE
+    // =====================================================
+
+    else
+    {
+        return StatusCode(
+            403,
+            $"Role '{role}' is not allowed to view outpass history."
+        );
+    }
+
+
+    // =====================================================
+    // 11. HISTORY STATUS FILTER
+    // =====================================================
+
+    var history = await query
+        .Where(x =>
+            x.Status == "Approved" ||
+            x.Status == "Completed" ||
+            x.Status == "Rejected" ||
+            x.Status == "Cancelled" ||
+            x.Status == "Not Accepted By Hostel Incharge" ||
+            x.Status == "Not Accepted By Warden" ||
+            x.OutpassState == "Expired"
+        )
+        .OrderByDescending(x => x.Id)
+        .ToListAsync();
+
+
+    Console.WriteLine(
+        $"OUTPASS HISTORY COUNT: {history.Count}"
+    );
+
 
     return Ok(history);
 }
+
 }

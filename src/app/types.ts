@@ -32,7 +32,7 @@ export interface User {
   collegeId?: number | null;
 
   college?: string;
-
+assignedYear?: string;
   isSystemAdmin?: boolean;
 
   // Old permissions kept temporarily

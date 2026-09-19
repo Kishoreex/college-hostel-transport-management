@@ -992,10 +992,16 @@ const [
 const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
 const [leaveHistory, setLeaveHistory] =
   useState<any[]>([]);
-      useEffect(() => {
-      loadOutpasses();
-        loadOutpassHistory();
-    }, []);
+useEffect(() => {
+  if (!user?.userId) return;
+
+  console.log("LOADING OUTPASSES FOR USER:", user.userId);
+  console.log("USER COLLEGE:", user.college);
+  console.log("USER ROLE:", user.staffRole || user.role);
+
+  loadOutpasses();
+  loadOutpassHistory();
+}, [user?.userId, user?.college, isManagement]);
 useEffect(() => {
   loadLeaveRequests();
   loadLeaveHistory();

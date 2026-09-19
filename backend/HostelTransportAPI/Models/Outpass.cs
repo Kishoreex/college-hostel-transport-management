@@ -55,4 +55,5 @@ public bool ExitRecorded { get; set; } = false;
 
 public bool ReturnRecorded { get; set; } = false;
 public string? RejectReason { get; set; }
+public string? RejectedBy { get; set; }
 }

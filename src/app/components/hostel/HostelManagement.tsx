@@ -486,14 +486,39 @@ const [historyToDate, setHistoryToDate] =
 const [searchQuery, setSearchQuery] = useState('');
 const [outpassSearch, setOutpassSearch] = useState('');
 const [leaveSearch, setLeaveSearch] = useState('');
-const staffApprovalLevel = user.hostelApprovalLevel;
-
 const canApproveStage = (approvalStage: string) => {
-  if (isManagement || staffApprovalLevel === "All") return true;
 
-  if (approvalStage === "FirstApproved") return staffApprovalLevel === "Second Level";
-  if (approvalStage === "SecondApproved") return staffApprovalLevel === "Final Level";
-  return staffApprovalLevel === "First Level"; // stage is "None"
+  const currentRole =
+    user.staffRole?.trim().toLowerCase() ||
+    user.role?.trim().toLowerCase() ||
+    "";
+
+  // Management can see/approve everything.
+  if (currentRole === "management") {
+    return approvalStage !== "FinalApproved";
+  }
+
+  // Principal can approve directly from any unfinished stage.
+  if (currentRole === "principal") {
+    return approvalStage !== "FinalApproved";
+  }
+
+  // Hostel Incharge can approve:
+  // New request
+  // OR Class Incharge approved request
+  if (currentRole === "hostel incharge") {
+    return (
+      approvalStage === "None" ||
+      approvalStage === "FirstApproved"
+    );
+  }
+
+  // Class Incharge can approve only new requests.
+  if (currentRole === "class incharge") {
+    return approvalStage === "None";
+  }
+
+  return false;
 };
 const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(null);
       const closeStudentSheet = () => {
@@ -2766,12 +2791,11 @@ if (!canManageHostel) {
                             </div>
                           </div>
                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${req.status === 'approved' ? 'bg-green-100 text-green-700' : req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {req.status?.toLowerCase() === 'pending'
-                              ? (req.approvalStage === 'FirstApproved'
-                                  ? `✓ ${req.firstApprovedBy ?? "First"} — Waiting: Second Level`
-                                  : req.approvalStage === 'SecondApproved'
-                                  ? `✓ ${req.secondApprovedBy ?? "Second"} — Waiting: Final Level`
-                                  : 'Waiting: First Level')
+                        {req.approvalStage === "FirstApproved"
+  ? `✓ ${req.firstApprovedBy ?? "Class Incharge"} — Waiting: Hostel Incharge / Principal`
+  : req.approvalStage === "SecondApproved"
+  ? `✓ ${req.secondApprovedBy ?? "Hostel Incharge"} — Waiting: Principal`
+  : "Waiting: Class Incharge / Hostel Incharge / Principal"}
                               : req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                           </span>
                         </div>
@@ -3579,6 +3603,31 @@ isManagement && expiredWithoutExit && (
 </div>
 )}
                               </div>
+                              {h.status === "Rejected" && (
+  <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+
+    <div className="flex justify-between text-sm">
+      <span className="text-red-500 font-medium">
+        Rejected By
+      </span>
+
+      <span className="font-semibold text-red-700">
+        {h.rejectedBy || "Unknown"}
+      </span>
+    </div>
+
+    <div className="text-sm">
+      <span className="text-red-500 font-medium">
+        Reason
+      </span>
+
+      <p className="text-red-700 mt-1">
+        {h.rejectReason || "No reason provided"}
+      </p>
+    </div>
+
+  </div>
+)}
                              {isManagement && returnedLate && h.actualReturnTime && (
                                 <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
                                   <Clock size={14} className="text-amber-600 shrink-0" />

@@ -138,52 +138,119 @@ public async Task<IActionResult> Approve(int id)
     if (outpass == null)
         return NotFound();
 
-    var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
-    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+    var role =
+        User.FindFirst(ClaimTypes.Role)?.Value
+        ?? User.FindFirst("role")?.Value
+        ?? "";
 
-    var staffUser = await _context.Users
-        .FirstOrDefaultAsync(u => u.Id.ToString() == userId);
-  var approverName = staffUser?.FullName ?? "Management";
-    // Management / Admin Office with "All" level can approve any stage directly
-    bool isFullOverride =
-    
+    var userId =
+        User.FindFirst(ClaimTypes.Name)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    User? staffUser = null;
+
+    if (!string.IsNullOrWhiteSpace(userId))
+    {
+        staffUser = await _context.Users
+            .FirstOrDefaultAsync(x => x.UserId == userId);
+    }
+
+    var approverName =
+        staffUser?.FullName
+        ?? "Management";
+
+    role = role.Trim();
+
+    var isManagement =
         role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
-        role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
-        (staffUser?.HostelApprovalLevel == "All");
-  
-    if (!isFullOverride)
-    {
-        var staffLevel = staffUser?.HostelApprovalLevel;
+        role.Equals("System Admin", StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
 
-        bool canApprove =
-            (outpass.ApprovalStage == "None" && staffLevel == "First Level") ||
-            (outpass.ApprovalStage == "FirstApproved" && staffLevel == "Second Level") ||
-            (outpass.ApprovalStage == "SecondApproved" && staffLevel == "Final Level");
+    var isClassIncharge =
+        role.Equals("Class Incharge", StringComparison.OrdinalIgnoreCase);
 
-        if (!canApprove)
-        {
-            return Forbid();
-        }
-    }
+    var isHostelIncharge =
+        role.Equals("Hostel Incharge", StringComparison.OrdinalIgnoreCase);
 
-    // Advance the stage
-    // Advance the stage
-    if (outpass.ApprovalStage == "None")
-    {
-        outpass.ApprovalStage = "FirstApproved";
-        outpass.FirstApprovedBy = approverName;
-    }
-    else if (outpass.ApprovalStage == "FirstApproved")
-    {
-        outpass.ApprovalStage = "SecondApproved";
-        outpass.SecondApprovedBy = approverName;
-    }
-    else
+    var isPrincipal =
+        role.Equals("Principal", StringComparison.OrdinalIgnoreCase);
+
+    // ---------------------------------------------------------
+    // MANAGEMENT
+    // Management can approve any stage directly.
+    // ---------------------------------------------------------
+
+    if (isManagement)
     {
         outpass.ApprovalStage = "FinalApproved";
         outpass.FinalApprovedBy = approverName;
         outpass.Status = "Approved";
         outpass.OutpassState = "Waiting For Exit";
+    }
+
+    // ---------------------------------------------------------
+    // PRINCIPAL
+    // Principal can approve from ANY unfinished stage.
+    // ---------------------------------------------------------
+
+    else if (isPrincipal)
+    {
+        if (outpass.ApprovalStage == "FinalApproved")
+        {
+            return BadRequest("Outpass is already finally approved.");
+        }
+
+        outpass.ApprovalStage = "FinalApproved";
+        outpass.FinalApprovedBy = approverName;
+        outpass.Status = "Approved";
+        outpass.OutpassState = "Waiting For Exit";
+    }
+
+    // ---------------------------------------------------------
+    // HOSTEL INCHARGE
+    //
+    // Can approve:
+    // None
+    // FirstApproved
+    //
+    // Cannot approve after Principal.
+    // ---------------------------------------------------------
+
+    else if (isHostelIncharge)
+    {
+        if (
+            outpass.ApprovalStage != "None" &&
+            outpass.ApprovalStage != "FirstApproved"
+        )
+        {
+            return Forbid();
+        }
+
+        outpass.ApprovalStage = "SecondApproved";
+        outpass.SecondApprovedBy = approverName;
+    }
+
+    // ---------------------------------------------------------
+    // CLASS INCHARGE
+    //
+    // Can approve only a fresh request.
+    // ---------------------------------------------------------
+
+    else if (isClassIncharge)
+    {
+        if (outpass.ApprovalStage != "None")
+        {
+            return Forbid();
+        }
+
+        outpass.ApprovalStage = "FirstApproved";
+        outpass.FirstApprovedBy = approverName;
+    }
+
+    else
+    {
+        return Forbid();
     }
 
     await _context.SaveChangesAsync();
@@ -193,7 +260,12 @@ public async Task<IActionResult> Approve(int id)
         outpass.StudentId
     );
 
-    return Ok(outpass);
+    return Ok(new
+    {
+        Message = $"Outpass approved by {approverName}",
+        ApprovalStage = outpass.ApprovalStage,
+        Status = outpass.Status
+    });
 }
 [HttpPut("reject/{id}")]
 public async Task<IActionResult> Reject(
@@ -205,8 +277,82 @@ public async Task<IActionResult> Reject(
     if (outpass == null)
         return NotFound();
 
+    var role =
+        User.FindFirst(ClaimTypes.Role)?.Value
+        ?? User.FindFirst("role")?.Value
+        ?? "";
+
+    var userId =
+        User.FindFirst(ClaimTypes.Name)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    User? staffUser = null;
+
+    if (!string.IsNullOrWhiteSpace(userId))
+    {
+        staffUser = await _context.Users
+            .FirstOrDefaultAsync(x => x.UserId == userId);
+    }
+
+    var rejectorName =
+        staffUser?.FullName
+        ?? "Management";
+
+    role = role.Trim();
+
+    var isManagement =
+        role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("System Admin", StringComparison.OrdinalIgnoreCase) ||
+        role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+
+    var isClassIncharge =
+        role.Equals("Class Incharge", StringComparison.OrdinalIgnoreCase);
+
+    var isHostelIncharge =
+        role.Equals("Hostel Incharge", StringComparison.OrdinalIgnoreCase);
+
+    var isPrincipal =
+        role.Equals("Principal", StringComparison.OrdinalIgnoreCase);
+
+    var canReject = false;
+
+    // Management can reject any unfinished request.
+    if (isManagement)
+    {
+        canReject = outpass.ApprovalStage != "FinalApproved";
+    }
+
+    // Principal can reject any unfinished request.
+    else if (isPrincipal)
+    {
+        canReject = outpass.ApprovalStage != "FinalApproved";
+    }
+
+    // Hostel Incharge can reject a new request
+    // or a request already approved by Class Incharge.
+    else if (isHostelIncharge)
+    {
+        canReject =
+            outpass.ApprovalStage == "None" ||
+            outpass.ApprovalStage == "FirstApproved";
+    }
+
+    // Class Incharge can reject only a new request.
+    else if (isClassIncharge)
+    {
+        canReject =
+            outpass.ApprovalStage == "None";
+    }
+
+    if (!canReject)
+    {
+        return Forbid();
+    }
+
     outpass.Status = "Rejected";
     outpass.RejectReason = dto.RejectReason;
+    outpass.RejectedBy = rejectorName;
 
     await _context.SaveChangesAsync();
 
@@ -215,7 +361,12 @@ public async Task<IActionResult> Reject(
         outpass.StudentId
     );
 
-    return Ok(outpass);
+    return Ok(new
+    {
+        Message = "Outpass Rejected",
+        RejectedBy = rejectorName,
+        RejectReason = dto.RejectReason
+    });
 }
 [HttpPut("activate/{id}")]
 public async Task<IActionResult> Activate(int id)

@@ -1024,47 +1024,56 @@ const loadLeaveRequests = async () => {
 };
 const loadOutpassHistory = async () => {
   try {
+
     const token =
       localStorage.getItem("authToken");
 
-    const url =
-      `${API_URL}/Outpasses/history`;
+    const response = await fetch(
+      `${API_URL}/Outpasses/history`,
+      {
+        method: "GET",
 
-    console.log(
-      "========== OUTPASS HISTORY =========="
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
     );
 
-    console.log("URL:", url);
-    console.log("USER:", user.userId);
+    console.log(
+      "========== OUTPASS HISTORY API =========="
+    );
+
+    console.log(
+      "USER:",
+      user.userId
+    );
+
     console.log(
       "ROLE:",
       user.staffRole || user.role
     );
+
     console.log(
       "COLLEGE:",
       user.college
     );
+
     console.log(
       "ASSIGNED YEAR:",
       user.assignedYear
     );
 
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Authorization:
-          `Bearer ${token}`,
-        "Content-Type":
-          "application/json",
-      },
-    });
+    console.log(
+      "STATUS:",
+      response.status
+    );
 
-    const data =
-      await response.json();
+
+    const data = await response.json();
 
     console.log(
-      "OUTPASS HISTORY RESPONSE:",
-      response.status,
+      "OUTPASS HISTORY DATA:",
       data
     );
 
@@ -1072,11 +1081,15 @@ const loadOutpassHistory = async () => {
       throw new Error(
         data?.message ||
         data?.title ||
-        `Failed to load outpass history (${response.status})`
+        "Failed to load outpass history"
       );
     }
 
-    setOutpassHistory(data);
+    setOutpassHistory(
+      Array.isArray(data)
+        ? data
+        : []
+    );
 
   } catch (error) {
 

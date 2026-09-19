@@ -811,315 +811,534 @@ outpass.OutpassState = "Cancelled";
 }
 
 [HttpGet("history")]
-public async Task<IActionResult> GetHistory(
-    [FromQuery] string? college)
+public async Task<IActionResult> GetHistory()
 {
-    var now = DateTime.Now;
+    try
+    {
+        var now = DateTime.Now;
 
-    // =====================================================
-    // 1. MARK EXPIRED OUTPASSES
-    // =====================================================
+        // =====================================================
+        // 1. MARK EXPIRED OUTPASSES
+        // =====================================================
 
-    var expiredOutpasses = await _context.Outpasses
-        .Where(x =>
-            x.ValidTo < now &&
-            x.ActualExitTime == null &&
-            (
-                x.Status == "Pending" ||
-                x.Status == "Approved" ||
-                x.OutpassState == "Active" ||
-                x.OutpassState == "Waiting For Exit"
+        var expiredOutpasses = await _context.Outpasses
+            .Where(x =>
+                x.ValidTo < now &&
+                x.ActualExitTime == null &&
+                (
+                    x.Status == "Pending" ||
+                    x.Status == "Approved" ||
+                    x.OutpassState == "Active" ||
+                    x.OutpassState == "Waiting For Exit"
+                )
+            )
+            .ToListAsync();
+
+        foreach (var item in expiredOutpasses)
+        {
+            if (item.Status == "Pending")
+            {
+                item.Status =
+                    "Not Accepted By Hostel Incharge";
+            }
+            else
+            {
+                item.Status = "Completed";
+                item.OutpassState = "Expired";
+            }
+        }
+
+        await _context.SaveChangesAsync();
+
+
+        // =====================================================
+        // 2. GET LOGGED-IN USER
+        // =====================================================
+
+        var jwtUserId =
+            User.FindFirst(ClaimTypes.Name)?.Value
+            ?? User.FindFirst("userId")?.Value
+            ?? User.FindFirst("UserId")?.Value;
+
+        var nameIdentifier =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+
+        Console.WriteLine(
+            "========== OUTPASS HISTORY REQUEST =========="
+        );
+
+        Console.WriteLine(
+            $"JWT Name       : [{jwtUserId}]"
+        );
+
+        Console.WriteLine(
+            $"JWT NameId     : [{nameIdentifier}]"
+        );
+
+
+        User? staffUser = null;
+
+
+        // =====================================================
+        // 3. FIND USER USING UserId
+        // =====================================================
+
+        if (!string.IsNullOrWhiteSpace(jwtUserId))
+        {
+            staffUser = await _context.Users
+                .Include(x => x.Role)
+                .FirstOrDefaultAsync(
+                    x => x.UserId == jwtUserId
+                );
+        }
+
+
+        // =====================================================
+        // 4. FALLBACK USING DATABASE ID
+        // =====================================================
+
+        if (
+            staffUser == null &&
+            int.TryParse(
+                nameIdentifier,
+                out var databaseUserId
             )
         )
-        .ToListAsync();
-
-    foreach (var item in expiredOutpasses)
-    {
-        if (item.Status == "Pending")
         {
-            item.Status =
-                "Not Accepted By Hostel Incharge";
+            staffUser = await _context.Users
+                .Include(x => x.Role)
+                .FirstOrDefaultAsync(
+                    x => x.Id == databaseUserId
+                );
         }
+
+
+        if (staffUser == null)
+        {
+            Console.WriteLine(
+                "HISTORY ERROR: STAFF USER NOT FOUND"
+            );
+
+            return StatusCode(
+                403,
+                "Logged-in staff user could not be identified."
+            );
+        }
+
+
+        // =====================================================
+        // 5. GET ROLE
+        // =====================================================
+
+        var role =
+            staffUser.Role?.Name?.Trim() ?? "";
+
+
+        Console.WriteLine(
+            $"DATABASE USER ID : {staffUser.Id}"
+        );
+
+        Console.WriteLine(
+            $"DATABASE USER ID : [{staffUser.UserId}]"
+        );
+
+        Console.WriteLine(
+            $"STAFF NAME       : [{staffUser.FullName}]"
+        );
+
+        Console.WriteLine(
+            $"ROLE             : [{role}]"
+        );
+
+        Console.WriteLine(
+            $"COLLEGE ID       : [{staffUser.CollegeId}]"
+        );
+
+        Console.WriteLine(
+            $"ASSIGNED YEAR    : [{staffUser.AssignedYear}]"
+        );
+
+
+        // =====================================================
+        // 6. RESOLVE COLLEGE USING CollegeId
+        // =====================================================
+
+        string? staffCollege = null;
+
+        if (
+            staffUser.CollegeId.HasValue &&
+            staffUser.CollegeId.Value > 0
+        )
+        {
+            staffCollege = await _context.Colleges
+                .Where(c =>
+                    c.Id == staffUser.CollegeId.Value
+                )
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync();
+        }
+
+
+        Console.WriteLine(
+            $"RESOLVED COLLEGE : [{staffCollege}]"
+        );
+
+
+        // =====================================================
+        // 7. NORMALIZE ASSIGNED YEAR
+        // =====================================================
+
+        var assignedYear =
+            staffUser.AssignedYear?.Trim();
+
+
+        if (
+            assignedYear?.Equals(
+                "4th Year",
+                StringComparison.OrdinalIgnoreCase
+            ) == true
+        )
+        {
+            assignedYear = "Final Year";
+        }
+
+        if (
+            assignedYear?.Equals(
+                "Intern",
+                StringComparison.OrdinalIgnoreCase
+            ) == true
+        )
+        {
+            assignedYear = "Internship";
+        }
+
+
+        Console.WriteLine(
+            $"NORMALIZED YEAR  : [{assignedYear}]"
+        );
+
+
+        // =====================================================
+        // 8. ROLE CHECK
+        // =====================================================
+
+        var isManagement =
+            role.Equals(
+                "Management",
+                StringComparison.OrdinalIgnoreCase
+            )
+            ||
+            role.Equals(
+                "System Admin",
+                StringComparison.OrdinalIgnoreCase
+            )
+            ||
+            role.Equals(
+                "Admin",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        var isClassIncharge =
+            role.Equals(
+                "Class Incharge",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        var isHostelIncharge =
+            role.Equals(
+                "Hostel Incharge",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        var isPrincipal =
+            role.Equals(
+                "Principal",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        // =====================================================
+        // 9. BASE QUERY
+        // =====================================================
+
+        var query =
+            _context.Outpasses.AsQueryable();
+
+
+        // =====================================================
+        // 10. MANAGEMENT
+        // ALL COLLEGES / ALL YEARS
+        // =====================================================
+
+        if (isManagement)
+        {
+            Console.WriteLine(
+                "HISTORY ACCESS: MANAGEMENT - ALL"
+            );
+        }
+
+
+        // =====================================================
+        // 11. CLASS INCHARGE
+        // COLLEGE + YEAR
+        // =====================================================
+
+        else if (isClassIncharge)
+        {
+            if (string.IsNullOrWhiteSpace(staffCollege))
+            {
+                Console.WriteLine(
+                    "HISTORY DENIED: CLASS INCHARGE COLLEGE EMPTY"
+                );
+
+                return StatusCode(
+                    403,
+                    "Class Incharge has no assigned college."
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(assignedYear))
+            {
+                Console.WriteLine(
+                    "HISTORY DENIED: CLASS INCHARGE YEAR EMPTY"
+                );
+
+                return StatusCode(
+                    403,
+                    "Class Incharge has no assigned year."
+                );
+            }
+
+
+            Console.WriteLine(
+                "HISTORY ACCESS: CLASS INCHARGE"
+            );
+
+            Console.WriteLine(
+                $"FILTER COLLEGE : [{staffCollege}]"
+            );
+
+            Console.WriteLine(
+                $"FILTER YEAR    : [{assignedYear}]"
+            );
+
+
+            var normalizedCollege =
+                staffCollege.Trim().ToLower();
+
+            var normalizedYear =
+                assignedYear.Trim().ToLower();
+
+
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId
+                    &&
+                    s.CollegeName != null
+                    &&
+                    s.CollegeName
+                        .Trim()
+                        .ToLower()
+                        == normalizedCollege
+                    &&
+                    s.Year != null
+                    &&
+                    (
+                        s.Year
+                            .Trim()
+                            .ToLower()
+                            == normalizedYear
+
+                        ||
+
+                        (
+                            normalizedYear == "final year"
+                            &&
+                            s.Year
+                                .Trim()
+                                .ToLower()
+                                == "4th year"
+                        )
+
+                        ||
+
+                        (
+                            normalizedYear == "internship"
+                            &&
+                            s.Year
+                                .Trim()
+                                .ToLower()
+                                == "intern"
+                        )
+                    )
+                )
+            );
+        }
+
+
+        // =====================================================
+        // 12. HOSTEL INCHARGE
+        // COLLEGE ONLY
+        // =====================================================
+
+        else if (isHostelIncharge)
+        {
+            if (string.IsNullOrWhiteSpace(staffCollege))
+            {
+                return StatusCode(
+                    403,
+                    "Hostel Incharge has no assigned college."
+                );
+            }
+
+
+            var normalizedCollege =
+                staffCollege.Trim().ToLower();
+
+
+            Console.WriteLine(
+                "HISTORY ACCESS: HOSTEL INCHARGE"
+            );
+
+            Console.WriteLine(
+                $"FILTER COLLEGE : [{staffCollege}]"
+            );
+
+
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId
+                    &&
+                    s.CollegeName != null
+                    &&
+                    s.CollegeName
+                        .Trim()
+                        .ToLower()
+                        == normalizedCollege
+                )
+            );
+        }
+
+
+        // =====================================================
+        // 13. PRINCIPAL
+        // COLLEGE ONLY
+        // =====================================================
+
+        else if (isPrincipal)
+        {
+            if (string.IsNullOrWhiteSpace(staffCollege))
+            {
+                return StatusCode(
+                    403,
+                    "Principal has no assigned college."
+                );
+            }
+
+
+            var normalizedCollege =
+                staffCollege.Trim().ToLower();
+
+
+            Console.WriteLine(
+                "HISTORY ACCESS: PRINCIPAL"
+            );
+
+            Console.WriteLine(
+                $"FILTER COLLEGE : [{staffCollege}]"
+            );
+
+
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId
+                    &&
+                    s.CollegeName != null
+                    &&
+                    s.CollegeName
+                        .Trim()
+                        .ToLower()
+                        == normalizedCollege
+                )
+            );
+        }
+
+
+        // =====================================================
+        // 14. UNKNOWN ROLE
+        // =====================================================
+
         else
         {
-            item.Status = "Completed";
-            item.OutpassState = "Expired";
+            Console.WriteLine(
+                $"HISTORY DENIED: UNKNOWN ROLE [{role}]"
+            );
+
+            return StatusCode(
+                403,
+                $"Role '{role}' is not allowed to view outpass history."
+            );
         }
-    }
-
-    await _context.SaveChangesAsync();
 
 
-    // =====================================================
-    // 2. GET LOGGED-IN USER FROM JWT
-    // =====================================================
+        // =====================================================
+        // 15. HISTORY STATUS
+        // =====================================================
 
-    var userId =
-        User.FindFirst(ClaimTypes.Name)?.Value
-        ?? User.FindFirst("userId")?.Value
-        ?? User.FindFirst("UserId")?.Value;
+        var history = await query
+            .Where(x =>
+                x.Status == "Approved" ||
+                x.Status == "Completed" ||
+                x.Status == "Rejected" ||
+                x.Status == "Cancelled" ||
+                x.Status ==
+                    "Not Accepted By Hostel Incharge" ||
+                x.Status ==
+                    "Not Accepted By Warden" ||
+                x.OutpassState == "Expired"
+            )
+            .OrderByDescending(x => x.Id)
+            .ToListAsync();
 
-    var nameIdentifier =
-        User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-    User? staffUser = null;
+        // =====================================================
+        // 16. DEBUG COUNT
+        // =====================================================
 
-    // Try UserId from JWT
-    if (!string.IsNullOrWhiteSpace(userId))
-    {
-        staffUser = await _context.Users
-            .Include(x => x.Role)
-            .Include(x => x.College)
-            .FirstOrDefaultAsync(
-                x => x.UserId == userId
+        Console.WriteLine(
+            $"OUTPASS HISTORY COUNT: {history.Count}"
+        );
+
+
+        foreach (var item in history.Take(10))
+        {
+            Console.WriteLine(
+                $"HISTORY -> ID:{item.Id} " +
+                $"Student:{item.StudentId} " +
+                $"Status:{item.Status} " +
+                $"Stage:{item.ApprovalStage}"
             );
-    }
+        }
 
-    // Fallback to database Id
-    if (
-        staffUser == null &&
-        int.TryParse(
-            nameIdentifier,
-            out var databaseUserId
-        )
-    )
-    {
-        staffUser = await _context.Users
-            .Include(x => x.Role)
-            .Include(x => x.College)
-            .FirstOrDefaultAsync(
-                x => x.Id == databaseUserId
-            );
-    }
 
-    if (staffUser == null)
+        return Ok(history);
+    }
+    catch (Exception ex)
     {
+        Console.WriteLine(
+            "========== OUTPASS HISTORY ERROR =========="
+        );
+
+        Console.WriteLine(ex.ToString());
+
         return StatusCode(
-            403,
-            "Logged-in staff user could not be identified."
+            500,
+            "Failed to load outpass history."
         );
     }
-
-
-    // =====================================================
-    // 3. GET ACTUAL DATABASE ROLE
-    // =====================================================
-
-    var role =
-        staffUser.Role?.Name?.Trim()
-        ?? "";
-
-    var staffCollege =
-        staffUser.College?.Name?.Trim();
-
-    var assignedYear =
-        staffUser.AssignedYear?.Trim();
-
-
-    Console.WriteLine(
-        "========== OUTPASS HISTORY =========="
-    );
-
-    Console.WriteLine(
-        $"UserId       : {staffUser.UserId}"
-    );
-
-    Console.WriteLine(
-        $"Name         : {staffUser.FullName}"
-    );
-
-    Console.WriteLine(
-        $"Role         : {role}"
-    );
-
-    Console.WriteLine(
-        $"College      : {staffCollege}"
-    );
-
-    Console.WriteLine(
-        $"AssignedYear : {assignedYear}"
-    );
-
-
-    // =====================================================
-    // 4. ROLE FLAGS
-    // =====================================================
-
-    var isManagement =
-        role.Equals(
-            "Management",
-            StringComparison.OrdinalIgnoreCase
-        )
-        ||
-        role.Equals(
-            "System Admin",
-            StringComparison.OrdinalIgnoreCase
-        )
-        ||
-        role.Equals(
-            "Admin",
-            StringComparison.OrdinalIgnoreCase
-        );
-
-    var isClassIncharge =
-        role.Equals(
-            "Class Incharge",
-            StringComparison.OrdinalIgnoreCase
-        );
-
-    var isHostelIncharge =
-        role.Equals(
-            "Hostel Incharge",
-            StringComparison.OrdinalIgnoreCase
-        );
-
-    var isPrincipal =
-        role.Equals(
-            "Principal",
-            StringComparison.OrdinalIgnoreCase
-        );
-
-
-    // =====================================================
-    // 5. BASE HISTORY QUERY
-    // =====================================================
-
-    var query = _context.Outpasses
-        .AsQueryable();
-
-
-    // =====================================================
-    // 6. MANAGEMENT
-    // =====================================================
-
-    if (isManagement)
-    {
-        // Management can see all colleges and all years.
-    }
-
-
-    // =====================================================
-    // 7. CLASS INCHARGE
-    // COLLEGE + ASSIGNED YEAR
-    // =====================================================
-
-    else if (isClassIncharge)
-    {
-        if (string.IsNullOrWhiteSpace(staffCollege))
-        {
-            return StatusCode(
-                403,
-                "Class Incharge has no assigned college."
-            );
-        }
-
-        if (string.IsNullOrWhiteSpace(assignedYear))
-        {
-            return StatusCode(
-                403,
-                "Class Incharge has no assigned year."
-            );
-        }
-
-        query = query.Where(x =>
-            _context.StudentRegistrations.Any(s =>
-                s.StudentId == x.StudentId
-                &&
-                s.CollegeName == staffCollege
-                &&
-                s.Year == assignedYear
-            )
-        );
-    }
-
-
-    // =====================================================
-    // 8. HOSTEL INCHARGE
-    // COLLEGE ONLY
-    // =====================================================
-
-    else if (isHostelIncharge)
-    {
-        if (string.IsNullOrWhiteSpace(staffCollege))
-        {
-            return StatusCode(
-                403,
-                "Hostel Incharge has no assigned college."
-            );
-        }
-
-        query = query.Where(x =>
-            _context.StudentRegistrations.Any(s =>
-                s.StudentId == x.StudentId
-                &&
-                s.CollegeName == staffCollege
-            )
-        );
-    }
-
-
-    // =====================================================
-    // 9. PRINCIPAL
-    // COLLEGE ONLY
-    // =====================================================
-
-    else if (isPrincipal)
-    {
-        if (string.IsNullOrWhiteSpace(staffCollege))
-        {
-            return StatusCode(
-                403,
-                "Principal has no assigned college."
-            );
-        }
-
-        query = query.Where(x =>
-            _context.StudentRegistrations.Any(s =>
-                s.StudentId == x.StudentId
-                &&
-                s.CollegeName == staffCollege
-            )
-        );
-    }
-
-
-    // =====================================================
-    // 10. UNKNOWN ROLE
-    // =====================================================
-
-    else
-    {
-        return StatusCode(
-            403,
-            $"Role '{role}' is not allowed to view outpass history."
-        );
-    }
-
-
-    // =====================================================
-    // 11. HISTORY STATUS FILTER
-    // =====================================================
-
-    var history = await query
-        .Where(x =>
-            x.Status == "Approved" ||
-            x.Status == "Completed" ||
-            x.Status == "Rejected" ||
-            x.Status == "Cancelled" ||
-            x.Status == "Not Accepted By Hostel Incharge" ||
-            x.Status == "Not Accepted By Warden" ||
-            x.OutpassState == "Expired"
-        )
-        .OrderByDescending(x => x.Id)
-        .ToListAsync();
-
-
-    Console.WriteLine(
-        $"OUTPASS HISTORY COUNT: {history.Count}"
-    );
-
-
-    return Ok(history);
 }
-
 }

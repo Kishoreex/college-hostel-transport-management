@@ -2791,11 +2791,12 @@ if (!canManageHostel) {
                             </div>
                           </div>
                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${req.status === 'approved' ? 'bg-green-100 text-green-700' : req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                        {req.approvalStage === "FirstApproved"
-  ? `✓ ${req.firstApprovedBy ?? "Class Incharge"} — Waiting: Hostel Incharge / Principal`
-  : req.approvalStage === "SecondApproved"
-  ? `✓ ${req.secondApprovedBy ?? "Hostel Incharge"} — Waiting: Principal`
-  : "Waiting: Class Incharge / Hostel Incharge / Principal"}
+                            {req.status?.toLowerCase() === 'pending'
+                              ? (req.approvalStage === 'FirstApproved'
+                                  ? `✓ ${req.firstApprovedBy ?? "First"} — Waiting: Second Level`
+                                  : req.approvalStage === 'SecondApproved'
+                                  ? `✓ ${req.secondApprovedBy ?? "Second"} — Waiting: Final Level`
+                                  : 'Waiting: First Level')
                               : req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                           </span>
                         </div>

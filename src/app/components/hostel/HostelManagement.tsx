@@ -1030,15 +1030,35 @@ const loadOutpassHistory = async () => {
           user.college || ""
         )}`;
 
-    const response = await fetch(url);
+    const token = localStorage.getItem("authToken");
+
+    console.log("========== OUTPASS HISTORY ==========");
+    console.log("URL:", url);
+    console.log("TOKEN EXISTS:", !!token);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    const data = await response.json();
+
+    console.log(
+      "OUTPASS HISTORY RESPONSE:",
+      response.status,
+      data
+    );
 
     if (!response.ok) {
       throw new Error(
-        "Failed to load outpass history"
+        data?.message ||
+        data?.title ||
+        `Failed to load outpass history (${response.status})`
       );
     }
-
-    const data = await response.json();
 
     setOutpassHistory(data);
   } catch (error) {

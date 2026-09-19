@@ -1258,16 +1258,13 @@ assignedYear:
       }
       className="w-full bg-gray-50 border border-gray-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
     >
-      <option value="">
-        Select Assigned Year
-      </option>
+<option value="">Select Assigned Year</option>
 
-      <option value="1st Year">1st Year</option>
-      <option value="2nd Year">2nd Year</option>
-      <option value="3rd Year">3rd Year</option>
-      <option value="4th Year">4th Year</option>
-      <option value="5th Year">5th Year</option>
-      <option value="Intern">Intern</option>
+<option value="1st Year">1st Year</option>
+<option value="2nd Year">2nd Year</option>
+<option value="3rd Year">3rd Year</option>
+<option value="Final Year">Final Year</option>
+<option value="Internship">Internship</option>
     </select>
   </div>
 )}
@@ -1832,16 +1829,13 @@ newCollegeId === '' ||
       }
       className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none transition-all"
     >
-      <option value="">
-        Select Assigned Year
-      </option>
+<option value="">Select Assigned Year</option>
 
-      <option value="1st Year">1st Year</option>
-      <option value="2nd Year">2nd Year</option>
-      <option value="3rd Year">3rd Year</option>
-      <option value="4th Year">4th Year</option>
-      <option value="5th Year">5th Year</option>
-      <option value="Intern">Intern</option>
+<option value="1st Year">1st Year</option>
+<option value="2nd Year">2nd Year</option>
+<option value="3rd Year">3rd Year</option>
+<option value="Final Year">Final Year</option>
+<option value="Internship">Internship</option>
     </select>
   </div>
 )}

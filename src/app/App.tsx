@@ -47,54 +47,100 @@ const handleLogin = (userData: User) => {
     setUser(userData);
 };
 const handleLogout = async (force = false) => {
-console.log("LOGOUT USER");
-console.log(JSON.stringify(user, null, 2));
-if (user?.role === "student") {
+  console.log("LOGOUT USER");
+  console.log(JSON.stringify(user, null, 2));
 
-    console.log("Student ID =", user.studentId);
+  try {
+    // ================================
+    // STUDENT
+    // ================================
+    if (user?.role === "student") {
 
-    if (!force) {
+      console.log("Student ID =", user.studentId);
 
-        const active =
-            await hasActiveOutpass(
-                user.studentId ?? user.userId
-            );
+      if (!force) {
+        try {
+          const active = await hasActiveOutpass(
+            user.studentId ?? user.userId
+          );
 
-        console.log("Active Outpass:", active);
+          console.log("Active Outpass:", active);
 
-        if (active) {
-
+          if (active) {
             alert(
-                "You have an active outpass. Logout is not allowed."
+              "You have an active outpass. Logout is not allowed."
             );
-
             return;
+          }
+
+        } catch (error) {
+          // If active-outpass check fails because
+          // token/session is invalid, continue logout.
+          console.error(
+            "ACTIVE OUTPASS CHECK FAILED:",
+            error
+          );
         }
+      }
 
+      try {
+        await logout(
+          user.studentId ?? user.userId
+        );
+      } catch (error) {
+        console.error(
+          "STUDENT LOGOUT API FAILED:",
+          error
+        );
+      }
     }
 
-    await logout(user.studentId ?? user.userId);
-}
-
+    // ================================
+    // ADMIN / STAFF
+    // ================================
     else {
-console.log("=== BEFORE LOGOUT ===");
-console.log(user);
 
-console.log("user.id =", user.id);
-console.log("user.userId =", user.userId);
+      const logoutId =
+        user.userId ?? user.id;
 
-const logoutId = user.userId ?? user.id;
+      console.log(
+        "FINAL logoutId =",
+        logoutId
+      );
 
-console.log("FINAL logoutId =", logoutId);
-
-await logout(logoutId);
+      try {
+        await logout(logoutId);
+      } catch (error) {
+        console.error(
+          "STAFF LOGOUT API FAILED:",
+          error
+        );
+      }
     }
+
+  } finally {
+
+    // ================================
+    // ALWAYS CLEAR LOCAL LOGIN
+    // ================================
+
+    console.log(
+      "CLEARING LOCAL LOGIN"
+    );
 
     localStorage.removeItem("hostelUser");
+    localStorage.removeItem("authToken");
 
-    window.history.replaceState(null, "", "/");
+    sessionStorage.clear();
 
     setUser(null);
+
+    window.history.replaceState(
+      null,
+      "",
+      "/"
+    );
+  }
 };
 
 

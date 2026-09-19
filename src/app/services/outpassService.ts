@@ -83,25 +83,50 @@ export const getAllOutpasses = async (
 export const approveOutpass = async (
   id: number
 ) => {
+  const token = localStorage.getItem("authToken");
+
+  console.log("========== APPROVE OUTPASS ==========");
+  console.log("ID:", id);
+  console.log("TOKEN EXISTS:", !!token);
+
   const response = await fetch(
-`${API_URL}/Outpasses/approve/${id}`,
+    `${API_URL}/Outpasses/approve/${id}`,
     {
       method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     }
   );
 
-  return response.json();
+  const data = await response.json();
+
+  console.log("APPROVE RESPONSE:", response.status, data);
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.title ||
+      `Approval failed (${response.status})`
+    );
+  }
+
+  return data;
 };
 
 export const rejectOutpass = async (
   id: number,
   rejectReason: string
 ) => {
+  const token = localStorage.getItem("authToken");
+
   const response = await fetch(
     `${API_URL}/Outpasses/reject/${id}`,
     {
       method: "PUT",
       headers: {
+        "Authorization": `Bearer ${token}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -110,7 +135,17 @@ export const rejectOutpass = async (
     }
   );
 
-  return response.json();
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.title ||
+      `Rejection failed (${response.status})`
+    );
+  }
+
+  return data;
 };
 export const markExit = async (
   id: number,

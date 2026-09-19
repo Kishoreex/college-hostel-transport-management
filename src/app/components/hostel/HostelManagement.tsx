@@ -486,36 +486,59 @@ const [historyToDate, setHistoryToDate] =
 const [searchQuery, setSearchQuery] = useState('');
 const [outpassSearch, setOutpassSearch] = useState('');
 const [leaveSearch, setLeaveSearch] = useState('');
-const canApproveStage = (approvalStage: string) => {
+const canApproveStage = (approvalStage?: string | null) => {
+
+  // IMPORTANT:
+  // Old outpasses may have NULL / empty ApprovalStage.
+  // Treat them as a fresh request.
+  const stage =
+    String(approvalStage ?? "None").trim() || "None";
 
   const currentRole =
     user.staffRole?.trim().toLowerCase() ||
     user.role?.trim().toLowerCase() ||
     "";
 
-  // Management can see/approve everything.
+  console.log("OUTPASS APPROVAL CHECK:", {
+    currentRole,
+    approvalStage,
+    normalizedStage: stage
+  });
+
+  // Management
   if (currentRole === "management") {
-    return approvalStage !== "FinalApproved";
+    return stage !== "FinalApproved";
   }
 
-  // Principal can approve directly from any unfinished stage.
+  // System Admin / Admin
+  if (
+    currentRole === "system admin" ||
+    currentRole === "admin"
+  ) {
+    return stage !== "FinalApproved";
+  }
+
+  // Principal
+  // Principal can directly approve any unfinished request.
   if (currentRole === "principal") {
-    return approvalStage !== "FinalApproved";
+    return stage !== "FinalApproved";
   }
 
-  // Hostel Incharge can approve:
-  // New request
-  // OR Class Incharge approved request
+  // Hostel Incharge
+  // Can approve:
+  // None -> SecondApproved
+  // FirstApproved -> SecondApproved
   if (currentRole === "hostel incharge") {
     return (
-      approvalStage === "None" ||
-      approvalStage === "FirstApproved"
+      stage === "None" ||
+      stage === "FirstApproved"
     );
   }
 
-  // Class Incharge can approve only new requests.
+  // Class Incharge
+  // Can approve only fresh requests.
   if (currentRole === "class incharge") {
-    return approvalStage === "None";
+    return stage === "None";
   }
 
   return false;
@@ -2791,13 +2814,19 @@ if (!canManageHostel) {
                             </div>
                           </div>
                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${req.status === 'approved' ? 'bg-green-100 text-green-700' : req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {req.status?.toLowerCase() === 'pending'
-                              ? (req.approvalStage === 'FirstApproved'
-                                  ? `✓ ${req.firstApprovedBy ?? "First"} — Waiting: Second Level`
-                                  : req.approvalStage === 'SecondApproved'
-                                  ? `✓ ${req.secondApprovedBy ?? "Second"} — Waiting: Final Level`
-                                  : 'Waiting: First Level')
-                              : req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+{req.status?.toLowerCase() === "pending"
+  ? (
+      String(req.approvalStage ?? "None").trim() === "FirstApproved"
+        ? `✓ ${req.firstApprovedBy ?? "Class Incharge"} — Waiting: Hostel Incharge / Principal`
+
+        : String(req.approvalStage ?? "None").trim() === "SecondApproved"
+        ? `✓ ${req.secondApprovedBy ?? "Hostel Incharge"} — Waiting: Principal`
+
+        : "Waiting: Class Incharge / Hostel Incharge / Principal"
+    )
+
+  : req.status?.charAt(0).toUpperCase() +
+    req.status?.slice(1)}
                           </span>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 mb-3">

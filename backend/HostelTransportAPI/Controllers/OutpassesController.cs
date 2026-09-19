@@ -119,7 +119,11 @@ if (hasActiveOutpass)
         outpass.StudentName = student.StudentName;
         outpass.Gender = student.Gender;
     }
-
+// Every new outpass starts at the first approval stage.
+if (string.IsNullOrWhiteSpace(outpass.ApprovalStage))
+{
+    outpass.ApprovalStage = "None";
+}
     _context.Outpasses.Add(outpass);
 
     await _context.SaveChangesAsync();
@@ -137,6 +141,12 @@ public async Task<IActionResult> Approve(int id)
 
     if (outpass == null)
         return NotFound();
+        // Old records may have NULL / empty ApprovalStage.
+// Treat them as fresh requests.
+if (string.IsNullOrWhiteSpace(outpass.ApprovalStage))
+{
+    outpass.ApprovalStage = "None";
+}
 
     var role =
         User.FindFirst(ClaimTypes.Role)?.Value

@@ -3398,13 +3398,32 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                       <>
 {outpassHistory
 .filter(h => {
-  const gender = h.gender?.toLowerCase();
-  const status = h.status?.toLowerCase();
+const gender =
+  h.gender?.toLowerCase();
 
-  const matchesGender =
+const status =
+  h.status?.toLowerCase();
+
+const currentRole =
+  (
+    user.staffRole ||
+    user.role ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+
+const isClassIncharge =
+  currentRole === "class incharge";
+
+const matchesGender =
+  isClassIncharge ||
+  isManagement ||
+  (
     historyGender === "boys"
       ? gender === "male"
-      : gender === "female";
+      : gender === "female"
+  );
 
   const matchesStatus =
     status === "approved" ||
@@ -3419,11 +3438,11 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
     return false;
   }
   // College staff are restricted by their selected hostel gender.
-  return (
-    (isManagement || matchesGender) &&
-    matchesStatus &&
-    !h.leaveRequestId
-  );
+return (
+  matchesGender &&
+  matchesStatus &&
+  !h.leaveRequestId
+);
 })
     .sort(
       (a, b) =>

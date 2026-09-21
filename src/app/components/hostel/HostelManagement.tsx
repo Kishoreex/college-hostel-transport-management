@@ -1061,11 +1061,23 @@ useEffect(() => {
 
   loadOutpasses();
   loadOutpassHistory();
-}, [user?.userId, user?.college, isManagement]);
+}, [
+  user?.userId,
+  user?.college,
+  user?.assignedYear,
+  isManagement
+]);
 useEffect(() => {
+  if (!user?.userId) return;
+
   loadLeaveRequests();
   loadLeaveHistory();
-}, []);
+}, [
+  user?.userId,
+  user?.college,
+  user?.assignedYear,
+  isManagement
+]);
 const loadLeaveRequests = async () => {
   try {
     const data = await getLeaveRequests(
@@ -1134,29 +1146,69 @@ const loadOutpassHistory = async () => {
 };
 const loadLeaveHistory = async () => {
   try {
-    const url = isManagement
-      ? `${API_URL}/LeaveRequests/history`
-      : `${API_URL}/LeaveRequests/history?college=${encodeURIComponent(
-          user.college || ""
-        )}`;
-
-    const response = await fetch(url);
+    const response = await fetch(
+      `${API_URL}/LeaveRequests/history`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+      }
+    );
 
     if (!response.ok) {
+      const errorText = await response.text();
+
       throw new Error(
-        "Failed to load leave history"
+        errorText || "Failed to load leave history"
       );
     }
 
     const data = await response.json();
 
     console.log(
-      "LEAVE HISTORY COLLEGE:",
+      "========== LEAVE HISTORY =========="
+    );
+
+    console.log(
+      "USER:",
+      user.userId
+    );
+
+    console.log(
+      "ROLE:",
+      user.staffRole || user.role
+    );
+
+    console.log(
+      "COLLEGE:",
       user.college
     );
 
-    setLeaveHistory(data);
+    console.log(
+      "ASSIGNED YEAR:",
+      user.assignedYear
+    );
+
+    console.log(
+      "LEAVE HISTORY:",
+      data
+    );
+
+    console.log(
+      "LEAVE HISTORY COUNT:",
+      Array.isArray(data)
+        ? data.length
+        : "NOT ARRAY"
+    );
+
+    setLeaveHistory(
+      Array.isArray(data)
+        ? data
+        : []
+    );
+
   } catch (error) {
+
     console.error(
       "FAILED TO LOAD LEAVE HISTORY:",
       error

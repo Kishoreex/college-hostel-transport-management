@@ -455,24 +455,19 @@ const [historyToDate, setHistoryToDate] =
 const [searchQuery, setSearchQuery] = useState('');
 const [outpassSearch, setOutpassSearch] = useState('');
 const [leaveSearch, setLeaveSearch] = useState('');
-const canApproveStage = (approvalStage?: string | null) => {
 const canApproveLeaveStage = (
   approvalStage?: string | null
 ) => {
-
   const stage =
-    String(
-      approvalStage ?? "None"
-    ).trim() || "None";
-
+    String(approvalStage ?? "None").trim() || "None";
 
   const currentRole =
     user.staffRole?.trim().toLowerCase() ||
     user.role?.trim().toLowerCase() ||
     "";
 
-
-  // Management
+  // Management / System Admin / Admin
+  // Can directly approve any unfinished leave
   if (
     currentRole === "management" ||
     currentRole === "system admin" ||
@@ -481,14 +476,15 @@ const canApproveLeaveStage = (
     return stage !== "FinalApproved";
   }
 
-
   // Principal
+  // Can directly approve any unfinished leave
   if (currentRole === "principal") {
     return stage !== "FinalApproved";
   }
 
-
   // Hostel Incharge
+  // None -> SecondApproved
+  // FirstApproved -> SecondApproved
   if (currentRole === "hostel incharge") {
     return (
       stage === "None" ||
@@ -496,18 +492,23 @@ const canApproveLeaveStage = (
     );
   }
 
-
   // Class Incharge
+  // None -> FirstApproved
   if (currentRole === "class incharge") {
     return stage === "None";
   }
 
-
   return false;
 };
+
+
+const canApproveStage = (
+  approvalStage?: string | null
+) => {
   // IMPORTANT:
   // Old outpasses may have NULL / empty ApprovalStage.
   // Treat them as a fresh request.
+
   const stage =
     String(approvalStage ?? "None").trim() || "None";
 
@@ -542,7 +543,6 @@ const canApproveLeaveStage = (
   }
 
   // Hostel Incharge
-  // Can approve:
   // None -> SecondApproved
   // FirstApproved -> SecondApproved
   if (currentRole === "hostel incharge") {

@@ -40,6 +40,14 @@ import {
 import { useState, useRef, useEffect } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
 import { App } from '@capacitor/app';
+import { registerPlugin } from '@capacitor/core';
+
+interface OutpassLocationPlugin {
+  openAppSettings(): Promise<void>;
+}
+
+const OutpassLocation =
+  registerPlugin<OutpassLocationPlugin>('OutpassLocation');
 import { toast } from 'sonner';
 import {
   Card,
@@ -121,73 +129,168 @@ const getDistanceMeters = (
 type StudentView = 'dashboard' | 'outpass' | 'leave' | 'history' | 'route' | 'announcements' | 'vacate' | 'cancel';
 
 export default function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
-    // =========================================================
-  // MANDATORY LOCATION PERMISSION
-  // =========================================================
+// =========================================================
+// MANDATORY LOCATION PERMISSION
+// =========================================================
 
-  const [locationAllowed, setLocationAllowed] = useState(false);
-  const [checkingLocation, setCheckingLocation] = useState(true);
+const [locationAllowed, setLocationAllowed] = useState(false);
+const [checkingLocation, setCheckingLocation] = useState(true);
 
-  const checkLocationPermission = async () => {
-    try {
-      setCheckingLocation(true);
+const checkLocationPermission = async () => {
+  try {
+    setCheckingLocation(true);
 
-      const permission = await Geolocation.checkPermissions();
+    const permission = await Geolocation.checkPermissions();
 
-      console.log("📍 Location permission:", permission.location);
+    console.log(
+      "📍 Current location permission:",
+      permission.location
+    );
 
-      if (
-        permission.location === "granted" ||
-        permission.location === "prompt"
-      ) {
-        // If permission is already granted, verify GPS is actually working.
-        if (permission.location === "granted") {
-          try {
-            await Geolocation.getCurrentPosition({
-              enableHighAccuracy: true,
-              timeout: 10000,
-            });
+    // =====================================================
+    // LOCATION ALREADY GRANTED
+    // =====================================================
 
-            setLocationAllowed(true);
-            return;
-          } catch (gpsError) {
-            console.log("GPS is not available:", gpsError);
-          }
-        }
+    if (permission.location === "granted") {
 
-        // Ask Android for permission
-        const requested = await Geolocation.requestPermissions();
+      try {
 
-        console.log(
-          "📍 Requested location permission:",
-          requested.location
+        await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+        });
+
+        console.log("✅ Location is working");
+
+        setLocationAllowed(true);
+        return;
+
+      } catch (gpsError) {
+
+        console.error(
+          "❌ GPS is not available:",
+          gpsError
         );
 
-        if (requested.location === "granted") {
-          try {
-            await Geolocation.getCurrentPosition({
-              enableHighAccuracy: true,
-              timeout: 10000,
-            });
-
-            setLocationAllowed(true);
-            return;
-          } catch (error) {
-            console.error("GPS unavailable:", error);
-          }
-        }
+        setLocationAllowed(false);
+        return;
       }
-
-      // Denied / restricted / GPS unavailable
-      setLocationAllowed(false);
-
-    } catch (error) {
-      console.error("❌ Location permission check failed:", error);
-      setLocationAllowed(false);
-    } finally {
-      setCheckingLocation(false);
     }
-  };
+
+    // =====================================================
+    // PERMISSION NOT GRANTED
+    // =====================================================
+
+    setLocationAllowed(false);
+
+  } catch (error) {
+
+    console.error(
+      "❌ Location permission check failed:",
+      error
+    );
+
+    setLocationAllowed(false);
+
+  } finally {
+
+    setCheckingLocation(false);
+  }
+};
+
+const handleEnableLocation = async () => {
+
+  try {
+
+    setCheckingLocation(true);
+
+    console.log("📍 Enable Location clicked");
+
+    // =====================================================
+    // FIRST TRY AND REQUEST ANDROID PERMISSION
+    // =====================================================
+
+    const requested =
+      await Geolocation.requestPermissions();
+
+    console.log(
+      "📍 Permission request result:",
+      requested.location
+    );
+
+    // =====================================================
+    // USER ALLOWED LOCATION
+    // =====================================================
+
+    if (requested.location === "granted") {
+
+      try {
+
+        await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+        });
+
+        console.log(
+          "✅ Location permission granted and GPS working"
+        );
+
+        setLocationAllowed(true);
+
+        return;
+
+      } catch (gpsError) {
+
+        console.error(
+          "❌ GPS is not available:",
+          gpsError
+        );
+
+        setLocationAllowed(false);
+
+        return;
+      }
+    }
+
+    // =====================================================
+    // USER DENIED / ANDROID NO LONGER SHOWS POPUP
+    // OPEN APP SETTINGS
+    // =====================================================
+
+    console.log(
+      "⚠️ Permission denied. Opening app settings..."
+    );
+
+    setLocationAllowed(false);
+
+    await OutpassLocation.openAppSettings();
+
+  } catch (error) {
+
+    console.error(
+      "❌ Enable Location failed:",
+      error
+    );
+
+    setLocationAllowed(false);
+
+    try {
+
+      await OutpassLocation.openAppSettings();
+
+    } catch (settingsError) {
+
+      console.error(
+        "❌ Could not open app settings:",
+        settingsError
+      );
+    }
+
+  } finally {
+
+    setCheckingLocation(false);
+  }
+};
 
   useEffect(() => {
     checkLocationPermission();
@@ -1422,14 +1525,12 @@ const getStatusColor = (status: string) => {
           Please enable location access to continue.
         </p>
 
-        <button
-          onClick={async () => {
-            await checkLocationPermission();
-          }}
-          className="w-full max-w-sm bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold shadow-lg"
-        >
-          Enable Location
-        </button>
+<button
+  onClick={handleEnableLocation}
+  className="w-full max-w-sm bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold shadow-lg"
+>
+  Enable Location
+</button>
 
         <p className="text-xs text-gray-400 mt-5 max-w-xs">
           If you previously denied permission, please enable

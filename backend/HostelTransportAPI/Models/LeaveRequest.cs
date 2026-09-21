@@ -31,14 +31,21 @@ public string Destination { get; set; } = string.Empty;
 public string ExitTime { get; set; } = "";
 
 public string ReturnTime { get; set; } = "";
-    public string Status { get; set; } = "Pending";
+   public string Status { get; set; } = "Pending";
+
 public string ApprovalStage { get; set; } = "None";
+
 public string? FirstApprovedBy { get; set; }
+
 public string? SecondApprovedBy { get; set; }
+
 public string? FinalApprovedBy { get; set; }
-    public DateTime? ApprovedDate { get; set; }
 
-    public string? ApprovedBy { get; set; }
+public DateTime? ApprovedDate { get; set; }
 
-    public string? RejectReason { get; set; }
+public string? ApprovedBy { get; set; }
+
+public string? RejectReason { get; set; }
+
+public string? RejectedBy { get; set; }
 }

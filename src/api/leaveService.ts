@@ -1,28 +1,45 @@
-const API_URL = "https://api.madhapharma.in/api";
+import API_URL from "./api";
 
+
+// =====================================================
+// CREATE LEAVE
+// =====================================================
 
 export async function createLeaveRequest(data: any) {
-  const token = localStorage.getItem("authToken");
+
+  const token =
+    localStorage.getItem("authToken");
 
   const response = await fetch(
     `${API_URL}/LeaveRequests`,
     {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+
+        ...(token
+          ? {
+              Authorization:
+                `Bearer ${token}`,
+            }
+          : {}),
       },
-      body: JSON.stringify(data),
+
+      body:
+        JSON.stringify(data),
     }
   );
 
-  const result = await response.json();
+  const result =
+    await response.json();
 
   if (!response.ok) {
+
     throw new Error(
       result?.message ||
       result?.title ||
-      `Failed to create leave request (${response.status})`
+      `Failed to create leave (${response.status})`
     );
   }
 
@@ -30,29 +47,40 @@ export async function createLeaveRequest(data: any) {
 }
 
 
+// =====================================================
+// GET ALL LEAVES
+// =====================================================
+
 export async function getLeaveRequests(
   college?: string | null
 ) {
-  const url = college
-    ? `${API_URL}/LeaveRequests?college=${encodeURIComponent(college)}`
-    : `${API_URL}/LeaveRequests`;
 
-  const token = localStorage.getItem("authToken");
+  const url =
+    college
+      ? `${API_URL}/LeaveRequests?college=${encodeURIComponent(college)}`
+      : `${API_URL}/LeaveRequests`;
 
-  const response = await fetch(
-    url,
-    {
+  const token =
+    localStorage.getItem("authToken");
+
+  const response =
+    await fetch(url, {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
 
-  const result = await response.json();
+      headers: {
+        "Content-Type":
+          "application/json",
+
+        Authorization:
+          `Bearer ${token}`,
+      },
+    });
+
+  const result =
+    await response.json();
 
   if (!response.ok) {
+
     throw new Error(
       result?.message ||
       result?.title ||
@@ -64,75 +92,93 @@ export async function getLeaveRequests(
 }
 
 
-export async function approveLeave(id: number) {
-  const token = localStorage.getItem("authToken");
+// =====================================================
+// APPROVE LEAVE
+// =====================================================
 
-  console.log("========== APPROVE LEAVE ==========");
-  console.log("ID:", id);
-  console.log("TOKEN EXISTS:", !!token);
+export async function approveLeave(
+  id: number
+) {
 
-  const response = await fetch(
-    `${API_URL}/LeaveRequests/approve/${id}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+  const token =
+    localStorage.getItem("authToken");
 
-  const data = await response.json().catch(() => null);
+  const response =
+    await fetch(
+      `${API_URL}/LeaveRequests/approve/${id}`,
+      {
+        method: "POST",
 
-  console.log(
-    "APPROVE LEAVE RESPONSE:",
-    response.status,
-    data
-  );
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+        },
+      }
+    );
+
+  const data =
+    await response.json()
+      .catch(() => null);
 
   if (!response.ok) {
+
     throw new Error(
-      typeof data === "string"
-        ? data
-        : data?.message ||
-          data?.title ||
-          `Approval failed (${response.status})`
+      data?.message ||
+      data?.title ||
+      `Approval failed (${response.status})`
     );
   }
 
   return data;
 }
 
+
+// =====================================================
+// REJECT LEAVE
+// =====================================================
 
 export async function rejectLeave(
   id: number,
   rejectReason: string
 ) {
-  const token = localStorage.getItem("authToken");
 
-  const response = await fetch(
-    `${API_URL}/LeaveRequests/reject/${id}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        rejectReason,
-      }),
-    }
-  );
+  const token =
+    localStorage.getItem("authToken");
 
-  const data = await response.json().catch(() => null);
+  const response =
+    await fetch(
+      `${API_URL}/LeaveRequests/reject/${id}`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+        },
+
+        body:
+          JSON.stringify({
+            rejectReason,
+          }),
+      }
+    );
+
+  const data =
+    await response.json()
+      .catch(() => null);
 
   if (!response.ok) {
+
     throw new Error(
-      typeof data === "string"
-        ? data
-        : data?.message ||
-          data?.title ||
-          `Rejection failed (${response.status})`
+      data?.message ||
+      data?.title ||
+      `Rejection failed (${response.status})`
     );
   }
 
@@ -140,23 +186,39 @@ export async function rejectLeave(
 }
 
 
-export async function cancelLeave(id: number) {
-  const token = localStorage.getItem("authToken");
+// =====================================================
+// CANCEL LEAVE
+// =====================================================
 
-  const response = await fetch(
-    `${API_URL}/LeaveRequests/cancel/${id}`,
-    {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    }
-  );
+export async function cancelLeave(
+  id: number
+) {
 
-  const data = await response.json().catch(() => null);
+  const token =
+    localStorage.getItem("authToken");
+
+  const response =
+    await fetch(
+      `${API_URL}/LeaveRequests/cancel/${id}`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+        },
+      }
+    );
+
+  const data =
+    await response.json()
+      .catch(() => null);
 
   if (!response.ok) {
+
     throw new Error(
       data?.message ||
       data?.title ||

@@ -37,7 +37,9 @@ import {
 import {
   changePassword
 } from "../../../api/authService";
-import { useState, useRef, useEffect } from 'react';  
+import { useState, useRef, useEffect } from 'react';
+import { Geolocation } from '@capacitor/geolocation';
+import { App } from '@capacitor/app';
 import { toast } from 'sonner';
 import {
   Card,
@@ -119,6 +121,102 @@ const getDistanceMeters = (
 type StudentView = 'dashboard' | 'outpass' | 'leave' | 'history' | 'route' | 'announcements' | 'vacate' | 'cancel';
 
 export default function StudentDashboard({ user, onLogout }: StudentDashboardProps) {
+    // =========================================================
+  // MANDATORY LOCATION PERMISSION
+  // =========================================================
+
+  const [locationAllowed, setLocationAllowed] = useState(false);
+  const [checkingLocation, setCheckingLocation] = useState(true);
+
+  const checkLocationPermission = async () => {
+    try {
+      setCheckingLocation(true);
+
+      const permission = await Geolocation.checkPermissions();
+
+      console.log("📍 Location permission:", permission.location);
+
+      if (
+        permission.location === "granted" ||
+        permission.location === "prompt"
+      ) {
+        // If permission is already granted, verify GPS is actually working.
+        if (permission.location === "granted") {
+          try {
+            await Geolocation.getCurrentPosition({
+              enableHighAccuracy: true,
+              timeout: 10000,
+            });
+
+            setLocationAllowed(true);
+            return;
+          } catch (gpsError) {
+            console.log("GPS is not available:", gpsError);
+          }
+        }
+
+        // Ask Android for permission
+        const requested = await Geolocation.requestPermissions();
+
+        console.log(
+          "📍 Requested location permission:",
+          requested.location
+        );
+
+        if (requested.location === "granted") {
+          try {
+            await Geolocation.getCurrentPosition({
+              enableHighAccuracy: true,
+              timeout: 10000,
+            });
+
+            setLocationAllowed(true);
+            return;
+          } catch (error) {
+            console.error("GPS unavailable:", error);
+          }
+        }
+      }
+
+      // Denied / restricted / GPS unavailable
+      setLocationAllowed(false);
+
+    } catch (error) {
+      console.error("❌ Location permission check failed:", error);
+      setLocationAllowed(false);
+    } finally {
+      setCheckingLocation(false);
+    }
+  };
+
+  useEffect(() => {
+    checkLocationPermission();
+
+    // IMPORTANT:
+    // When student goes to Android Settings and enables
+    // location, then comes back to the app, check again.
+    let listener: any;
+
+    const setupAppListener = async () => {
+      listener = await App.addListener(
+        "appStateChange",
+        ({ isActive }) => {
+          if (isActive) {
+            console.log("📱 App became active - checking location again");
+            checkLocationPermission();
+          }
+        }
+      );
+    };
+
+    setupAppListener();
+
+    return () => {
+      if (listener) {
+        listener.remove();
+      }
+    };
+  }, []);
   const getApprovalLabel = (item: any) => {
   if (item.status?.toLowerCase() !== "pending") {
     return item.status;
@@ -1284,6 +1382,63 @@ const getStatusColor = (status: string) => {
     leave: 'Apply Leave',
   }[currentView];
     
+
+  // =========================================================
+  // BLOCK APP UNTIL LOCATION IS ENABLED
+  // =========================================================
+
+  if (checkingLocation) {
+    return (
+      <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mb-5">
+          <MapPin size={40} className="text-blue-600" />
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">
+          Checking Location
+        </h2>
+
+        <p className="text-gray-500 max-w-sm">
+          Please wait while we verify your location permission.
+        </p>
+      </div>
+    );
+  }
+
+  if (!locationAllowed) {
+    return (
+      <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center">
+
+        <div className="w-24 h-24 rounded-full bg-red-100 flex items-center justify-center mb-6">
+          <MapPin size={48} className="text-red-600" />
+        </div>
+
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">
+          Location Required
+        </h2>
+
+        <p className="text-gray-600 max-w-sm mb-6 leading-relaxed">
+          Location permission is required to use Madha Campus.
+          Please enable location access to continue.
+        </p>
+
+        <button
+          onClick={async () => {
+            await checkLocationPermission();
+          }}
+          className="w-full max-w-sm bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-xl font-semibold shadow-lg"
+        >
+          Enable Location
+        </button>
+
+        <p className="text-xs text-gray-400 mt-5 max-w-xs">
+          If you previously denied permission, please enable
+          Location permission for Madha Campus from Android Settings.
+        </p>
+
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout

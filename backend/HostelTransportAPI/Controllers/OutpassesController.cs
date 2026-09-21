@@ -1288,21 +1288,27 @@ public async Task<IActionResult> GetHistory()
         // =====================================================
         // 15. HISTORY STATUS
         // =====================================================
+var history = await query
+    .Where(x =>
+        x.Status == "Approved" ||
+        x.Status == "Completed" ||
+        x.Status == "Rejected" ||
+        x.Status == "Cancelled" ||
+        x.Status == "Not Accepted By Hostel Incharge" ||
+        x.Status == "Not Accepted By Warden" ||
+        x.OutpassState == "Expired" ||
 
-        var history = await query
-            .Where(x =>
-                x.Status == "Approved" ||
-                x.Status == "Completed" ||
-                x.Status == "Rejected" ||
-                x.Status == "Cancelled" ||
-                x.Status ==
-                    "Not Accepted By Hostel Incharge" ||
-                x.Status ==
-                    "Not Accepted By Warden" ||
-                x.OutpassState == "Expired"
-            )
-            .OrderByDescending(x => x.Id)
-            .ToListAsync();
+        // Class Incharge approved
+        x.ApprovalStage == "FirstApproved" ||
+
+        // Hostel Incharge approved
+        x.ApprovalStage == "SecondApproved" ||
+
+        // Principal / Management finally approved
+        x.ApprovalStage == "FinalApproved"
+    )
+    .OrderByDescending(x => x.Id)
+    .ToListAsync();
 
 
         // =====================================================

@@ -280,3 +280,54 @@ export async function cancelOutpass(id: number) {
 
   return result;
 }
+export async function getOutpassHistory() {
+  const token = localStorage.getItem("authToken");
+
+  console.log("========== OUTPASS HISTORY REQUEST ==========");
+  console.log("TOKEN EXISTS:", !!token);
+  console.log("URL:", `${API_URL}/Outpasses/history`);
+
+  const response = await fetch(
+    `${API_URL}/Outpasses/history`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  const text = await response.text();
+
+  let data: any;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  console.log(
+    "OUTPASS HISTORY STATUS:",
+    response.status
+  );
+
+  console.log(
+    "OUTPASS HISTORY RESPONSE:",
+    data
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.title ||
+      data ||
+      `Failed to load outpass history (${response.status})`
+    );
+  }
+
+  return Array.isArray(data)
+    ? data
+    : [];
+}

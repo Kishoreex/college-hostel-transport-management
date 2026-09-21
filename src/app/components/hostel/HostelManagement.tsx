@@ -1,8 +1,9 @@
-    import { getAllOutpasses } from "../../services/outpassService";
-    import {
-      approveOutpass,
-      rejectOutpass
-    } from "../../services/outpassService";
+import {
+  getAllOutpasses,
+  getOutpassHistory,
+  approveOutpass,
+  rejectOutpass
+} from "../../services/outpassService";
     import {
   getLeaveRequests,
   approveLeave,
@@ -138,38 +139,6 @@ import API_URL, { HUB_URL } from "../../../api/api";
       status: 'pending' | 'approved' | 'closed';
     }
 
-    const seedStudents: StudentDetail[] = [
-      { id: 'BDS2022011', name: 'Rahul Kumar', phone: '9876543210', college: 'Madha Dental College & Hospital', department: 'BDS', year: '3rd Year', batch: '2022-2027', parentName: 'Suresh Kumar', parentPhone: '9876543200', address: '12, MG Road, Chennai - 600040', roomNumber: 'B-301', gender: 'boys', roommates: ['Amit Shah', 'Vijay Patel'] },
-      { id: 'CS2021002', name: 'Amit Shah', phone: '9871234567', college: 'Madha College of Nursing', department: 'B.Sc Nursing', year: '2nd Year', batch: '2021-2025', parentName: 'Nilesh Shah', parentPhone: '9871234500', address: '45, Anna Nagar, Chennai - 600040', roomNumber: 'B-301', gender: 'boys', roommates: ['Rahul Kumar', 'Vijay Patel'] },
-      { id: 'ME2021034', name: 'Vijay Patel', phone: '9865432109', college: 'Madha College of Physiotherapy', department: 'BPT', year: '2nd Year', batch: '2021-2025', parentName: 'Ramesh Patel', parentPhone: '9865432100', address: '78, T Nagar, Chennai - 600017', roomNumber: 'B-301', gender: 'boys', roommates: ['Rahul Kumar', 'Amit Shah'] },
-      { id: 'BDS2022044', name: 'Sneha Iyer', phone: '9845678901', college: 'Madha Dental College & Hospital', department: 'BDS', year: '3rd Year', batch: '2022-2027', parentName: 'Venkat Iyer', parentPhone: '9845678900', address: '22, Adyar, Chennai - 600020', roomNumber: 'G-405', gender: 'girls', roommates: ['Meera Nair', 'Lakshmi Bai'] },
-      { id: 'BDS2022045', name: 'Meera Nair', phone: '9834567890', college: 'Madha Dental College & Hospital', department: 'BDS', year: '3rd Year', batch: '2022-2027', parentName: 'Suresh Nair', parentPhone: '9834567800', address: '5, Velachery, Chennai - 600042', roomNumber: 'G-405', gender: 'girls', roommates: ['Sneha Iyer', 'Lakshmi Bai'] },
-      { id: 'NUR2021010', name: 'Lakshmi Bai', phone: '9823456789', college: 'Madha College of Nursing', department: 'B.Sc Nursing', year: '2nd Year', batch: '2021-2025', parentName: 'Rajan Bai', parentPhone: '9823456700', address: '9, Tambaram, Chennai - 600045', roomNumber: 'G-405', gender: 'girls', roommates: ['Sneha Iyer', 'Meera Nair'] },
-      { id: 'EC2020046', name: 'Divya Verma', phone: '9812345678', college: 'Madha College of Physiotherapy', department: 'BPT', year: '3rd Year', batch: '2020-2024', parentName: 'Anil Verma', parentPhone: '9812345600', address: '33, Porur, Chennai - 600116', roomNumber: 'G-302', gender: 'girls', roommates: ['Anjali Reddy'] },
-      { id: 'EC2020047', name: 'Anjali Reddy', phone: '9801234567', college: 'Madha Dental College & Hospital', department: 'MDS', year: '1st Year', batch: '2025-2027', parentName: 'Ravi Reddy', parentPhone: '9801234500', address: '67, Chromepet, Chennai - 600044', roomNumber: 'G-302', gender: 'girls', roommates: ['Divya Verma'] },
-    ];
-
-    const seedRooms: RoomData[] = [
-      { roomNumber: 'B-301', capacity: 4, gender: 'boys', students: seedStudents.filter(s => s.roomNumber === 'B-301') },
-      { roomNumber: 'B-204', capacity: 4, gender: 'boys', students: [] },
-      { roomNumber: 'B-112', capacity: 3, gender: 'boys', students: [] },
-      { roomNumber: 'G-405', capacity: 4, gender: 'girls', students: seedStudents.filter(s => s.roomNumber === 'G-405') },
-      { roomNumber: 'G-302', capacity: 3, gender: 'girls', students: seedStudents.filter(s => s.roomNumber === 'G-302') },
-      { roomNumber: 'G-210', capacity: 4, gender: 'girls', students: [] },
-    ];
-
-    const seedOutpasses: OutpassRequest[] = [
-      { id: 'OP001', studentName: 'Rahul Kumar', studentId: 'BDS2022011', gender: 'boys', type: 'outpass', reason: 'Medical appointment', destination: 'Government Hospital, Tambaram', dateTimeOut: '2026-06-09 10:00', returnTime: '2026-06-09 18:00', from: '2026-06-09 10:00', to: '2026-06-09 18:00', status: 'pending' },
-      { id: 'OP002', studentName: 'Sneha Iyer', studentId: 'BDS2022044', gender: 'girls', type: 'outpass', reason: 'Family function', destination: 'Anna Nagar, Chennai', dateTimeOut: '2026-06-10 08:00', returnTime: '2026-06-10 20:00', from: '2026-06-10 08:00', to: '2026-06-10 20:00', status: 'pending' },
-      { id: 'LV001', studentName: 'Amit Shah', studentId: 'CS2021002', gender: 'boys', type: 'leave', leaveType: 'casual', campus: 'outcampus', reason: 'Home visit - festival', from: '2026-06-12', to: '2026-06-15', status: 'pending' },
-      { id: 'LV002', studentName: 'Meera Nair', studentId: 'BDS2022045', gender: 'girls', type: 'leave', leaveType: 'emergency', campus: 'outcampus', reason: 'Festival at home', from: '2026-06-14', to: '2026-06-17', status: 'pending' },
-    ];
-
-    const seedVacatingRequests: VacatingRequest[] = [
-      { id: 'VR001', studentId: 'BDS2020015', studentName: 'Karthik Raja', gender: 'boys', department: 'BDS', year: 'Final Year', batch: '2020-2024', roomNumber: 'B-205', phone: '9876501234', reason: 'Course completed. Planning to move back home.', requestDate: '2026-06-05', status: 'pending' },
-      { id: 'VR002', studentId: 'EC2020032', studentName: 'Priya Menon', gender: 'girls', department: 'Electronics', year: '3rd Year', batch: '2021-2025', roomNumber: 'G-102', phone: '9876502345', reason: 'Family relocating to Chennai. Will commute from home.', requestDate: '2026-06-06', status: 'pending' },
-      { id: 'VR003', studentId: 'CS2019045', studentName: 'Suresh Kumar', gender: 'boys', department: 'Computer Science', year: 'Final Year', batch: '2019-2023', roomNumber: 'B-310', phone: '9876503456', reason: 'Course completed successfully.', requestDate: '2026-05-28', status: 'closed' },
-    ];
 
     interface HistoryOutpass {
       id: string;
@@ -1024,66 +993,37 @@ const loadLeaveRequests = async () => {
 };
 const loadOutpassHistory = async () => {
   try {
-
-    const token =
-      localStorage.getItem("authToken");
-
-    const response = await fetch(
-      `${API_URL}/Outpasses/history`,
-      {
-        method: "GET",
-
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
     console.log(
-      "========== OUTPASS HISTORY API =========="
+      "========== LOADING OUTPASS HISTORY =========="
     );
 
-    console.log(
-      "USER:",
-      user.userId
-    );
-
+    console.log("USER ID:", user.userId);
     console.log(
       "ROLE:",
       user.staffRole || user.role
     );
-
     console.log(
       "COLLEGE:",
       user.college
     );
-
     console.log(
       "ASSIGNED YEAR:",
       user.assignedYear
     );
 
-    console.log(
-      "STATUS:",
-      response.status
-    );
-
-
-    const data = await response.json();
+    const data = await getOutpassHistory();
 
     console.log(
-      "OUTPASS HISTORY DATA:",
+      "OUTPASS HISTORY RECEIVED:",
       data
     );
 
-    if (!response.ok) {
-      throw new Error(
-        data?.message ||
-        data?.title ||
-        "Failed to load outpass history"
-      );
-    }
+    console.log(
+      "OUTPASS HISTORY COUNT:",
+      Array.isArray(data)
+        ? data.length
+        : "NOT ARRAY"
+    );
 
     setOutpassHistory(
       Array.isArray(data)
@@ -1094,7 +1034,7 @@ const loadOutpassHistory = async () => {
   } catch (error) {
 
     console.error(
-      "FAILED TO LOAD OUTPASS HISTORY:",
+      "========== OUTPASS HISTORY FAILED ==========",
       error
     );
 
@@ -3398,32 +3338,13 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                       <>
 {outpassHistory
 .filter(h => {
-const gender =
-  h.gender?.toLowerCase();
+  const gender = h.gender?.toLowerCase();
+  const status = h.status?.toLowerCase();
 
-const status =
-  h.status?.toLowerCase();
-
-const currentRole =
-  (
-    user.staffRole ||
-    user.role ||
-    ""
-  )
-    .trim()
-    .toLowerCase();
-
-const isClassIncharge =
-  currentRole === "class incharge";
-
-const matchesGender =
-  isClassIncharge ||
-  isManagement ||
-  (
+  const matchesGender =
     historyGender === "boys"
       ? gender === "male"
-      : gender === "female"
-  );
+      : gender === "female";
 
   const matchesStatus =
     status === "approved" ||
@@ -3438,11 +3359,11 @@ const matchesGender =
     return false;
   }
   // College staff are restricted by their selected hostel gender.
-return (
-  matchesGender &&
-  matchesStatus &&
-  !h.leaveRequestId
-);
+  return (
+    (isManagement || matchesGender) &&
+    matchesStatus &&
+    !h.leaveRequestId
+  );
 })
     .sort(
       (a, b) =>

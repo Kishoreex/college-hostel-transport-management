@@ -140,53 +140,161 @@ const checkLocationPermission = async () => {
   try {
     setCheckingLocation(true);
 
-    const permission = await Geolocation.checkPermissions();
+    // =========================================================
+    // ANDROID / CAPACITOR APP
+    // =========================================================
+
+    if (Capacitor.isNativePlatform()) {
+      console.log("📱 Native Android detected");
+
+      let permission =
+        await Geolocation.checkPermissions();
+
+      console.log(
+        "📍 Current Android permission:",
+        permission.location
+      );
+
+      // -------------------------------------------------------
+      // Permission not granted yet
+      // Request it automatically when app opens
+      // -------------------------------------------------------
+
+      if (permission.location !== "granted") {
+        console.log(
+          "📍 Requesting Android location permission automatically..."
+        );
+
+        permission =
+          await Geolocation.requestPermissions();
+
+        console.log(
+          "📍 Android permission result:",
+          permission.location
+        );
+      }
+
+      // -------------------------------------------------------
+      // Permission granted
+      // Now force a HIGH ACCURACY location request.
+      //
+      // If Android Location Accuracy is OFF,
+      // Android can show:
+      //
+      // "To continue, your device will need to use
+      // Location Accuracy"
+      //
+      // with the "Turn on" button.
+      // -------------------------------------------------------
+
+      if (permission.location === "granted") {
+        try {
+          console.log(
+            "📍 Checking high accuracy GPS..."
+          );
+
+          await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 15000,
+          });
+
+          console.log(
+            "✅ Android location and accuracy are working"
+          );
+
+          setLocationAllowed(true);
+          return;
+
+        } catch (gpsError) {
+
+          console.error(
+            "❌ Android GPS / Location Accuracy is OFF:",
+            gpsError
+          );
+
+          setLocationAllowed(false);
+          return;
+        }
+      }
+
+      // Permission was denied
+      console.log(
+        "⚠️ Android location permission denied"
+      );
+
+      setLocationAllowed(false);
+      return;
+    }
+
+
+    // =========================================================
+    // WEB BROWSER
+    // =========================================================
 
     console.log(
-      "📍 Current location permission:",
-      permission.location
+      "🌐 Web browser detected"
     );
 
-    // =====================================================
-    // LOCATION ALREADY GRANTED
-    // =====================================================
+    if (!navigator.geolocation) {
 
-    if (permission.location === "granted") {
+      alert(
+        "Location is not supported by this browser."
+      );
 
-      try {
+      setLocationAllowed(false);
+      return;
+    }
 
-        await Geolocation.getCurrentPosition({
-          enableHighAccuracy: true,
-          timeout: 10000,
-        });
+    // ---------------------------------------------------------
+    // IMPORTANT:
+    // Request location automatically when the website opens.
+    //
+    // enableHighAccuracy: true can trigger the Android/Chrome
+    // Location Accuracy popup shown in your screenshot.
+    // ---------------------------------------------------------
 
-        console.log("✅ Location is working");
+    navigator.geolocation.getCurrentPosition(
+
+      // =======================================================
+      // LOCATION SUCCESS
+      // =======================================================
+
+      (position) => {
+
+        console.log(
+          "✅ Browser location granted:",
+          position.coords.latitude,
+          position.coords.longitude
+        );
 
         setLocationAllowed(true);
-        return;
+      },
 
-      } catch (gpsError) {
+      // =======================================================
+      // LOCATION ERROR
+      // =======================================================
+
+      (error) => {
 
         console.error(
-          "❌ GPS is not available:",
-          gpsError
+          "❌ Browser location error:",
+          error
         );
 
         setLocationAllowed(false);
-        return;
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
       }
-    }
-
-    // =====================================================
-    // PERMISSION NOT GRANTED
-    // =====================================================
-
-    setLocationAllowed(false);
+    );
 
   } catch (error) {
 
     console.error(
-      "❌ Location permission check failed:",
+      "❌ Automatic location check failed:",
       error
     );
 

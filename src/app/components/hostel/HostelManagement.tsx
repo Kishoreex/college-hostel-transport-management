@@ -3065,9 +3065,31 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                               <p className="text-xs text-gray-400">{req.studentId}</p>
                             </div>
                           </div>
-                          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${req.status === 'approved' ? 'bg-green-100 text-green-700' : req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
-                            {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
-                          </span>
+                        <span
+  className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
+    req.status?.toLowerCase() === "approved"
+      ? "bg-green-100 text-green-700"
+      : req.status?.toLowerCase() === "rejected"
+      ? "bg-red-100 text-red-700"
+      : "bg-amber-100 text-amber-700"
+  }`}
+>
+  {req.status?.toLowerCase() === "pending"
+    ? (
+        String(req.approvalStage ?? "None").trim() === "FirstApproved"
+          ? `✓ ${req.firstApprovedBy ?? "Class Incharge"} — Waiting: Hostel Incharge`
+
+          : String(req.approvalStage ?? "None").trim() === "SecondApproved"
+          ? `✓ ${req.secondApprovedBy ?? "Hostel Incharge"} — Waiting: Principal`
+
+          : "Waiting: Class Incharge"
+      )
+    : req.status?.toLowerCase() === "approved"
+    ? "Approved"
+    : req.status?.toLowerCase() === "rejected"
+    ? "Rejected"
+    : req.status}
+</span>
                         </div>
                         {req.status === 'approved' && req.campus === 'outcampus' && (
                           <div className="flex items-center space-x-2 bg-blue-50 border border-blue-100 rounded-xl p-2.5 mb-3">

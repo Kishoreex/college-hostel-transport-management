@@ -149,7 +149,7 @@ public async Task<IActionResult> GetAll(
 
             if (now > lastApprovalTime)
             {
-                leave.Status = "Not Accepted By Hostel Incharge";
+                leave.Status = "Not Accepted By Class Incharge";
             }
         }
 
@@ -394,7 +394,7 @@ public IActionResult GetHistory([FromQuery] string? college)
 
         if (now > expiryTime)
         {
-            leave.Status = "Not Accepted By Hostel Incharge";
+            leave.Status = "Not Accepted By Class Incharge";
         }
     }
 
@@ -411,7 +411,7 @@ public IActionResult GetHistory([FromQuery] string? college)
             x.Status == "Expired" ||
             x.Status == "Cancelled" ||
             x.Status == "Rejected" ||
-            x.Status == "Not Accepted By Hostel Incharge"
+            x.Status == "Not Accepted By Class Incharge"
         )
         .OrderByDescending(x => x.CreatedDate)
         .ToList();

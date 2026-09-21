@@ -54,7 +54,7 @@ public IActionResult GetAll([FromQuery] string? college)
             {
                 if (now > outpass.ValidTo)
                 {
-                    outpass.Status = "Not Accepted By Hostel Incharge";
+                    outpass.Status = "Not Accepted By Class Incharge";
                 }
             }
         }
@@ -839,7 +839,7 @@ public async Task<IActionResult> GetHistory()
             if (item.Status == "Pending")
             {
                 item.Status =
-                    "Not Accepted By Hostel Incharge";
+                    "Not Accepted By Class Incharge";
             }
             else
             {
@@ -1087,99 +1087,183 @@ public async Task<IActionResult> GetHistory()
         // COLLEGE + YEAR
         // =====================================================
 
-        else if (isClassIncharge)
-        {
-            if (string.IsNullOrWhiteSpace(staffCollege))
-            {
-                Console.WriteLine(
-                    "HISTORY DENIED: CLASS INCHARGE COLLEGE EMPTY"
-                );
+      else if (isClassIncharge)
+{
+    Console.WriteLine(
+        "========== CLASS INCHARGE HISTORY =========="
+    );
 
-                return StatusCode(
-                    403,
-                    "Class Incharge has no assigned college."
-                );
-            }
+    Console.WriteLine(
+        $"CLASS INCHARGE USER : [{staffUser.UserId}]"
+    );
 
-            if (string.IsNullOrWhiteSpace(assignedYear))
-            {
-                Console.WriteLine(
-                    "HISTORY DENIED: CLASS INCHARGE YEAR EMPTY"
-                );
+    Console.WriteLine(
+        $"CLASS INCHARGE NAME : [{staffUser.FullName}]"
+    );
 
-                return StatusCode(
-                    403,
-                    "Class Incharge has no assigned year."
-                );
-            }
+    Console.WriteLine(
+        $"COLLEGE ID          : [{staffUser.CollegeId}]"
+    );
 
+    Console.WriteLine(
+        $"ASSIGNED YEAR RAW   : [{staffUser.AssignedYear}]"
+    );
 
-            Console.WriteLine(
-                "HISTORY ACCESS: CLASS INCHARGE"
-            );
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no CollegeId assigned."
+        );
+    }
 
-            Console.WriteLine(
-                $"FILTER COLLEGE : [{staffCollege}]"
-            );
+    if (string.IsNullOrWhiteSpace(staffUser.AssignedYear))
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no AssignedYear."
+        );
+    }
 
-            Console.WriteLine(
-                $"FILTER YEAR    : [{assignedYear}]"
-            );
+    // Get college name from College table
+    var collegeName =
+        await _context.Colleges
+            .Where(c =>
+                c.Id == staffUser.CollegeId.Value
+            )
+            .Select(c => c.Name)
+            .FirstOrDefaultAsync();
 
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            $"College not found for CollegeId {staffUser.CollegeId}."
+        );
+    }
 
-            var normalizedCollege =
-                staffCollege.Trim().ToLower();
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
 
-            var normalizedYear =
-                assignedYear.Trim().ToLower();
+    var rawYear =
+        staffUser.AssignedYear.Trim().ToLower();
 
+    // Normalize staff year
+    string normalizedYear;
 
-            query = query.Where(x =>
-                _context.StudentRegistrations.Any(s =>
-                    s.StudentId == x.StudentId
-                    &&
-                    s.CollegeName != null
-                    &&
-                    s.CollegeName
-                        .Trim()
-                        .ToLower()
-                        == normalizedCollege
-                    &&
-                    s.Year != null
+    if (
+        rawYear == "4th year" ||
+        rawYear == "final year" ||
+        rawYear == "4th"
+    )
+    {
+        normalizedYear = "final year";
+    }
+    else if (
+        rawYear == "intern" ||
+        rawYear == "internship"
+    )
+    {
+        normalizedYear = "internship";
+    }
+    else
+    {
+        normalizedYear = rawYear;
+    }
+
+    Console.WriteLine(
+        $"RESOLVED COLLEGE    : [{collegeName}]"
+    );
+
+    Console.WriteLine(
+        $"NORMALIZED COLLEGE  : [{normalizedCollege}]"
+    );
+
+    Console.WriteLine(
+        $"NORMALIZED YEAR     : [{normalizedYear}]"
+    );
+
+    // =====================================================
+    // CLASS INCHARGE = COLLEGE + ASSIGNED YEAR
+    // =====================================================
+
+    query = query.Where(x =>
+        _context.StudentRegistrations.Any(s =>
+            s.StudentId == x.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName
+                .Trim()
+                .ToLower()
+                == normalizedCollege
+            &&
+            s.Year != null
+            &&
+            (
+                // Exact match
+                s.Year
+                    .Trim()
+                    .ToLower()
+                    == normalizedYear
+
+                ||
+
+                // Final Year aliases
+                (
+                    normalizedYear == "final year"
                     &&
                     (
                         s.Year
                             .Trim()
                             .ToLower()
-                            == normalizedYear
+                            == "4th year"
 
                         ||
 
-                        (
-                            normalizedYear == "final year"
-                            &&
-                            s.Year
-                                .Trim()
-                                .ToLower()
-                                == "4th year"
-                        )
-
-                        ||
-
-                        (
-                            normalizedYear == "internship"
-                            &&
-                            s.Year
-                                .Trim()
-                                .ToLower()
-                                == "intern"
-                        )
+                        s.Year
+                            .Trim()
+                            .ToLower()
+                            == "final year"
                     )
                 )
-            );
-        }
 
+                ||
 
+                // Internship aliases
+                (
+                    normalizedYear == "internship"
+                    &&
+                    (
+                        s.Year
+                            .Trim()
+                            .ToLower()
+                            == "intern"
+
+                        ||
+
+                        s.Year
+                            .Trim()
+                            .ToLower()
+                            == "internship"
+                    )
+                )
+            )
+        )
+    );
+
+    Console.WriteLine(
+        "CLASS INCHARGE FILTER APPLIED:"
+    );
+
+    Console.WriteLine(
+        $"College = [{collegeName}]"
+    );
+
+    Console.WriteLine(
+        $"Year    = [{normalizedYear}]"
+    );
+}
         // =====================================================
         // 12. HOSTEL INCHARGE
         // COLLEGE ONLY
@@ -1290,22 +1374,23 @@ public async Task<IActionResult> GetHistory()
         // =====================================================
 var history = await query
     .Where(x =>
+        // Normal completed/final history
         x.Status == "Approved" ||
         x.Status == "Completed" ||
         x.Status == "Rejected" ||
         x.Status == "Cancelled" ||
-        x.Status == "Not Accepted By Hostel Incharge" ||
+
+        // Expired / not accepted
+        x.Status == "Not Accepted By Class Incharge" ||
         x.Status == "Not Accepted By Warden" ||
-        x.OutpassState == "Expired" ||
 
-        // Class Incharge approved
+        // Approval workflow history
         x.ApprovalStage == "FirstApproved" ||
-
-        // Hostel Incharge approved
         x.ApprovalStage == "SecondApproved" ||
+        x.ApprovalStage == "FinalApproved" ||
 
-        // Principal / Management finally approved
-        x.ApprovalStage == "FinalApproved"
+        // Expired state
+        x.OutpassState == "Expired"
     )
     .OrderByDescending(x => x.Id)
     .ToListAsync();
@@ -1330,7 +1415,38 @@ var history = await query
             );
         }
 
+Console.WriteLine(
+    "========== FINAL OUTPASS HISTORY =========="
+);
 
+Console.WriteLine(
+    $"ROLE          : [{role}]"
+);
+
+Console.WriteLine(
+    $"COLLEGE       : [{staffCollege}]"
+);
+
+Console.WriteLine(
+    $"ASSIGNED YEAR : [{assignedYear}]"
+);
+
+Console.WriteLine(
+    $"HISTORY COUNT : {history.Count}"
+);
+
+foreach (var item in history.Take(20))
+{
+    Console.WriteLine(
+        $"HISTORY -> " +
+        $"ID={item.Id}, " +
+        $"Student={item.StudentId}, " +
+        $"StudentName={item.StudentName}, " +
+        $"Status={item.Status}, " +
+        $"Stage={item.ApprovalStage}, " +
+        $"Gender={item.Gender}"
+    );
+}
         return Ok(history);
     }
     catch (Exception ex)

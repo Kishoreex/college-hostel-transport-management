@@ -1635,7 +1635,7 @@ disabled={
         "Completed",
         "Rejected",
         "Expired",
-        "Not Accepted By Hostel Incharge"
+        "Not Accepted By  Incharge"
       ].includes(x.status)
   )
 }
@@ -1650,7 +1650,7 @@ outpasses.some(
       "Completed",
       "Rejected",
       "Expired",
-      "Not Accepted By Hostel Incharge"
+      "Not Accepted By  Incharge"
     ].includes(x.status)
 )
 ? "opacity-50 cursor-not-allowed"

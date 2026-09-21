@@ -3346,13 +3346,19 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
       ? gender === "male"
       : gender === "female";
 
-  const matchesStatus =
-    status === "approved" ||
-    status === "completed" ||
-    status === "cancelled" ||
-    status === "rejected" ||
-    status === "not accepted by hostel incharge";
+const approvalStage =
+  String(h.approvalStage ?? "").trim().toLowerCase();
 
+const matchesStatus =
+  status === "approved" ||
+  status === "completed" ||
+  status === "cancelled" ||
+  status === "rejected" ||
+  status === "not accepted by hostel incharge" ||
+
+  approvalStage === "firstapproved" ||
+  approvalStage === "secondapproved" ||
+  approvalStage === "finalapproved";
   // Management can see both boys and girls.
 
   if (!matchesHistoryFilters(h)) {

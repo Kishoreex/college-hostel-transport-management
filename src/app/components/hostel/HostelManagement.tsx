@@ -456,7 +456,55 @@ const [searchQuery, setSearchQuery] = useState('');
 const [outpassSearch, setOutpassSearch] = useState('');
 const [leaveSearch, setLeaveSearch] = useState('');
 const canApproveStage = (approvalStage?: string | null) => {
+const canApproveLeaveStage = (
+  approvalStage?: string | null
+) => {
 
+  const stage =
+    String(
+      approvalStage ?? "None"
+    ).trim() || "None";
+
+
+  const currentRole =
+    user.staffRole?.trim().toLowerCase() ||
+    user.role?.trim().toLowerCase() ||
+    "";
+
+
+  // Management
+  if (
+    currentRole === "management" ||
+    currentRole === "system admin" ||
+    currentRole === "admin"
+  ) {
+    return stage !== "FinalApproved";
+  }
+
+
+  // Principal
+  if (currentRole === "principal") {
+    return stage !== "FinalApproved";
+  }
+
+
+  // Hostel Incharge
+  if (currentRole === "hostel incharge") {
+    return (
+      stage === "None" ||
+      stage === "FirstApproved"
+    );
+  }
+
+
+  // Class Incharge
+  if (currentRole === "class incharge") {
+    return stage === "None";
+  }
+
+
+  return false;
+};
   // IMPORTANT:
   // Old outpasses may have NULL / empty ApprovalStage.
   // Treat them as a fresh request.
@@ -1120,12 +1168,38 @@ const handleApproveLeave = async (id: number) => {
 
       loadOutpasses();
     };
-    const handleRejectLeave = async (
+const handleRejectLeave = async (
   id: number
 ) => {
-  await rejectLeave(id);
+  try {
+    await rejectLeave(
+      id,
+      rejectRemark
+    );
 
-  loadLeaveRequests();
+    toast.success("Leave Rejected");
+
+    await loadLeaveRequests();
+
+    setRejectSheet({
+      open: false,
+      id: "",
+      type: ""
+    });
+
+    setRejectRemark("");
+  } catch (error) {
+    console.error(
+      "REJECT LEAVE ERROR:",
+      error
+    );
+
+    toast.error(
+      error instanceof Error
+        ? error.message
+        : "Rejection Failed"
+    );
+  }
 };
 const loadOutpasses = async () => {
   try {
@@ -2850,6 +2924,69 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                             </div>
                           ))}
                         </div>
+                        {/* LEAVE APPROVAL STAGE */}
+<div className="mb-3">
+
+  {(!req.approvalStage ||
+    req.approvalStage === "None") && (
+    <div className="bg-amber-50 border border-amber-100 rounded-xl p-3">
+      <p className="text-xs font-semibold text-amber-700">
+        Waiting for Class Incharge / Hostel Incharge / Principal
+      </p>
+    </div>
+  )}
+
+  {req.approvalStage === "FirstApproved" && (
+    <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+      <p className="text-xs font-semibold text-blue-700">
+        ✓ Class Incharge Approved
+      </p>
+
+      {req.firstApprovedBy && (
+        <p className="text-xs text-blue-600 mt-1">
+          Approved by: {req.firstApprovedBy}
+        </p>
+      )}
+
+      <p className="text-xs text-blue-600 mt-1">
+        Waiting for Hostel Incharge / Principal
+      </p>
+    </div>
+  )}
+
+  {req.approvalStage === "SecondApproved" && (
+    <div className="bg-purple-50 border border-purple-100 rounded-xl p-3">
+      <p className="text-xs font-semibold text-purple-700">
+        ✓ Hostel Incharge Approved
+      </p>
+
+      {req.secondApprovedBy && (
+        <p className="text-xs text-purple-600 mt-1">
+          Approved by: {req.secondApprovedBy}
+        </p>
+      )}
+
+      <p className="text-xs text-purple-600 mt-1">
+        Waiting for Principal / Management
+      </p>
+    </div>
+  )}
+
+  {req.approvalStage === "FinalApproved" && (
+    <div className="bg-green-50 border border-green-100 rounded-xl p-3">
+      <p className="text-xs font-semibold text-green-700">
+        ✓ Final Approved
+      </p>
+
+      {req.finalApprovedBy && (
+        <p className="text-xs text-green-600 mt-1">
+          Approved by: {req.finalApprovedBy}
+        </p>
+      )}
+    </div>
+  )}
+
+</div>
                         {req.remarks && (
                           <div className="flex items-start space-x-2 bg-red-50 border border-red-100 rounded-xl p-3 mb-3">
                             <AlertCircle size={14} className="text-red-400 mt-0.5 shrink-0" />
@@ -2915,20 +3052,24 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                         </button>
                       ))}
                     </div>
-                  {leaveRequests.filter(o =>
+             {leaveRequests.filter(o =>
   (outpassGender === "boys"
     ? o.gender?.toLowerCase() === "male"
     : o.gender?.toLowerCase() === "female") &&
-  o.status?.toLowerCase() === "pending"
+  o.status?.toLowerCase() !== "approved" &&
+  o.status?.toLowerCase() !== "rejected" &&
+  o.approvalStage?.toLowerCase() !== "finalapproved"
 ).length === 0 && (
                       <div className="text-center py-10"><Calendar size={36} className="text-gray-200 mx-auto mb-2" /><p className="text-gray-400 text-sm">No leave requests</p></div>
                     )}
-                   {leaveRequests
+      {leaveRequests
   .filter(o =>
     (outpassGender === "boys"
       ? o.gender?.toLowerCase() === "male"
       : o.gender?.toLowerCase() === "female") &&
-    o.status?.toLowerCase() === "pending"
+    o.status?.toLowerCase() !== "approved" &&
+    o.status?.toLowerCase() !== "rejected" &&
+    o.approvalStage?.toLowerCase() !== "finalapproved"
   )
   .map(req => (
                       <div key={req.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
@@ -2944,7 +3085,8 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                             {req.status.charAt(0).toUpperCase() + req.status.slice(1)}
                           </span>
                         </div>
-                        {req.status === 'approved' && req.campus === 'outcampus' && (
+             {req.status?.toLowerCase() === "approved" &&
+  req.campus?.toLowerCase() === "out campus" && (
                           <div className="flex items-center space-x-2 bg-blue-50 border border-blue-100 rounded-xl p-2.5 mb-3">
                             <FileText size={13} className="text-blue-500 shrink-0" />
                             <p className="text-xs text-blue-700 font-medium">Outpass auto-generated for this out-campus leave</p>
@@ -3005,16 +3147,39 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                             <p className="text-xs text-red-700"><span className="font-semibold">Remark: </span>{req.remarks}</p>
                           </div>
                         )}
-                        {req.status === 'Pending' && (
-                          <div className="flex gap-2">
-                            <button  onClick={() => handleApproveLeave(Number(req.id))} className="flex-1 flex items-center justify-center space-x-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
-                              <CheckCircle2 size={15} /><span>Accept</span>
-                            </button>
-                            <button onClick={() => { setRejectSheet({ open: true, id: req.id, type: 'leave' }); setRejectRemark(''); }} className="flex-1 flex items-center justify-center space-x-1.5 bg-white border-2 border-red-200 hover:bg-red-50 active:scale-95 text-red-500 py-2.5 rounded-xl text-sm font-semibold transition-all">
-                              <X size={15} /><span>Reject</span>
-                            </button>
-                          </div>
-                        )}
+                   {canApproveLeaveStage(req.approvalStage) && (
+  <div className="flex gap-2">
+
+    {/* APPROVE */}
+    <button
+      onClick={() =>
+        handleApproveLeave(Number(req.id))
+      }
+      className="flex-1 flex items-center justify-center space-x-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm"
+    >
+      <CheckCircle2 size={15} />
+      <span>Accept</span>
+    </button>
+
+    {/* REJECT */}
+    <button
+      onClick={() => {
+        setRejectSheet({
+          open: true,
+          id: req.id,
+          type: "leave"
+        });
+
+        setRejectRemark("");
+      }}
+      className="flex-1 flex items-center justify-center space-x-1.5 bg-white border-2 border-red-200 hover:bg-red-50 active:scale-95 text-red-500 py-2.5 rounded-xl text-sm font-semibold transition-all"
+    >
+      <X size={15} />
+      <span>Reject</span>
+    </button>
+
+  </div>
+)}
                       </div>
                     ))}
                   </div>

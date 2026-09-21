@@ -190,173 +190,730 @@ public async Task<IActionResult> GetAll(
             .ToList()
     );
 }
-     [HttpPost("approve/{id}")]
-    public async Task<IActionResult> Approve(int id)
+    [HttpPost("approve/{id}")]
+public async Task<IActionResult> Approve(int id)
+{
+    var leave = await _context.LeaveRequests
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (leave == null)
+        return NotFound("Leave Request Not Found");
+
+
+    // =====================================================
+    // GET LOGGED-IN USER
+    // =====================================================
+
+    var userId =
+        User.FindFirst(ClaimTypes.Name)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    var nameIdentifier =
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+
+    User? staffUser = null;
+
+
+    // First try UserId from JWT
+    if (!string.IsNullOrWhiteSpace(userId))
     {
-        var leave = await _context.LeaveRequests.FindAsync(id);
+        staffUser = await _context.Users
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(x => x.UserId == userId);
+    }
 
-        if (leave == null)
-            return NotFound("Leave Request Not Found");
 
-        var role = User.FindFirst(ClaimTypes.Role)?.Value ?? "";
-        var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "";
+    // Fallback: database ID
+    if (
+        staffUser == null &&
+        int.TryParse(nameIdentifier, out var databaseUserId)
+    )
+    {
+        staffUser = await _context.Users
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(x => x.Id == databaseUserId);
+    }
 
-        var staffUser = await _context.Users
-            .FirstOrDefaultAsync(u => u.Id.ToString() == userId);
 
-        var approverName = staffUser?.FullName ?? "Management";
+    if (staffUser == null)
+    {
+        return StatusCode(
+            403,
+            "Logged-in staff user could not be identified."
+        );
+    }
 
-        bool isFullOverride =
-            role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
-            role.Equals("admin", StringComparison.OrdinalIgnoreCase) ||
-            (staffUser?.HostelApprovalLevel == "All");
 
-        if (!isFullOverride)
+    // =====================================================
+    // ACTUAL DATABASE ROLE
+    // =====================================================
+
+    var role =
+        staffUser.Role?.Name?.Trim()
+        ?? "";
+
+    var approverName =
+        staffUser.FullName;
+
+
+    // =====================================================
+    // LOG
+    // =====================================================
+
+    Console.WriteLine("========== LEAVE APPROVAL ==========");
+    Console.WriteLine($"Database User Id : {staffUser.Id}");
+    Console.WriteLine($"Database UserId   : {staffUser.UserId}");
+    Console.WriteLine($"Staff Name        : {staffUser.FullName}");
+    Console.WriteLine($"Database Role     : {role}");
+    Console.WriteLine($"Leave Id          : {leave.Id}");
+    Console.WriteLine($"Current Stage     : {leave.ApprovalStage}");
+
+
+    // =====================================================
+    // OLD RECORD FIX
+    // =====================================================
+
+    if (string.IsNullOrWhiteSpace(leave.ApprovalStage))
+    {
+        leave.ApprovalStage = "None";
+    }
+
+    var stage =
+        leave.ApprovalStage.Trim();
+
+
+    // =====================================================
+    // ROLE CHECK
+    // =====================================================
+
+    var isManagement =
+        role.Equals(
+            "Management",
+            StringComparison.OrdinalIgnoreCase
+        )
+        ||
+        role.Equals(
+            "System Admin",
+            StringComparison.OrdinalIgnoreCase
+        )
+        ||
+        role.Equals(
+            "Admin",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    var isClassIncharge =
+        role.Equals(
+            "Class Incharge",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    var isHostelIncharge =
+        role.Equals(
+            "Hostel Incharge",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    var isPrincipal =
+        role.Equals(
+            "Principal",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    // =====================================================
+    // MANAGEMENT
+    //
+    // Management can directly approve.
+    //
+    // Any unfinished stage
+    //        ↓
+    // FinalApproved
+    // =====================================================
+
+    if (isManagement)
+    {
+        if (stage == "FinalApproved")
         {
-            var staffLevel = staffUser?.HostelApprovalLevel;
-
-            bool canApprove =
-                (leave.ApprovalStage == "None" && staffLevel == "First Level") ||
-                (leave.ApprovalStage == "FirstApproved" && staffLevel == "Second Level") ||
-                (leave.ApprovalStage == "SecondApproved" && staffLevel == "Final Level");
-
-            if (!canApprove)
-            {
-                return Forbid();
-            }
+            return BadRequest(
+                "Leave is already finally approved."
+            );
         }
 
-        if (leave.ApprovalStage == "None")
+        leave.ApprovalStage =
+            "FinalApproved";
+
+        leave.FinalApprovedBy =
+            approverName;
+
+        leave.Status =
+            "Approved";
+
+        leave.ApprovedDate =
+            DateTime.UtcNow;
+
+        leave.ApprovedBy =
+            approverName;
+    }
+
+
+    // =====================================================
+    // PRINCIPAL
+    //
+    // Principal can directly approve ANY unfinished stage.
+    //
+    // None
+    // FirstApproved
+    // SecondApproved
+    //        ↓
+    // FinalApproved
+    // =====================================================
+
+    else if (isPrincipal)
+    {
+        if (stage == "FinalApproved")
         {
-            leave.ApprovalStage = "FirstApproved";
-            leave.FirstApprovedBy = approverName;
-
-            await _context.SaveChangesAsync();
-            await _hub.Clients.All.SendAsync("LeaveUpdated", leave.StudentId);
-
-            return Ok(new { Message = $"Leave approved at First Level by {approverName}" });
+            return BadRequest(
+                "Leave is already finally approved."
+            );
         }
 
-        if (leave.ApprovalStage == "FirstApproved")
+        leave.ApprovalStage =
+            "FinalApproved";
+
+        leave.FinalApprovedBy =
+            approverName;
+
+        leave.Status =
+            "Approved";
+
+        leave.ApprovedDate =
+            DateTime.UtcNow;
+
+        leave.ApprovedBy =
+            approverName;
+    }
+
+
+    // =====================================================
+    // HOSTEL INCHARGE
+    //
+    // None
+    //    ↓
+    // SecondApproved
+    //
+    // FirstApproved
+    //    ↓
+    // SecondApproved
+    // =====================================================
+
+    else if (isHostelIncharge)
+    {
+        if (
+            stage != "None" &&
+            stage != "FirstApproved"
+        )
         {
-            leave.ApprovalStage = "SecondApproved";
-            leave.SecondApprovedBy = approverName;
-
-            await _context.SaveChangesAsync();
-            await _hub.Clients.All.SendAsync("LeaveUpdated", leave.StudentId);
-
-            return Ok(new { Message = $"Leave approved at Second Level by {approverName}" });
+            return Forbid();
         }
 
-        // Final Level — full approval
-        leave.ApprovalStage = "FinalApproved";
-        leave.FinalApprovedBy = approverName;
-        leave.Status = "Approved";
-        leave.ApprovedDate = DateTime.UtcNow;
-        leave.ApprovedBy = approverName;
+        leave.ApprovalStage =
+            "SecondApproved";
 
-        _context.ActivityLogs.Add(
-            new ActivityLog
-            {
-                UserId = staffUser?.Id ?? 6,
-                UserName = approverName,
-                Action = $"Approved leave request #{leave.Id}",
-                Module = "Leave",
-                CreatedAt = DateTime.Now
-            });
+        leave.SecondApprovedBy =
+            approverName;
+    }
 
-        if (leave.Campus == "Out Campus")
+
+    // =====================================================
+    // CLASS INCHARGE
+    //
+    // None
+    //    ↓
+    // FirstApproved
+    // =====================================================
+
+    else if (isClassIncharge)
+    {
+        if (stage != "None")
+        {
+            return Forbid();
+        }
+
+        leave.ApprovalStage =
+            "FirstApproved";
+
+        leave.FirstApprovedBy =
+            approverName;
+    }
+
+
+    // =====================================================
+    // UNKNOWN ROLE
+    // =====================================================
+
+    else
+    {
+        Console.WriteLine(
+            $"LEAVE APPROVAL DENIED. ROLE = [{role}]"
+        );
+
+        return StatusCode(
+            403,
+            $"Role '{role}' is not allowed to approve leave requests."
+        );
+    }
+
+
+    // =====================================================
+    // FINAL APPROVAL ACTIONS
+    //
+    // Only when leave becomes FinalApproved
+    // =====================================================
+
+    if (
+        leave.ApprovalStage == "FinalApproved" &&
+        leave.Status != "Approved"
+    )
+    {
+        leave.Status =
+            "Approved";
+
+        leave.ApprovedDate =
+            DateTime.UtcNow;
+
+        leave.ApprovedBy =
+            approverName;
+    }
+
+
+    // =====================================================
+    // CREATE OUTPASS ONLY AFTER FINAL APPROVAL
+    //
+    // Same existing behavior as your current system.
+    // =====================================================
+
+    if (
+        leave.ApprovalStage == "FinalApproved" &&
+        leave.Status == "Approved" &&
+        leave.Campus == "Out Campus"
+    )
+    {
+        var existingOutpass =
+            await _context.Outpasses
+                .FirstOrDefaultAsync(
+                    x => x.LeaveRequestId == leave.Id
+                );
+
+        if (existingOutpass == null)
         {
             DateTime validFrom;
             DateTime validTo;
 
+
             if (leave.FromDate.Date == leave.ToDate.Date)
             {
-                validFrom = leave.FromDate.Date + TimeSpan.Parse(leave.ExitTime);
-                validTo = leave.ToDate.Date + TimeSpan.Parse(leave.ReturnTime);
+                validFrom =
+                    leave.FromDate.Date +
+                    TimeSpan.Parse(leave.ExitTime);
+
+                validTo =
+                    leave.ToDate.Date +
+                    TimeSpan.Parse(leave.ReturnTime);
             }
             else
             {
-                validFrom = leave.FromDate.Date;
-                validTo = leave.ToDate.Date.AddHours(23).AddMinutes(59).AddSeconds(59);
+                validFrom =
+                    leave.FromDate.Date;
+
+                validTo =
+                    leave.ToDate.Date
+                        .AddHours(23)
+                        .AddMinutes(59)
+                        .AddSeconds(59);
             }
+
 
             var outpass = new Outpass
             {
-                OutpassNumber = $"OP{DateTime.Now:yyyyMMddHHmmss}",
-                StudentId = leave.StudentId,
-                StudentName = leave.StudentName,
-                Gender = leave.Gender,
-                LeaveRequestId = leave.Id,
-                ValidFrom = validFrom,
-                ValidTo = validTo,
-                Status = "Approved",
-                ApprovalStage = "FinalApproved",
-                FirstApprovedBy = leave.FirstApprovedBy,
-                SecondApprovedBy = leave.SecondApprovedBy,
-                FinalApprovedBy = leave.FinalApprovedBy,
-                OutpassState = "Active",
-                Reason = leave.Reason,
-                Destination = leave.Destination,
-                TimeOut = string.IsNullOrWhiteSpace(leave.ExitTime) ? "00:00" : leave.ExitTime,
-                ReturnTime = string.IsNullOrWhiteSpace(leave.ReturnTime) ? "23:59" : leave.ReturnTime
+                OutpassNumber =
+                    $"OP{DateTime.Now:yyyyMMddHHmmss}",
+
+                StudentId =
+                    leave.StudentId,
+
+                StudentName =
+                    leave.StudentName,
+
+                CollegeName =
+                    leave.CollegeName,
+
+                Gender =
+                    leave.Gender,
+
+                LeaveRequestId =
+                    leave.Id,
+
+                ValidFrom =
+                    validFrom,
+
+                ValidTo =
+                    validTo,
+
+                Status =
+                    "Approved",
+
+                ApprovalStage =
+                    "FinalApproved",
+
+                FirstApprovedBy =
+                    leave.FirstApprovedBy,
+
+                SecondApprovedBy =
+                    leave.SecondApprovedBy,
+
+                FinalApprovedBy =
+                    leave.FinalApprovedBy,
+
+                OutpassState =
+                    "Waiting For Exit",
+
+                Reason =
+                    leave.Reason,
+
+                Destination =
+                    leave.Destination,
+
+                TimeOut =
+                    string.IsNullOrWhiteSpace(
+                        leave.ExitTime
+                    )
+                    ? "00:00"
+                    : leave.ExitTime,
+
+                ReturnTime =
+                    string.IsNullOrWhiteSpace(
+                        leave.ReturnTime
+                    )
+                    ? "23:59"
+                    : leave.ReturnTime
             };
 
+
             _context.Outpasses.Add(outpass);
+
 
             _context.ActivityLogs.Add(
                 new ActivityLog
                 {
-                    UserId = staffUser?.Id ?? 6,
-                    UserName = approverName,
-                    Action = $"Created outpass {outpass.OutpassNumber}",
-                    Module = "Outpass",
-                    CreatedAt = DateTime.Now
-                });
+                    UserId =
+                        staffUser.Id,
+
+                    UserName =
+                        approverName,
+
+                    Action =
+                        $"Created outpass {outpass.OutpassNumber}",
+
+                    Module =
+                        "Outpass",
+
+                    CreatedAt =
+                        DateTime.Now
+                }
+            );
         }
-
-        await _context.SaveChangesAsync();
-
-        await _hub.Clients.All.SendAsync("LeaveUpdated", leave.StudentId);
-
-        return Ok(new { Message = $"Leave Approved by {approverName}" });
     }
-    [HttpPost("reject/{id}")]
-    public async Task<IActionResult> Reject(
-    int id,
-    RejectLeaveDto dto
-)
-    {
-        var leave = await _context.LeaveRequests.FindAsync(id);
 
-        if (leave == null)
-            return NotFound("Leave Request Not Found");
 
-        leave.Status = "Rejected";
-        leave.RejectReason = dto.RejectReason;
-        leave.ApprovedDate = DateTime.UtcNow;
-        leave.ApprovedBy = "Admin";
-        _context.ActivityLogs.Add(
-    new ActivityLog
-    {
-        UserId = 6,
-        UserName = "Main Administrator",
-        Action = $"Rejected leave request #{leave.Id}",
-        Module = "Leave",
-        CreatedAt = DateTime.Now
-    });
+    // =====================================================
+    // ACTIVITY LOG
+    // =====================================================
 
-      await _context.SaveChangesAsync();
-
-await _hub.Clients.All.SendAsync(
-    "LeaveUpdated",
-    leave.StudentId
-);
-        return Ok(new
+    _context.ActivityLogs.Add(
+        new ActivityLog
         {
-            Message = "Leave Rejected"
-        });
+            UserId =
+                staffUser.Id,
+
+            UserName =
+                approverName,
+
+            Action =
+                $"Approved leave request #{leave.Id} at {leave.ApprovalStage}",
+
+            Module =
+                "Leave",
+
+            CreatedAt =
+                DateTime.Now
+        }
+    );
+
+
+    await _context.SaveChangesAsync();
+
+
+    await _hub.Clients.All.SendAsync(
+        "LeaveUpdated",
+        leave.StudentId
+    );
+
+
+    Console.WriteLine(
+        $"LEAVE APPROVAL SUCCESS: {approverName} -> {leave.ApprovalStage}"
+    );
+
+
+    return Ok(
+        new
+        {
+            Message =
+                $"Leave approved by {approverName}",
+
+            ApprovalStage =
+                leave.ApprovalStage,
+
+            Status =
+                leave.Status,
+
+            ApprovedBy =
+                approverName
+        }
+    );
+}
+    
+[HttpPost("reject/{id}")]
+public async Task<IActionResult> Reject(
+    int id,
+    RejectLeaveDto dto)
+{
+    var leave = await _context.LeaveRequests
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (leave == null)
+        return NotFound("Leave Request Not Found");
+
+
+    // =====================================================
+    // GET LOGGED-IN USER
+    // =====================================================
+
+    var userId =
+        User.FindFirst(ClaimTypes.Name)?.Value
+        ?? User.FindFirst("userId")?.Value
+        ?? User.FindFirst("UserId")?.Value;
+
+    var nameIdentifier =
+        User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+
+    User? staffUser = null;
+
+
+    if (!string.IsNullOrWhiteSpace(userId))
+    {
+        staffUser = await _context.Users
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(x => x.UserId == userId);
     }
+
+
+    if (
+        staffUser == null &&
+        int.TryParse(nameIdentifier, out var databaseUserId)
+    )
+    {
+        staffUser = await _context.Users
+            .Include(x => x.Role)
+            .FirstOrDefaultAsync(x => x.Id == databaseUserId);
+    }
+
+
+    if (staffUser == null)
+    {
+        return StatusCode(
+            403,
+            "Logged-in staff user could not be identified."
+        );
+    }
+
+
+    var role =
+        staffUser.Role?.Name?.Trim()
+        ?? "";
+
+    var rejectorName =
+        staffUser.FullName;
+
+
+    // =====================================================
+    // STAGE
+    // =====================================================
+
+    if (string.IsNullOrWhiteSpace(leave.ApprovalStage))
+    {
+        leave.ApprovalStage = "None";
+    }
+
+    var stage =
+        leave.ApprovalStage.Trim();
+
+
+    // =====================================================
+    // ROLE
+    // =====================================================
+
+    var isManagement =
+        role.Equals(
+            "Management",
+            StringComparison.OrdinalIgnoreCase
+        )
+        ||
+        role.Equals(
+            "System Admin",
+            StringComparison.OrdinalIgnoreCase
+        )
+        ||
+        role.Equals(
+            "Admin",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    var isClassIncharge =
+        role.Equals(
+            "Class Incharge",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    var isHostelIncharge =
+        role.Equals(
+            "Hostel Incharge",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    var isPrincipal =
+        role.Equals(
+            "Principal",
+            StringComparison.OrdinalIgnoreCase
+        );
+
+
+    // =====================================================
+    // REJECTION PERMISSION
+    // =====================================================
+
+    bool canReject = false;
+
+
+    // Management
+    if (isManagement)
+    {
+        canReject =
+            stage != "FinalApproved";
+    }
+
+
+    // Principal
+    else if (isPrincipal)
+    {
+        canReject =
+            stage != "FinalApproved";
+    }
+
+
+    // Hostel Incharge
+    else if (isHostelIncharge)
+    {
+        canReject =
+            stage == "None" ||
+            stage == "FirstApproved";
+    }
+
+
+    // Class Incharge
+    else if (isClassIncharge)
+    {
+        canReject =
+            stage == "None";
+    }
+
+
+    if (!canReject)
+    {
+        return Forbid();
+    }
+
+
+    // =====================================================
+    // SAVE REJECTION
+    // =====================================================
+
+    leave.Status =
+        "Rejected";
+
+    leave.RejectReason =
+        dto.RejectReason;
+
+    leave.ApprovedDate =
+        DateTime.UtcNow;
+
+    leave.ApprovedBy =
+        rejectorName;
+
+
+    _context.ActivityLogs.Add(
+        new ActivityLog
+        {
+            UserId =
+                staffUser.Id,
+
+            UserName =
+                rejectorName,
+
+            Action =
+                $"Rejected leave request #{leave.Id}",
+
+            Module =
+                "Leave",
+
+            CreatedAt =
+                DateTime.Now
+        }
+    );
+
+
+    await _context.SaveChangesAsync();
+
+
+    await _hub.Clients.All.SendAsync(
+        "LeaveUpdated",
+        leave.StudentId
+    );
+
+
+    return Ok(
+        new
+        {
+            Message =
+                "Leave Rejected",
+
+            RejectedBy =
+                rejectorName,
+
+            RejectReason =
+                dto.RejectReason
+        }
+    );
+}
 [HttpGet("history")]
 public IActionResult GetHistory([FromQuery] string? college)
 {

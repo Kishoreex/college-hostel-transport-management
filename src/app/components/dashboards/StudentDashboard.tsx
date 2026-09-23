@@ -565,7 +565,28 @@ const [leaveForm, setLeaveForm] = useState({
   const [changePwdForm, setChangePwdForm] = useState({ current: '', newPwd: '', confirm: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+const hasProfilePhoto = () => {
+  return !!(
+    profilePhoto ||
+    studentProfile?.profilePhoto ||
+    user.profilePhoto
+  );
+};
 
+const requireProfilePhoto = () => {
+  if (hasProfilePhoto()) {
+    return true;
+  }
+
+  toast.error(
+    "Profile photo is required. Please upload your profile photo first."
+  );
+
+  setProfileDialogOpen(true);
+  setProfileTab("info");
+
+  return false;
+};
   const [studentProfile, setStudentProfile] = useState<any>(null);
   const [photoPreviewOpen, setPhotoPreviewOpen] = useState(false);
 const [photoAdjustOpen, setPhotoAdjustOpen] = useState(false);
@@ -1343,10 +1364,15 @@ if (
 
 }, [activeOutpass]);
 
-  const handleOutpassSubmit = async (
+const handleOutpassSubmit = async (
   e: React.FormEvent
 ) => {
  e.preventDefault();
+
+if (!requireProfilePhoto()) {
+  return;
+}
+
 if (submittingOutpass) return;
 
 setSubmittingOutpass(true);
@@ -1446,6 +1472,11 @@ const handleLeaveSubmit = async (
 ) => {
 
   e.preventDefault();
+
+  if (!requireProfilePhoto()) {
+    return;
+  }
+
   if (submittingLeave) return;
 
 setSubmittingLeave(true);
@@ -2003,7 +2034,11 @@ disabled={
       ].includes(x.status)
   )
 }
-onClick={() => setOutpassDialogOpen(true)}
+onClick={() => {
+  if (!requireProfilePhoto()) return;
+
+  setOutpassDialogOpen(true);
+}}
 className={`bg-gradient-to-br from-blue-500 to-blue-600
 text-white p-4 rounded-2xl shadow-lg
 ${
@@ -2027,7 +2062,11 @@ outpasses.some(
                   </button>
 <button
 disabled={activeLeave}
-onClick={() => setLeaveDialogOpen(true)}
+onClick={() => {
+  if (!requireProfilePhoto()) return;
+
+  setLeaveDialogOpen(true);
+}}
 className={`bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-2xl shadow-lg ${
 activeLeave
 ? "opacity-50 cursor-not-allowed"

@@ -3544,11 +3544,11 @@ const matchesStatus =
     return false;
   }
   // College staff are restricted by their selected hostel gender.
-  return (
-    (isManagement || matchesGender) &&
-    matchesStatus &&
-    !h.leaveRequestId
-  );
+return (
+  matchesHistoryFilters(h) &&
+  matchesStatus &&
+  !h.leaveRequestId
+);
 })
     .sort(
       (a, b) =>
@@ -4094,24 +4094,12 @@ isManagement && expiredWithoutExit && (
         ))}
     </>
   )}
-        {historyType === 'leave' && (
+{historyType === 'leave' && (
   <>
-{leaveHistory
-  .filter(h => {
-
-    if (
-      !matchesHistoryFilters(h)
-    ) {
-      return false;
-    }
-
-    return isManagement
-      ? true
-      : historyGender === "boys"
-        ? h.gender?.toLowerCase() === "male"
-        : h.gender?.toLowerCase() === "female";
-
-  })
+    {leaveHistory
+      .filter(h => {
+        return matchesHistoryFilters(h);
+      })
       .map(h => {
                          const now = new Date();
 

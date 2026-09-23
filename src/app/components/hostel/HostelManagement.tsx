@@ -3690,7 +3690,18 @@ stillOut
                    </span>
                               </div>
                               <div className="bg-gray-50 rounded-xl p-3 space-y-1.5">
-                                {[['Reason', h.reason], ['Destination', h.destination], [
+                                {[  [
+      "Date",
+      h.validFrom
+        ? new Date(h.validFrom).toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+          })
+        : "-"
+    ],
+
+                                  ['Reason', h.reason], ['Destination', h.destination], [
 'Time Out',
 new Date(`2000-01-01T${h.timeOut}`)
 .toLocaleTimeString([],{

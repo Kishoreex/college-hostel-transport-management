@@ -110,6 +110,7 @@ import API_URL, { HUB_URL } from "../../../api/api";
       studentName: string;
       studentId: string;
       gender: 'boys' | 'girls';
+        parentPhone?: string;
       type: 'outpass' | 'leave';
       reason: string;
       from: string;
@@ -1051,6 +1052,24 @@ const [
       const [outpasses, setOutpasses] =
       useState<any[]>([]);
 const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
+// =====================================================
+// GET PARENT PHONE FROM STUDENT REGISTRATION
+// =====================================================
+const getParentPhone = (studentId: any) => {
+  if (!studentId) return "";
+
+  const student = hostelStudents.find(
+    (s: any) =>
+      String(s.id ?? "").trim().toLowerCase() ===
+      String(studentId).trim().toLowerCase()
+  );
+
+  return (
+    student?.parentPhone ??
+    student?.ParentPhone ??
+    ""
+  );
+};
 const [leaveHistory, setLeaveHistory] =
   useState<any[]>([]);
 useEffect(() => {
@@ -2981,7 +3000,11 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                           </span>
                         </div>
                         <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 mb-3">
-                          {[['Reason', req.reason], ['Destination', req.destination || '—'],[
+                          {[
+                                [
+      "Parent Phone",
+      getParentPhone(req.studentId) || "Not available"
+    ],['Reason', req.reason], ['Destination', req.destination || '—'],[
       'Date & Time Out',
       `${req.validFrom?.split('T')[0]} ${new Date(`2000-01-01T${req.timeOut}`)
       .toLocaleTimeString([], {
@@ -3128,7 +3151,10 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                           </div>
                         )}
                         <div className="bg-gray-50 rounded-xl p-3 space-y-1.5 mb-3">
-                          {[
+                          {[[
+  "Parent Phone",
+  getParentPhone(req.studentId) || "Not available"
+],
   [
     "Leave Type",
     req.leaveType

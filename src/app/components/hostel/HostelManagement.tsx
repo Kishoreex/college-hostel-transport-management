@@ -613,6 +613,86 @@ const [fullPhotoOpen, setFullPhotoOpen] =
 
 const [fullPhotoUrl, setFullPhotoUrl] =
   useState<string | null>(null);
+
+  // =====================================================
+// STUDENT PROFILE PHOTO HELPERS
+// =====================================================
+
+const getStudentPhoto = (
+  studentId: any,
+  fallbackPhoto?: any
+) => {
+  // 1. Use photo already returned by the current item
+  if (fallbackPhoto) {
+    return fallbackPhoto;
+  }
+
+  if (!studentId) {
+    return null;
+  }
+
+  // 2. Find the student from the main hostel student list
+  const student = hostelStudents.find(
+    (s: any) =>
+      String(s.id ?? "")
+        .trim()
+        .toLowerCase() ===
+      String(studentId)
+        .trim()
+        .toLowerCase()
+  );
+
+  return (
+    student?.profilePhoto ??
+    student?.ProfilePhoto ??
+    null
+  );
+};
+
+
+const getStudentPhotoUrl = (
+  studentId: any,
+  fallbackPhoto?: any
+) => {
+  const photo = getStudentPhoto(
+    studentId,
+    fallbackPhoto
+  );
+
+  if (!photo) {
+    return null;
+  }
+
+  // Already a complete URL
+  if (
+    String(photo).startsWith("http://") ||
+    String(photo).startsWith("https://")
+  ) {
+    return String(photo);
+  }
+
+  // Relative API path
+  return `https://api.madhapharma.in${photo}`;
+};
+
+
+const openStudentPhoto = (
+  studentId: any,
+  fallbackPhoto?: any
+) => {
+  const photoUrl = getStudentPhotoUrl(
+    studentId,
+    fallbackPhoto
+  );
+
+  if (!photoUrl) {
+    return;
+  }
+
+  setFullPhotoUrl(photoUrl);
+  setFullPhotoOpen(true);
+};
+
       const closeStudentSheet = () => {
     setStudentSheetOpen(false);
   };
@@ -973,7 +1053,10 @@ const [
 
           return {
             id: a.studentId,
-
+profilePhoto:
+    registration?.profilePhoto ??
+    registration?.ProfilePhoto ??
+    null,
             name:
               a.studentName ??
               a.StudentName ??
@@ -3003,9 +3086,44 @@ if (!canManageHostel) {
   }}className="w-full">
                           <div className="flex items-center justify-between bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50 active:bg-blue-100 p-3.5 rounded-2xl transition-all shadow-sm">
                             <div className="flex items-center space-x-3">
-                              <div className={`${s.gender === 'boys' ? 'bg-indigo-100' : 'bg-pink-100'} p-2.5 rounded-xl`}>
-                                <UserCircle size={22} className={s.gender === 'boys' ? 'text-indigo-500' : 'text-pink-500'} />
-                              </div>
+                      <div
+  className={`w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center ${
+    s.gender === "boys"
+      ? "bg-indigo-100"
+      : "bg-pink-100"
+  }`}
+  onClick={(e) => {
+    e.stopPropagation();
+
+    openStudentPhoto(
+      s.id,
+      s.profilePhoto
+    );
+  }}
+>
+  {getStudentPhotoUrl(
+    s.id,
+    s.profilePhoto
+  ) ? (
+    <img
+      src={getStudentPhotoUrl(
+        s.id,
+        s.profilePhoto
+      )!}
+      alt={s.name}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <UserCircle
+      size={22}
+      className={
+        s.gender === "boys"
+          ? "text-indigo-500"
+          : "text-pink-500"
+      }
+    />
+  )}
+</div>
                               <div>
                                 <p className="font-bold text-gray-800 text-sm">{s.name}</p>
                                 <p className="text-xs text-gray-400">{s.id}</p>
@@ -3074,8 +3192,37 @@ if (!canManageHostel) {
                       <div key={req.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center space-x-3">
-                            <div className="bg-orange-100 p-2.5 rounded-xl"><UserCircle size={20} className="text-orange-500" /></div>
-                            <div>
+                          <div
+  className="w-11 h-11 rounded-xl overflow-hidden bg-orange-100 flex items-center justify-center cursor-pointer"
+  onClick={() =>
+    openStudentPhoto(
+      req.studentId,
+      req.profilePhoto ??
+      req.ProfilePhoto
+    )
+  }
+>
+  {getStudentPhotoUrl(
+    req.studentId,
+    req.profilePhoto ??
+    req.ProfilePhoto
+  ) ? (
+    <img
+      src={getStudentPhotoUrl(
+        req.studentId,
+        req.profilePhoto ??
+        req.ProfilePhoto
+      )!}
+      alt={req.studentName}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <UserCircle
+      size={20}
+      className="text-orange-500"
+    />
+  )}
+</div>          <div>
                               <p className="font-bold text-gray-800 text-sm">{req.studentName}</p>
                               <p className="text-xs text-gray-400">{req.studentId}</p>
                             </div>
@@ -3208,8 +3355,37 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                       <div key={req.id} className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center space-x-3">
-                            <div className="bg-teal-100 p-2.5 rounded-xl"><UserCircle size={20} className="text-teal-500" /></div>
-                            <div>
+                          <div
+  className="w-11 h-11 rounded-xl overflow-hidden bg-teal-100 flex items-center justify-center cursor-pointer"
+  onClick={() =>
+    openStudentPhoto(
+      req.studentId,
+      req.profilePhoto ??
+      req.ProfilePhoto
+    )
+  }
+>
+  {getStudentPhotoUrl(
+    req.studentId,
+    req.profilePhoto ??
+    req.ProfilePhoto
+  ) ? (
+    <img
+      src={getStudentPhotoUrl(
+        req.studentId,
+        req.profilePhoto ??
+        req.ProfilePhoto
+      )!}
+      alt={req.studentName}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <UserCircle
+      size={20}
+      className="text-teal-500"
+    />
+  )}
+</div>     <div>
                               <p className="font-bold text-gray-800 text-sm">{req.studentName}</p>
                               <p className="text-xs text-gray-400">{req.studentId}</p>
                             </div>
@@ -3736,28 +3912,50 @@ const delayMins =
 }`}>
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex items-center space-x-3">
-                                 <div
-className={`p-2.5 rounded-xl ${
-  isManagement
-    ? stillOut
-      ? "bg-red-100"
-      : returnedLate
-      ? "bg-amber-100"
+                           <div
+  className={`w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center cursor-pointer ${
+    isManagement
+      ? stillOut
+        ? "bg-red-100"
+        : returnedLate
+        ? "bg-amber-100"
+        : "bg-green-100"
       : "bg-green-100"
-    : "bg-green-100"
-}`}
+  }`}
+  onClick={() =>
+    openStudentPhoto(
+      h.studentId,
+      h.profilePhoto ?? h.ProfilePhoto
+    )
+  }
 >
-  <UserCircle
-className={
-  isManagement
-    ? stillOut
-      ? "text-red-500"
-      : returnedLate
-      ? "text-amber-600"
-      : "text-green-600"
-    : "text-green-600"
-}
-/>                            </div>
+  {getStudentPhotoUrl(
+    h.studentId,
+    h.profilePhoto ?? h.ProfilePhoto
+  ) ? (
+    <img
+      src={getStudentPhotoUrl(
+        h.studentId,
+        h.profilePhoto ?? h.ProfilePhoto
+      )!}
+      alt={h.studentName}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <UserCircle
+      size={20}
+      className={
+        isManagement
+          ? stillOut
+            ? "text-red-500"
+            : returnedLate
+            ? "text-amber-600"
+            : "text-green-600"
+          : "text-green-600"
+      }
+    />
+  )}
+</div>
                                   <div>
                                     <p className="font-bold text-gray-800 text-sm">{h.studentName}</p>
                                     <p className="text-xs text-gray-400">{h.studentId}</p>
@@ -4314,34 +4512,54 @@ className={`bg-white border rounded-2xl p-4 shadow-sm ${
                                 <div className="flex items-center space-x-3">
                        
 
-  <div
- className={`p-2.5 rounded-xl ${
-  isManagement
-    ? overdueOutside
-      ? "bg-red-100"
-      : outsideCampus
-      ? "bg-blue-100"
-      : returnedLate
-      ? "bg-amber-100"
+<div
+  className={`w-11 h-11 rounded-xl overflow-hidden flex items-center justify-center cursor-pointer ${
+    isManagement
+      ? overdueOutside
+        ? "bg-red-100"
+        : outsideCampus
+        ? "bg-blue-100"
+        : returnedLate
+        ? "bg-amber-100"
+        : "bg-green-100"
       : "bg-green-100"
-    : "bg-green-100"
-}`}
-  >
+  }`}
+  onClick={() =>
+    openStudentPhoto(
+      h.studentId,
+      h.profilePhoto ?? h.ProfilePhoto
+    )
+  }
+>
+  {getStudentPhotoUrl(
+    h.studentId,
+    h.profilePhoto ?? h.ProfilePhoto
+  ) ? (
+    <img
+      src={getStudentPhotoUrl(
+        h.studentId,
+        h.profilePhoto ?? h.ProfilePhoto
+      )!}
+      alt={h.studentName}
+      className="w-full h-full object-cover"
+    />
+  ) : (
     <UserCircle
       size={20}
-    className={
-  isManagement
-    ? overdueOutside
-      ? "text-red-500"
-      : outsideCampus
-      ? "text-blue-600"
-      : returnedLate
-      ? "text-amber-600"
-      : "text-teal-600"
-    : "text-teal-600"
-}
+      className={
+        isManagement
+          ? overdueOutside
+            ? "text-red-500"
+            : outsideCampus
+            ? "text-blue-600"
+            : returnedLate
+            ? "text-amber-600"
+            : "text-teal-600"
+          : "text-teal-600"
+      }
     />
-  </div>
+  )}
+</div>
 
   <div>
     <p className="font-bold text-gray-800 text-sm">{h.studentName}</p>

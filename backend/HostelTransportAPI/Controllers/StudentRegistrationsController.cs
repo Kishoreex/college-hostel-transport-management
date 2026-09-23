@@ -276,7 +276,14 @@ public async Task<IActionResult> GetApprovedStudents([FromQuery] string? college
             x.Gender,
             x.Email,
             x.Status,
-            x.IsApproved
+            x.IsApproved,
+
+                    // STUDENT PROFILE PHOTO
+        ProfilePhoto = _context.Users
+            .Where(u => u.UserId == x.StudentId)
+            .Select(u => u.ProfilePhoto)
+            .FirstOrDefault()
+
         })
         .ToListAsync();
 

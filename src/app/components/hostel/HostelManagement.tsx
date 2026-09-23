@@ -80,6 +80,7 @@ import API_URL, { HUB_URL } from "../../../api/api";
       id: string;
       name: string;
       phone: string;
+      profilePhoto?: string | null;
       college: string;
        email: string;
       department: string;
@@ -215,6 +216,7 @@ import API_URL, { HUB_URL } from "../../../api/api";
             {children}
           </DialogContent>
         </Dialog>
+        
       );
     }
 
@@ -606,6 +608,11 @@ const canApproveLeaveStage = (
   return false;
 };
 const [selectedStudent, setSelectedStudent] = useState<StudentDetail | null>(null);
+const [fullPhotoOpen, setFullPhotoOpen] =
+  useState(false);
+
+const [fullPhotoUrl, setFullPhotoUrl] =
+  useState<string | null>(null);
       const closeStudentSheet = () => {
     setStudentSheetOpen(false);
   };
@@ -648,6 +655,10 @@ const loadHostelStudents = async () => {
 
       return {
         id: studentId,
+profilePhoto:
+  student.profilePhoto ??
+  student.ProfilePhoto ??
+  null,
 
         name:
           student.studentName ??
@@ -2508,9 +2519,33 @@ const reportTypes = [
               {/* Profile header */}
               <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-5 text-white">
                 <div className="flex items-center space-x-4">
-                  <div className="bg-white/20 p-3 rounded-2xl">
-                    <UserCircle size={40} className="text-white" />
-                  </div>
+                 <div
+  className="w-16 h-16 rounded-full overflow-hidden bg-white/20 border-2 border-white/60 cursor-pointer active:scale-95 transition-transform"
+  onClick={() => {
+    if (selectedStudent.profilePhoto) {
+      setFullPhotoUrl(
+        `https://api.madhapharma.in${selectedStudent.profilePhoto}`
+      );
+
+      setFullPhotoOpen(true);
+    }
+  }}
+>
+  {selectedStudent.profilePhoto ? (
+    <img
+      src={`https://api.madhapharma.in${selectedStudent.profilePhoto}`}
+      alt={selectedStudent.name}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center">
+      <UserCircle
+        size={40}
+        className="text-white"
+      />
+    </div>
+  )}
+</div>
                   <div>
                     <h2 className="font-bold text-xl">{selectedStudent.name}</h2>
                     <p className="text-blue-200 text-sm">{selectedStudent.id}</p>
@@ -2573,6 +2608,42 @@ const reportTypes = [
                 </div>
               )}
             </div>
+            <Dialog
+  open={fullPhotoOpen}
+  onClose={() => {
+    setFullPhotoOpen(false);
+    setFullPhotoUrl(null);
+  }}
+  maxWidth="md"
+>
+  <DialogContent
+    sx={{
+      p: 0,
+      bgcolor: "#000",
+      position: "relative",
+    }}
+  >
+
+    <button
+      onClick={() => {
+        setFullPhotoOpen(false);
+        setFullPhotoUrl(null);
+      }}
+      className="absolute top-3 right-3 z-10 w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center"
+    >
+      <X size={22} />
+    </button>
+
+    {fullPhotoUrl && (
+      <img
+        src={fullPhotoUrl}
+        alt="Student profile"
+        className="max-w-[90vw] max-h-[85vh] object-contain"
+      />
+    )}
+
+  </DialogContent>
+</Dialog>
           </DashboardLayout>
         );
       }
@@ -2720,14 +2791,39 @@ if (!canManageHostel) {
             : "bg-pink-100"
         } p-1.5 rounded-lg`}
       >
-        <UserCircle
-          size={16}
-          className={
-            s.gender === "boys"
-              ? "text-indigo-500"
-              : "text-pink-500"
-          }
-        />
+  <div
+  className={`w-9 h-9 rounded-full overflow-hidden ${
+    s.gender === "boys"
+      ? "bg-indigo-100"
+      : "bg-pink-100"
+  } flex items-center justify-center`}
+>
+  {s.profilePhoto ? (
+    <img
+      src={`https://api.madhapharma.in${s.profilePhoto}`}
+      alt={s.name}
+      className="w-full h-full object-cover cursor-pointer"
+      onClick={(e) => {
+        e.stopPropagation();
+
+        setFullPhotoUrl(
+          `https://api.madhapharma.in${s.profilePhoto}`
+        );
+
+        setFullPhotoOpen(true);
+      }}
+    />
+  ) : (
+    <UserCircle
+      size={20}
+      className={
+        s.gender === "boys"
+          ? "text-indigo-500"
+          : "text-pink-500"
+      }
+    />
+  )}
+</div>
       </div>
 
       <div className="text-left">

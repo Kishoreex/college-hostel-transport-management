@@ -228,3 +228,58 @@ export async function cancelLeave(
 
   return data;
 }
+// =====================================================
+// GET LEAVE HISTORY
+// =====================================================
+
+export async function getLeaveHistory() {
+  const token = localStorage.getItem("authToken");
+
+  console.log("========== LEAVE HISTORY REQUEST ==========");
+  console.log("TOKEN EXISTS:", !!token);
+  console.log("URL:", `${API_URL}/LeaveRequests/history`);
+
+  const response = await fetch(
+    `${API_URL}/LeaveRequests/history`,
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const text = await response.text();
+
+  let data: any;
+
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = text;
+  }
+
+  console.log(
+    "LEAVE HISTORY STATUS:",
+    response.status
+  );
+
+  console.log(
+    "LEAVE HISTORY RESPONSE:",
+    data
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message ||
+      data?.title ||
+      data ||
+      `Failed to load leave history (${response.status})`
+    );
+  }
+
+  return Array.isArray(data)
+    ? data
+    : [];
+}

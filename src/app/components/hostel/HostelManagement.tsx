@@ -4,8 +4,9 @@ import {
   approveOutpass,
   rejectOutpass
 } from "../../services/outpassService";
-    import {
+import {
   getLeaveRequests,
+  getLeaveHistory,
   approveLeave,
   rejectLeave
 } from "../../../api/leaveService";
@@ -1146,51 +1147,28 @@ const loadOutpassHistory = async () => {
 };
 const loadLeaveHistory = async () => {
   try {
-    const response = await fetch(
-      `${API_URL}/LeaveRequests/history`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-
-      throw new Error(
-        errorText || "Failed to load leave history"
-      );
-    }
-
-    const data = await response.json();
-
     console.log(
-      "========== LEAVE HISTORY =========="
+      "========== LOADING LEAVE HISTORY =========="
     );
 
-    console.log(
-      "USER:",
-      user.userId
-    );
-
+    console.log("USER ID:", user.userId);
     console.log(
       "ROLE:",
       user.staffRole || user.role
     );
-
     console.log(
       "COLLEGE:",
       user.college
     );
-
     console.log(
       "ASSIGNED YEAR:",
       user.assignedYear
     );
 
+    const data = await getLeaveHistory();
+
     console.log(
-      "LEAVE HISTORY:",
+      "LEAVE HISTORY RECEIVED:",
       data
     );
 
@@ -1210,7 +1188,7 @@ const loadLeaveHistory = async () => {
   } catch (error) {
 
     console.error(
-      "FAILED TO LOAD LEAVE HISTORY:",
+      "========== LEAVE HISTORY FAILED ==========",
       error
     );
 
@@ -3374,34 +3352,36 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
 
 
   {/* College */}
-  <div>
-
-    <label className="block text-sm font-semibold text-gray-700 mb-2">
-      🏫 Select College
-    </label>
-
-    <select
-      value={historyCollege}
-      onChange={(e) =>
-        setHistoryCollege(e.target.value)
-      }
-      className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200"
-    >
-
-      {historyColleges.map(college => (
-        <option
-          key={college}
-          value={college}
-        >
-          {college === "All"
-            ? "All Colleges"
-            : college}
-        </option>
-      ))}
-
-    </select>
-
+{isManagement && (
+  <div> 
+ 
+    <label className="block text-sm font-semibold text-gray-700 mb-2"> 
+      🏫 Select College 
+    </label> 
+ 
+    <select 
+      value={historyCollege} 
+      onChange={(e) => 
+        setHistoryCollege(e.target.value) 
+      } 
+      className="w-full bg-gray-100 rounded-2xl px-4 py-3 text-sm text-gray-800 outline-none focus:bg-indigo-50 focus:ring-2 focus:ring-indigo-200" 
+    > 
+ 
+      {historyColleges.map(college => ( 
+        <option 
+          key={college} 
+          value={college} 
+        > 
+          {college === "All" 
+            ? "All Colleges" 
+            : college} 
+        </option> 
+      ))} 
+ 
+    </select> 
+ 
   </div>
+)}
 
 
   {/* Time Period */}

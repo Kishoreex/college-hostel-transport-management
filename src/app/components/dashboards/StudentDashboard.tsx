@@ -3020,9 +3020,9 @@ onChange={(e) => setVacateReason(e.target.value)}
               <Card sx={{ borderRadius: 3 }}>
                 <CardContent className="p-4 space-y-2">
                   {[
-                    ['College', user.college || 'Madha Dental College & Hospital'],
-                    ['Department', user.department || 'BDS'],
-                    ['Year', user.year || '2nd Year'],
+        ['College', studentProfile?.collegeName || '-'],
+['Department', studentProfile?.department || '-'],
+['Year', studentProfile?.year || '-'],
                     ['Student ID', user.studentId || '—'],
                     ['Email', user.email || '—'],
                     ['Service', isHostel ? 'Hostel' : 'Transport'],

@@ -95,13 +95,17 @@ export async function updateUser(
 // CHANGE PASSWORD
 // =====================================================
 
+// =====================================================
+// CHANGE PASSWORD
+// =====================================================
+
 export async function changePassword(
   id: number,
   currentPassword: string,
   newPassword: string
 ) {
   const response = await fetch(
-    `${API_URL}/Users/change-password/${id}`,
+    `${API_URL}/Auth/change-password-by-id/${id}`,
     {
       method: "POST",
       headers: getAuthHeaders(),

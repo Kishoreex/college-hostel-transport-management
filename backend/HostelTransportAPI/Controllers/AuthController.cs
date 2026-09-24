@@ -5,6 +5,7 @@ using HostelTransportAPI.DTOs;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using System.Text;
 
 namespace HostelTransportAPI.Controllers;
@@ -449,4 +450,55 @@ user.AssignedYear,
             "Password updated successfully"
         );
     }
+
+
+    [Authorize]
+[HttpPost("change-password-by-id/{id}")]
+public async Task<IActionResult> ChangePasswordById(
+    int id,
+    ChangePasswordRequest request)
+{
+    var currentUserId =
+        User.FindFirstValue(
+            ClaimTypes.NameIdentifier
+        );
+
+    // User can change ONLY their own password
+    if (currentUserId != id.ToString())
+    {
+        return Forbid();
+    }
+
+    var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == id);
+
+    if (user == null)
+    {
+        return NotFound("User not found");
+    }
+
+    bool validPassword =
+        BCrypt.Net.BCrypt.Verify(
+            request.CurrentPassword,
+            user.PasswordHash
+        );
+
+    if (!validPassword)
+    {
+        return BadRequest(
+            "Current Password Incorrect"
+        );
+    }
+
+    user.PasswordHash =
+        BCrypt.Net.BCrypt.HashPassword(
+            request.NewPassword
+        );
+
+    await _context.SaveChangesAsync();
+
+    return Ok(
+        "Password Updated"
+    );
+}
 }

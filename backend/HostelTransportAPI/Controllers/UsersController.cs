@@ -880,22 +880,7 @@ public async Task<IActionResult> ChangePassword(
             ClaimTypes.NameIdentifier
         );
 
-    // Protect MainAdmin from OTHER accounts changing it,
-    // but allow MainAdmin to change its OWN password.
-    if (
-        string.Equals(
-            user.UserId,
-            ProtectedManagementUserId,
-            StringComparison.OrdinalIgnoreCase
-        )
-        &&
-        currentUserId != user.Id.ToString()
-    )
-    {
-        return BadRequest(
-            "The Management account password can only be changed by the account owner."
-        );
-    }
+ 
 
     bool validPassword =
         BCrypt.Net.BCrypt.Verify(

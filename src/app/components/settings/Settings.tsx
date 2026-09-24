@@ -810,11 +810,11 @@ assignedYear:
                     disabled={!currentPwd || !pwdMatch}
                     onClick={async () => {
   try {
-    await changePassword(
-      user.id,
-      currentPwd,
-      newPwd
-    );
+   await changePassword(
+  Number(user.userId),
+  currentPwd,
+  newPwd
+);
 
     setPwdSaved(true);
 

@@ -808,13 +808,17 @@ assignedYear:
 
                   <button
                     disabled={!currentPwd || !pwdMatch}
-                    onClick={async () => {
+onClick={async () => {
   try {
-   await changePassword(
-  Number(user.userId),
-  currentPwd,
-  newPwd
-);
+    console.log("PASSWORD CHANGE USER:", user);
+    console.log("PASSWORD CHANGE USER ID:", user.id);
+    console.log("PASSWORD CHANGE USER ID NUMBER:", Number(user.id));
+
+    await changePassword(
+      Number(user.id),
+      currentPwd,
+      newPwd
+    );
 
     setPwdSaved(true);
 

@@ -861,62 +861,66 @@ else
     // CHANGE PASSWORD
     // SYSTEM ADMIN ONLY
     // =====================================================
-
-    [HttpPost("change-password/{id}")]
-    public async Task<IActionResult> ChangePassword(
-        int id,
-        ChangePasswordDto dto)
-    {
-        var user = await _context.Users
-            .FirstOrDefaultAsync(
-                x => x.Id == id
-            );
-
-        if (user == null)
-        {
-            return NotFound();
-        }
-
-if (
-    string.Equals(
-        user.UserId,
-        ProtectedManagementUserId,
-        StringComparison.OrdinalIgnoreCase
-    )
-)
+[HttpPost("change-password/{id}")]
+public async Task<IActionResult> ChangePassword(
+    int id,
+    ChangePasswordDto dto)
 {
-    return BadRequest(
-        "The Management account password cannot be changed from Users."
-    );
-}
-        bool validPassword =
-            BCrypt.Net.BCrypt.Verify(
-                dto.CurrentPassword,
-                user.PasswordHash
-            );
+    var user = await _context.Users
+        .FirstOrDefaultAsync(x => x.Id == id);
 
+    if (user == null)
+    {
+        return NotFound();
+    }
 
-        if (!validPassword)
-        {
-            return BadRequest(
-                "Current Password Incorrect"
-            );
-        }
+    // Current logged-in user
+    var currentUserId =
+        User.FindFirstValue(
+            ClaimTypes.NameIdentifier
+        );
 
-
-        user.PasswordHash =
-            BCrypt.Net.BCrypt.HashPassword(
-                dto.NewPassword
-            );
-
-
-        await _context.SaveChangesAsync();
-
-
-        return Ok(
-            "Password Updated"
+    // Protect MainAdmin from OTHER accounts changing it,
+    // but allow MainAdmin to change its OWN password.
+    if (
+        string.Equals(
+            user.UserId,
+            ProtectedManagementUserId,
+            StringComparison.OrdinalIgnoreCase
+        )
+        &&
+        currentUserId != user.Id.ToString()
+    )
+    {
+        return BadRequest(
+            "The Management account password can only be changed by the account owner."
         );
     }
+
+    bool validPassword =
+        BCrypt.Net.BCrypt.Verify(
+            dto.CurrentPassword,
+            user.PasswordHash
+        );
+
+    if (!validPassword)
+    {
+        return BadRequest(
+            "Current Password Incorrect"
+        );
+    }
+
+    user.PasswordHash =
+        BCrypt.Net.BCrypt.HashPassword(
+            dto.NewPassword
+        );
+
+    await _context.SaveChangesAsync();
+
+    return Ok(
+        "Password Updated"
+    );
+}
 
 
     // =====================================================

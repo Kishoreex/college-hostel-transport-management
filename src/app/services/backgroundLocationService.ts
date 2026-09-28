@@ -2,7 +2,16 @@ import { registerPlugin, PluginListenerHandle } from "@capacitor/core";
 
 interface OutpassLocationPlugin {
   start(): Promise<void>;
+
   stop(): Promise<void>;
+
+  addListener(
+    eventName: "locationUpdate",
+    listenerFunc: (data: {
+      latitude: number;
+      longitude: number;
+    }) => void
+  ): Promise<PluginListenerHandle>;
 }
 
 const OutpassLocation =

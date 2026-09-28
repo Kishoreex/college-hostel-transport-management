@@ -11,6 +11,7 @@ import {
   stopBackgroundLocation,
   addBackgroundLocationListener
 } from "../../services/backgroundLocationService";
+import type { PluginListenerHandle } from "@capacitor/core";
 import * as signalR from "@microsoft/signalr";
 import API_URL from "../../../api/api";
 const HUB_URL = API_URL.replace("/api", "");

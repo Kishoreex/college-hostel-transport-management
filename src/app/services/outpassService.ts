@@ -185,12 +185,21 @@ export const markExit = async (
   latitude: number,
   longitude: number
 ) => {
+  const token = localStorage.getItem("authToken");
+
+  console.log("========== MARK EXIT ==========");
+  console.log("Outpass ID:", id);
+  console.log("Latitude:", latitude);
+  console.log("Longitude:", longitude);
+  console.log("Token exists:", !!token);
+
   const response = await fetch(
     `${API_URL}/Outpasses/exit/${id}`,
     {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         latitude,
@@ -199,7 +208,23 @@ export const markExit = async (
     }
   );
 
-  return response.json();
+  const result = await response.json();
+
+  console.log(
+    "MARK EXIT RESPONSE:",
+    response.status,
+    result
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      result?.title ||
+      `Failed to record exit (${response.status})`
+    );
+  }
+
+  return result;
 };
 
 export const markReturn = async (
@@ -207,22 +232,46 @@ export const markReturn = async (
   latitude: number,
   longitude: number
 ) => {
+  const token = localStorage.getItem("authToken");
+
+  console.log("========== MARK RETURN ==========");
+  console.log("Outpass ID:", id);
+  console.log("Latitude:", latitude);
+  console.log("Longitude:", longitude);
+  console.log("Token exists:", !!token);
+
   const response = await fetch(
     `${API_URL}/Outpasses/return/${id}`,
     {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         latitude,
         longitude,
       }),
-
     }
   );
 
-  return response.json();
+  const result = await response.json();
+
+  console.log(
+    "MARK RETURN RESPONSE:",
+    response.status,
+    result
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      result?.title ||
+      `Failed to record return (${response.status})`
+    );
+  }
+
+  return result;
 };
 export async function hasActiveOutpass(studentId: string) {
 

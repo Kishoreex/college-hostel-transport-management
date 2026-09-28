@@ -700,6 +700,83 @@ const openStudentPhoto = (
   useState(false);
     const [rooms, setRooms] = useState<any[]>([]);
 const [hostelStudents, setHostelStudents] = useState<any[]>([]);
+// =====================================================
+// OPEN FULL STUDENT PROFILE FROM ANY STUDENT RECORD
+// =====================================================
+const openStudentProfile = (studentId: any) => {
+  if (!studentId) {
+    toast.error("Student ID not found");
+    return;
+  }
+
+  const student = hostelStudents.find(
+    (s: any) =>
+      String(s.id ?? "")
+        .trim()
+        .toLowerCase() ===
+      String(studentId)
+        .trim()
+        .toLowerCase()
+  );
+
+  if (!student) {
+    toast.error("Student profile not found");
+    console.log("STUDENT PROFILE NOT FOUND:", studentId);
+    return;
+  }
+
+  setSelectedStudent({
+    id: student.id ?? "",
+    name: student.name ?? student.studentName ?? "",
+    phone: student.phone ?? student.Phone ?? "",
+    profilePhoto:
+      student.profilePhoto ??
+      student.ProfilePhoto ??
+      null,
+    college:
+      student.college ??
+      student.collegeName ??
+      "",
+    email:
+      student.email ??
+      student.Email ??
+      "",
+    department:
+      student.department ??
+      student.Department ??
+      "",
+    year:
+      student.year ??
+      student.Year ??
+      "",
+    batch:
+      student.batch ??
+      student.Batch ??
+      "",
+    parentName:
+      student.parentName ??
+      student.ParentName ??
+      "",
+    parentPhone:
+      student.parentPhone ??
+      student.ParentPhone ??
+      "",
+    address:
+      student.address ??
+      student.Address ??
+      "",
+    roomNumber:
+      student.roomNumber ??
+      "",
+    gender:
+      student.gender === "male" ||
+      student.gender === "boys"
+        ? "boys"
+        : "girls",
+    roommates:
+      student.roommates ?? []
+  });
+};
 
 const loadHostelStudents = async () => {
   try {
@@ -3201,7 +3278,7 @@ if (!canManageHostel) {
       req.ProfilePhoto
     )
   }
->
+> 
   {getStudentPhotoUrl(
     req.studentId,
     req.profilePhoto ??
@@ -3222,10 +3299,24 @@ if (!canManageHostel) {
       className="text-orange-500"
     />
   )}
-</div>          <div>
-                              <p className="font-bold text-gray-800 text-sm">{req.studentName}</p>
-                              <p className="text-xs text-gray-400">{req.studentId}</p>
-                            </div>
+</div>        
+<div>
+  <p className="font-bold text-gray-800 text-sm">
+    {req.studentName}
+  </p>
+
+  <p className="text-xs text-gray-400">
+    {req.studentId}
+  </p>
+
+  <button
+    type="button"
+    onClick={() => openStudentProfile(req.studentId)}
+    className="text-xs font-semibold text-blue-600 hover:text-blue-800 mt-1"
+  >
+    View Full Profile
+  </button>
+</div>
                           </div>
                         <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${req.status === 'approved' ? 'bg-green-100 text-green-700' : req.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}`}>
 {req.status?.toLowerCase() === "pending"
@@ -3385,10 +3476,23 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
       className="text-teal-500"
     />
   )}
-</div>     <div>
-                              <p className="font-bold text-gray-800 text-sm">{req.studentName}</p>
-                              <p className="text-xs text-gray-400">{req.studentId}</p>
-                            </div>
+</div>  <div>
+  <p className="font-bold text-gray-800 text-sm">
+    {req.studentName}
+  </p>
+
+  <p className="text-xs text-gray-400">
+    {req.studentId}
+  </p>
+
+  <button
+    type="button"
+    onClick={() => openStudentProfile(req.studentId)}
+    className="text-xs font-semibold text-teal-600 hover:text-teal-800 mt-1"
+  >
+    View Full Profile
+  </button>
+</div>
                           </div>
                         <span
   className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
@@ -3956,10 +4060,23 @@ const delayMins =
     />
   )}
 </div>
-                                  <div>
-                                    <p className="font-bold text-gray-800 text-sm">{h.studentName}</p>
-                                    <p className="text-xs text-gray-400">{h.studentId}</p>
-                                  </div>
+                              <div>
+  <p className="font-bold text-gray-800 text-sm">
+    {h.studentName}
+  </p>
+
+  <p className="text-xs text-gray-400">
+    {h.studentId}
+  </p>
+
+  <button
+    type="button"
+    onClick={() => openStudentProfile(h.studentId)}
+    className="text-xs font-semibold text-green-600 hover:text-green-800 mt-1"
+  >
+    View Full Profile
+  </button>
+</div>
                                 </div>
                                 <span
 className={`text-xs px-2.5 py-1 rounded-full font-semibold ${
@@ -4561,10 +4678,23 @@ className={`bg-white border rounded-2xl p-4 shadow-sm ${
   )}
 </div>
 
-  <div>
-    <p className="font-bold text-gray-800 text-sm">{h.studentName}</p>
-    <p className="text-xs text-gray-400">{h.studentId}</p>
-  </div>
+<div>
+  <p className="font-bold text-gray-800 text-sm">
+    {h.studentName}
+  </p>
+
+  <p className="text-xs text-gray-400">
+    {h.studentId}
+  </p>
+
+  <button
+    type="button"
+    onClick={() => openStudentProfile(h.studentId)}
+    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 mt-1"
+  >
+    View Full Profile
+  </button>
+</div>
 
 </div>                                <div className="flex flex-col items-end gap-1">
                                   

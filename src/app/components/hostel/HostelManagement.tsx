@@ -3278,7 +3278,7 @@ if (!canManageHostel) {
       req.ProfilePhoto
     )
   }
-> 
+>
   {getStudentPhotoUrl(
     req.studentId,
     req.profilePhoto ??

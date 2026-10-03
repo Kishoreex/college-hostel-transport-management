@@ -455,10 +455,11 @@ const canApproveStage = (
   status?: string | null
 ) => {
 
-  const currentStatus =
-    String(status ?? "").trim().toLowerCase();
+  const currentStatus = String(status ?? "")
+    .trim()
+    .toLowerCase();
 
-  // Do not show Approve / Reject after decision
+  // Never show buttons after final decision
   if (
     currentStatus === "approved" ||
     currentStatus === "rejected" ||
@@ -468,43 +469,71 @@ const canApproveStage = (
     return false;
   }
 
-  const stage =
-    String(approvalStage ?? "None").trim() || "None";
+  const stage = String(approvalStage ?? "None")
+    .trim()
+    .toLowerCase();
 
-  const currentRole =
-    user.staffRole?.trim().toLowerCase() ||
-    user.role?.trim().toLowerCase() ||
-    "";
+  const currentRole = String(
+    user.staffRole ?? user.role ?? ""
+  )
+    .trim()
+    .toLowerCase()
+    .replace(/[-_]/g, " ")
+    .replace(/\s+/g, " ");
 
-  // Management
-  if (currentRole === "management") {
-    return stage !== "FinalApproved";
-  }
-
-  // System Admin / Admin
+  // ================================
+  // CLASS INCHARGE
+  // ================================
+  // Can approve ONLY a new request.
   if (
-    currentRole === "system admin" ||
-    currentRole === "admin"
+    currentRole === "class incharge" ||
+    currentRole === "class in-charge" ||
+    currentRole === "class in charge"
   ) {
-    return stage !== "FinalApproved";
+    return stage === "none" || stage === "";
   }
 
-  // Principal
-  if (currentRole === "principal") {
-    return stage !== "FinalApproved";
-  }
-
-  // Hostel Incharge
-  if (currentRole === "hostel incharge") {
+  // ================================
+  // HOSTEL INCHARGE
+  // ================================
+  // Can approve after Class Incharge.
+  if (
+    currentRole === "hostel incharge" ||
+    currentRole === "hostel in-charge" ||
+    currentRole === "hostel in charge"
+  ) {
     return (
-      stage === "None" ||
-      stage === "FirstApproved"
+      stage === "none" ||
+      stage === "firstapproved"
     );
   }
 
-  // Class Incharge
-  if (currentRole === "class incharge") {
-    return stage === "None";
+  // ================================
+  // PRINCIPAL
+  // ================================
+  if (currentRole === "principal") {
+    return (
+      stage !== "finalapproved" &&
+      stage !== "rejected"
+    );
+  }
+
+  // ================================
+  // MANAGEMENT
+  // ================================
+  if (currentRole === "management") {
+    return stage !== "finalapproved";
+  }
+
+  // ================================
+  // ADMIN
+  // ================================
+  if (
+    currentRole === "admin" ||
+    currentRole === "system admin" ||
+    currentRole === "admin office"
+  ) {
+    return stage !== "finalapproved";
   }
 
   return false;
@@ -3333,7 +3362,11 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                             <p className="text-xs text-red-700"><span className="font-semibold">Remark: </span>{req.remarks}</p>
                           </div>
                         )}
-               {req.status?.toLowerCase() === 'pending' && canApproveStage(req.approvalStage) && (
+           {req.status?.toLowerCase() === "pending" &&
+  canApproveStage(
+    req.approvalStage,
+    req.status
+  ) && (
                           <div className="flex gap-2">
                             <button onClick={() => handleApprove(Number(req.id))} className="flex-1 flex items-center justify-center space-x-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
                               <CheckCircle2 size={15} /><span>Accept</span>
@@ -3549,7 +3582,11 @@ String(req.approvalStage ?? "None").trim() === "FirstApproved"
                             <p className="text-xs text-red-700"><span className="font-semibold">Remark: </span>{req.remarks}</p>
                           </div>
                         )}
-                        {req.status === 'Pending' && (
+                     {String(req.status ?? "").toLowerCase() === "pending" &&
+  canApproveLeaveStage(
+    req.approvalStage,
+    req.status
+  ) && (
                           <div className="flex gap-2">
                             <button  onClick={() => handleApproveLeave(Number(req.id))} className="flex-1 flex items-center justify-center space-x-1.5 bg-green-500 hover:bg-green-600 active:scale-95 text-white py-2.5 rounded-xl text-sm font-semibold transition-all shadow-sm">
                               <CheckCircle2 size={15} /><span>Accept</span>

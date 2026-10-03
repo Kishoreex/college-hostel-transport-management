@@ -169,15 +169,6 @@ import API_URL, { HUB_URL } from "../../../api/api";
 
 
 
-    const seedLeaveHistory: HistoryLeave[] = [
-      { id: 'HLV01', studentName: 'Amit Shah', studentId: 'CS2021002', gender: 'boys', leaveType: 'Casual', campus: 'outcampus', fromDate: '2026-05-28', toDate: '2026-05-31', actualReturn: '2026-05-31' },
-      { id: 'HLV02', studentName: 'Vijay Patel', studentId: 'ME2021034', gender: 'boys', leaveType: 'Sick', campus: 'incampus', fromDate: '2026-06-01', toDate: '2026-06-03', actualReturn: '2026-06-03' },
-      { id: 'HLV03', studentName: 'Rahul Kumar', studentId: 'BDS2022011', gender: 'boys', leaveType: 'Emergency', campus: 'outcampus', fromDate: '2026-06-08', toDate: '2026-06-10' },
-      { id: 'HLV04', studentName: 'Sneha Iyer', studentId: 'BDS2022044', gender: 'girls', leaveType: 'Casual', campus: 'outcampus', fromDate: '2026-05-30', toDate: '2026-06-02', actualReturn: '2026-06-03' },
-      { id: 'HLV05', studentName: 'Meera Nair', studentId: 'BDS2022045', gender: 'girls', leaveType: 'Sick', campus: 'incampus', fromDate: '2026-06-04', toDate: '2026-06-05', actualReturn: '2026-06-05' },
-      { id: 'HLV06', studentName: 'Lakshmi Bai', studentId: 'NUR2021010', gender: 'girls', leaveType: 'Emergency', campus: 'outcampus', fromDate: '2026-06-09', toDate: '2026-06-12' },
-    ];
-
     function getDelayMinutes(expected: string, actual: string): number {
       const exp = new Date(expected.replace(' ', 'T')).getTime();
       const act = new Date(actual.replace(' ', 'T')).getTime();
@@ -459,11 +450,24 @@ const [historyToDate, setHistoryToDate] =
 const [searchQuery, setSearchQuery] = useState('');
 const [outpassSearch, setOutpassSearch] = useState('');
 const [leaveSearch, setLeaveSearch] = useState('');
-const canApproveStage = (approvalStage?: string | null) => {
+const canApproveStage = (
+  approvalStage?: string | null,
+  status?: string | null
+) => {
 
-  // IMPORTANT:
-  // Old outpasses may have NULL / empty ApprovalStage.
-  // Treat them as a fresh request.
+  const currentStatus =
+    String(status ?? "").trim().toLowerCase();
+
+  // Do not show Approve / Reject after decision
+  if (
+    currentStatus === "approved" ||
+    currentStatus === "rejected" ||
+    currentStatus === "cancelled" ||
+    currentStatus === "completed"
+  ) {
+    return false;
+  }
+
   const stage =
     String(approvalStage ?? "None").trim() || "None";
 
@@ -471,12 +475,6 @@ const canApproveStage = (approvalStage?: string | null) => {
     user.staffRole?.trim().toLowerCase() ||
     user.role?.trim().toLowerCase() ||
     "";
-
-  console.log("OUTPASS APPROVAL CHECK:", {
-    currentRole,
-    approvalStage,
-    normalizedStage: stage
-  });
 
   // Management
   if (currentRole === "management") {
@@ -492,15 +490,11 @@ const canApproveStage = (approvalStage?: string | null) => {
   }
 
   // Principal
-  // Principal can directly approve any unfinished request.
   if (currentRole === "principal") {
     return stage !== "FinalApproved";
   }
 
   // Hostel Incharge
-  // Can approve:
-  // None -> SecondApproved
-  // FirstApproved -> SecondApproved
   if (currentRole === "hostel incharge") {
     return (
       stage === "None" ||
@@ -509,7 +503,6 @@ const canApproveStage = (approvalStage?: string | null) => {
   }
 
   // Class Incharge
-  // Can approve only fresh requests.
   if (currentRole === "class incharge") {
     return stage === "None";
   }
@@ -521,44 +514,37 @@ const canApproveStage = (approvalStage?: string | null) => {
 // =====================================================
 
 const canApproveLeaveStage = (
-  approvalStage?: string | null
+  approvalStage?: string | null,
+  status?: string | null
 ) => {
 
+  const currentStatus =
+    String(status ?? "").trim().toLowerCase();
+
+  // Do not show Approve / Reject after decision
+  if (
+    currentStatus === "approved" ||
+    currentStatus === "rejected" ||
+    currentStatus === "cancelled" ||
+    currentStatus === "completed"
+  ) {
+    return false;
+  }
+
   const stage =
-    String(
-      approvalStage ?? "None"
-    ).trim() || "None";
+    String(approvalStage ?? "None").trim() || "None";
 
   const currentRole =
     user.staffRole?.trim().toLowerCase() ||
     user.role?.trim().toLowerCase() ||
     "";
 
-  console.log(
-    "LEAVE APPROVAL CHECK:",
-    {
-      currentRole,
-      approvalStage,
-      normalizedStage: stage
-    }
-  );
-
-
-  // ==========================================
-  // MANAGEMENT
-  // ==========================================
-
-  if (
-    currentRole === "management"
-  ) {
+  // Management
+  if (currentRole === "management") {
     return stage !== "FinalApproved";
   }
 
-
-  // ==========================================
-  // SYSTEM ADMIN / ADMIN
-  // ==========================================
-
+  // System Admin / Admin
   if (
     currentRole === "system admin" ||
     currentRole === "admin"
@@ -566,44 +552,23 @@ const canApproveLeaveStage = (
     return stage !== "FinalApproved";
   }
 
-
-  // ==========================================
-  // PRINCIPAL
-  // ==========================================
-
-  if (
-    currentRole === "principal"
-  ) {
+  // Principal
+  if (currentRole === "principal") {
     return stage !== "FinalApproved";
   }
 
-
-  // ==========================================
-  // HOSTEL INCHARGE
-  // ==========================================
-
-  if (
-    currentRole === "hostel incharge"
-  ) {
-
+  // Hostel Incharge
+  if (currentRole === "hostel incharge") {
     return (
       stage === "None" ||
       stage === "FirstApproved"
     );
   }
 
-
-  // ==========================================
-  // CLASS INCHARGE
-  // ==========================================
-
-  if (
-    currentRole === "class incharge"
-  ) {
-
+  // Class Incharge
+  if (currentRole === "class incharge") {
     return stage === "None";
   }
-
 
   return false;
 };

@@ -155,17 +155,33 @@ import API_URL, { HUB_URL } from "../../../api/api";
       actualReturn?: string;
     }
 
-    interface HistoryLeave {
-      id: string;
-      studentName: string;
-      studentId: string;
-      gender: 'boys' | 'girls';
-      leaveType: string;
-      campus: 'incampus' | 'outcampus';
-      fromDate: string;
-      toDate: string;
-      actualReturn?: string;
-    }
+interface HistoryLeave {
+  id: string;
+  studentName: string;
+  studentId: string;
+  gender: 'boys' | 'girls';
+
+  leaveType: string;
+  campus: 'incampus' | 'outcampus';
+
+  fromDate: string;
+  toDate: string;
+
+  actualReturn?: string;
+
+  status?: string;
+  approvalStage?: string;
+
+  firstApprovedBy?: string;
+  secondApprovedBy?: string;
+  finalApprovedBy?: string;
+
+  approvedBy?: string;
+  approvedDate?: string;
+
+  rejectReason?: string;
+  rejectedBy?: string;
+}
 
 
 
@@ -4858,6 +4874,31 @@ h.campus === "In Campus"
                                   </div>
                                 )}
                               </div>
+                              {h.status === "Rejected" && (
+  <div className="mt-3 bg-red-50 border border-red-200 rounded-xl p-3 space-y-2">
+
+    <div className="flex justify-between text-sm">
+      <span className="text-red-500 font-medium">
+        Rejected By
+      </span>
+
+      <span className="font-semibold text-red-700">
+        {h.rejectedBy || "Unknown"}
+      </span>
+    </div>
+
+    <div className="text-sm">
+      <span className="text-red-500 font-medium">
+        Reason
+      </span>
+
+      <p className="text-red-700 mt-1">
+        {h.rejectReason || "No reason provided"}
+      </p>
+    </div>
+
+  </div>
+)}
                      {isManagement && returnedLate && h.actualReturnTime && (
       <div className="flex items-center space-x-2 bg-amber-50 border border-amber-200 rounded-xl p-2.5 mt-3">
         <Clock size={14} className="text-amber-600 shrink-0" />

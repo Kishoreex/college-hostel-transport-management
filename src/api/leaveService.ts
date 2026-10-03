@@ -91,7 +91,48 @@ export async function getLeaveRequests(
   return result;
 }
 
+// =====================================================
+// GET STUDENT LEAVES
+// =====================================================
 
+export async function getStudentLeaveRequests(
+  studentId: string
+) {
+  const token =
+    localStorage.getItem("authToken");
+
+  const response =
+    await fetch(
+      `${API_URL}/LeaveRequests/student/${encodeURIComponent(studentId)}`,
+      {
+        method: "GET",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+
+          Authorization:
+            `Bearer ${token}`,
+        },
+      }
+    );
+
+  const result =
+    await response.json();
+
+  if (!response.ok) {
+
+    throw new Error(
+      result?.message ||
+      result?.title ||
+      `Failed to load student leave requests (${response.status})`
+    );
+  }
+
+  return Array.isArray(result)
+    ? result
+    : [];
+}
 // =====================================================
 // APPROVE LEAVE
 // =====================================================

@@ -32,7 +32,7 @@ import {
 } from "../../../api/vacatingService";
 import {
   createLeaveRequest,
-  getLeaveRequests,
+  getStudentLeaveRequests,
   cancelLeave
 } from "../../../api/leaveService";
 import {
@@ -958,23 +958,32 @@ const handlePhotoDoubleClick = () => {
   }
 };
 const loadLeaveRequests = async () => {
-
   try {
 
-    const data = await getLeaveRequests();
+    const studentId = user.studentId || "";
 
-    setLeaveRequests(
-      data.filter(
-        (x:any) => x.studentId === user.studentId
-      )
-    );
+    if (!studentId) {
+      console.log("No student ID available");
+      setLeaveRequests([]);
+      return;
+    }
+
+    const data = await getStudentLeaveRequests(studentId);
+
+    console.log("STUDENT LEAVE REQUESTS =", data);
+
+    setLeaveRequests(data);
 
   } catch (err) {
 
-    console.log(err);
+    console.error(
+      "Failed to load student leave requests:",
+      err
+    );
+
+    setLeaveRequests([]);
 
   }
-
 };
 useEffect(() => {
 

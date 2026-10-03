@@ -105,101 +105,586 @@ await _hub.Clients.All.SendAsync(
 public async Task<IActionResult> GetAll(
     [FromQuery] string? college)
 {
-    var now = DateTime.Now;
-
-    var query = _context.LeaveRequests
-        .AsQueryable();
-
-    if (!string.IsNullOrWhiteSpace(college))
+    try
     {
-        query = query.Where(x =>
-            _context.StudentRegistrations.Any(s =>
-                s.StudentId == x.StudentId &&
-                s.CollegeName == college
+        var now = DateTime.Now;
+
+        // =====================================================
+        // GET LOGGED-IN USER
+        // =====================================================
+
+        var userId =
+            User.FindFirst(ClaimTypes.Name)?.Value
+            ??
+            User.FindFirst("userId")?.Value
+            ??
+            User.FindFirst("UserId")?.Value;
+
+        var nameIdentifier =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        User? staffUser = null;
+
+        // First try UserId from JWT
+        if (!string.IsNullOrWhiteSpace(userId))
+        {
+            staffUser = await _context.Users
+                .Include(x => x.Role)
+                .FirstOrDefaultAsync(
+                    x => x.UserId == userId
+                );
+        }
+
+        // Fallback to database Id
+        if (
+            staffUser == null &&
+            int.TryParse(
+                nameIdentifier,
+                out var databaseUserId
             )
+        )
+        {
+            staffUser = await _context.Users
+                .Include(x => x.Role)
+                .FirstOrDefaultAsync(
+                    x => x.Id == databaseUserId
+                );
+        }
+
+        if (staffUser == null)
+        {
+            return StatusCode(
+                403,
+                "Logged-in staff user could not be identified."
+            );
+        }
+
+
+        // =====================================================
+        // GET ROLE
+        // =====================================================
+
+        var role =
+            staffUser.Role?.Name?.Trim()
+            ?? "";
+
+
+        // =====================================================
+        // ROLE FLAGS
+        // =====================================================
+
+        var isManagement =
+            role.Equals(
+                "Management",
+                StringComparison.OrdinalIgnoreCase
+            )
+            ||
+            role.Equals(
+                "System Admin",
+                StringComparison.OrdinalIgnoreCase
+            )
+            ||
+            role.Equals(
+                "Admin",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        var isClassIncharge =
+            role.Equals(
+                "Class Incharge",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        var isHostelIncharge =
+            role.Equals(
+                "Hostel Incharge",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        var isPrincipal =
+            role.Equals(
+                "Principal",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+
+        // =====================================================
+        // BASE QUERY
+        // =====================================================
+
+        var query =
+            _context.LeaveRequests
+                .AsQueryable();
+
+
+        // =====================================================
+        // MANAGEMENT / ADMIN
+        // ALL COLLEGES + ALL YEARS
+        // =====================================================
+
+        if (isManagement)
+        {
+            // No filter.
+        }
+
+
+        // =====================================================
+        // CLASS INCHARGE
+        // ONLY ASSIGNED COLLEGE + ASSIGNED YEAR
+        // =====================================================
+
+        else if (isClassIncharge)
+        {
+            if (!staffUser.CollegeId.HasValue)
+            {
+                return StatusCode(
+                    403,
+                    "Class Incharge has no CollegeId assigned."
+                );
+            }
+
+            if (
+                string.IsNullOrWhiteSpace(
+                    staffUser.AssignedYear
+                )
+            )
+            {
+                return StatusCode(
+                    403,
+                    "Class Incharge has no AssignedYear."
+                );
+            }
+
+
+            // -------------------------------------------------
+            // GET ASSIGNED COLLEGE NAME
+            // -------------------------------------------------
+
+            var collegeName =
+                await _context.Colleges
+                    .Where(c =>
+                        c.Id ==
+                        staffUser.CollegeId.Value
+                    )
+                    .Select(c => c.Name)
+                    .FirstOrDefaultAsync();
+
+
+            if (string.IsNullOrWhiteSpace(collegeName))
+            {
+                return StatusCode(
+                    403,
+                    "Assigned college could not be found."
+                );
+            }
+
+
+            // -------------------------------------------------
+            // NORMALIZE COLLEGE
+            // -------------------------------------------------
+
+            var normalizedCollege =
+                collegeName
+                    .Trim()
+                    .ToLower();
+
+
+            // -------------------------------------------------
+            // NORMALIZE ASSIGNED YEAR
+            // -------------------------------------------------
+
+            var rawYear =
+                staffUser.AssignedYear
+                    .Trim()
+                    .ToLower();
+
+            string normalizedYear;
+
+
+            if (
+                rawYear == "4th year" ||
+                rawYear == "final year" ||
+                rawYear == "4th"
+            )
+            {
+                normalizedYear =
+                    "final year";
+            }
+            else if (
+                rawYear == "intern" ||
+                rawYear == "internship"
+            )
+            {
+                normalizedYear =
+                    "internship";
+            }
+            else
+            {
+                normalizedYear =
+                    rawYear;
+            }
+
+
+            // -------------------------------------------------
+            // FILTER:
+            // ASSIGNED COLLEGE + ASSIGNED YEAR
+            // -------------------------------------------------
+
+            query =
+                query.Where(x =>
+                    _context.StudentRegistrations.Any(s =>
+                        s.StudentId == x.StudentId
+
+                        &&
+
+                        s.CollegeName != null
+
+                        &&
+
+                        s.CollegeName
+                            .Trim()
+                            .ToLower()
+                            ==
+                            normalizedCollege
+
+                        &&
+
+                        s.Year != null
+
+                        &&
+
+                        (
+                            s.Year
+                                .Trim()
+                                .ToLower()
+                                ==
+                                normalizedYear
+
+                            ||
+
+                            (
+                                normalizedYear ==
+                                "final year"
+
+                                &&
+
+                                (
+                                    s.Year
+                                        .Trim()
+                                        .ToLower()
+                                        ==
+                                        "4th year"
+
+                                    ||
+
+                                    s.Year
+                                        .Trim()
+                                        .ToLower()
+                                        ==
+                                        "final year"
+                                )
+                            )
+
+                            ||
+
+                            (
+                                normalizedYear ==
+                                "internship"
+
+                                &&
+
+                                (
+                                    s.Year
+                                        .Trim()
+                                        .ToLower()
+                                        ==
+                                        "intern"
+
+                                    ||
+
+                                    s.Year
+                                        .Trim()
+                                        .ToLower()
+                                        ==
+                                        "internship"
+                                )
+                            )
+                        )
+                    )
+                );
+        }
+
+
+        // =====================================================
+        // HOSTEL INCHARGE
+        // ONLY ASSIGNED COLLEGE
+        // =====================================================
+
+        else if (isHostelIncharge)
+        {
+            if (!staffUser.CollegeId.HasValue)
+            {
+                return StatusCode(
+                    403,
+                    "Hostel Incharge has no CollegeId assigned."
+                );
+            }
+
+
+            var collegeName =
+                await _context.Colleges
+                    .Where(c =>
+                        c.Id ==
+                        staffUser.CollegeId.Value
+                    )
+                    .Select(c => c.Name)
+                    .FirstOrDefaultAsync();
+
+
+            if (string.IsNullOrWhiteSpace(collegeName))
+            {
+                return StatusCode(
+                    403,
+                    "Assigned college could not be found."
+                );
+            }
+
+
+            var normalizedCollege =
+                collegeName
+                    .Trim()
+                    .ToLower();
+
+
+            query =
+                query.Where(x =>
+                    _context.StudentRegistrations.Any(s =>
+                        s.StudentId == x.StudentId
+
+                        &&
+
+                        s.CollegeName != null
+
+                        &&
+
+                        s.CollegeName
+                            .Trim()
+                            .ToLower()
+                            ==
+                            normalizedCollege
+                    )
+                );
+        }
+
+
+        // =====================================================
+        // PRINCIPAL
+        // ONLY ASSIGNED COLLEGE
+        // =====================================================
+
+        else if (isPrincipal)
+        {
+            if (!staffUser.CollegeId.HasValue)
+            {
+                return StatusCode(
+                    403,
+                    "Principal has no CollegeId assigned."
+                );
+            }
+
+
+            var collegeName =
+                await _context.Colleges
+                    .Where(c =>
+                        c.Id ==
+                        staffUser.CollegeId.Value
+                    )
+                    .Select(c => c.Name)
+                    .FirstOrDefaultAsync();
+
+
+            if (string.IsNullOrWhiteSpace(collegeName))
+            {
+                return StatusCode(
+                    403,
+                    "Assigned college could not be found."
+                );
+            }
+
+
+            var normalizedCollege =
+                collegeName
+                    .Trim()
+                    .ToLower();
+
+
+            query =
+                query.Where(x =>
+                    _context.StudentRegistrations.Any(s =>
+                        s.StudentId == x.StudentId
+
+                        &&
+
+                        s.CollegeName != null
+
+                        &&
+
+                        s.CollegeName
+                            .Trim()
+                            .ToLower()
+                            ==
+                            normalizedCollege
+                    )
+                );
+        }
+
+
+        // =====================================================
+        // UNKNOWN ROLE
+        // =====================================================
+
+        else
+        {
+            return StatusCode(
+                403,
+                $"Role '{role}' is not allowed to view leave requests."
+            );
+        }
+
+
+        // =====================================================
+        // GET FILTERED LEAVES
+        // =====================================================
+
+        var leaves =
+            await query.ToListAsync();
+
+
+        // =====================================================
+        // UPDATE EXPIRED / COMPLETED REQUESTS
+        // =====================================================
+
+        foreach (var leave in leaves)
+        {
+            if (leave.Status == "Pending")
+            {
+                DateTime lastApprovalTime;
+
+                if (
+                    leave.Campus == "Out Campus" &&
+                    leave.FromDate.Date ==
+                        leave.ToDate.Date &&
+                    !string.IsNullOrWhiteSpace(
+                        leave.ReturnTime
+                    )
+                )
+                {
+                    lastApprovalTime =
+                        leave.ToDate.Date +
+                        TimeSpan.Parse(
+                            leave.ReturnTime
+                        );
+                }
+                else
+                {
+                    lastApprovalTime =
+                        leave.ToDate.Date
+                            .AddHours(23)
+                            .AddMinutes(59)
+                            .AddSeconds(59);
+                }
+
+
+                if (now > lastApprovalTime)
+                {
+                    if (
+                        leave.ApprovalStage ==
+                        "None"
+                    )
+                    {
+                        leave.Status =
+                            "Not Accepted By Class Incharge";
+                    }
+                    else if (
+                        leave.ApprovalStage ==
+                        "FirstApproved"
+                    )
+                    {
+                        leave.Status =
+                            "Not Accepted By Hostel Incharge";
+                    }
+                }
+            }
+
+
+            if (leave.Status == "Approved")
+            {
+                DateTime leaveEnd;
+
+                if (
+                    leave.FromDate.Date ==
+                        leave.ToDate.Date &&
+                    !string.IsNullOrWhiteSpace(
+                        leave.ReturnTime
+                    )
+                )
+                {
+                    leaveEnd =
+                        leave.ToDate.Date +
+                        TimeSpan.Parse(
+                            leave.ReturnTime
+                        );
+                }
+                else
+                {
+                    leaveEnd =
+                        leave.ToDate.Date
+                            .AddHours(23)
+                            .AddMinutes(59)
+                            .AddSeconds(59);
+                }
+
+
+                if (now > leaveEnd)
+                {
+                    leave.Status =
+                        "Completed";
+                }
+            }
+        }
+
+
+        // =====================================================
+        // SAVE CHANGES
+        // =====================================================
+
+        await _context.SaveChangesAsync();
+
+
+        // =====================================================
+        // RETURN FILTERED RESULT
+        // =====================================================
+
+        return Ok(
+            leaves
+                .OrderByDescending(
+                    x => x.CreatedDate
+                )
+                .ToList()
         );
     }
-
-    var leaves = await query.ToListAsync();
-
-    foreach (var leave in leaves)
+    catch (Exception ex)
     {
-        if (leave.Status == "Pending")
-        {
-            DateTime lastApprovalTime;
+        Console.WriteLine(ex.ToString());
 
-            if (
-                leave.Campus == "Out Campus" &&
-                leave.FromDate.Date == leave.ToDate.Date &&
-                !string.IsNullOrWhiteSpace(leave.ReturnTime)
-            )
-            {
-                lastApprovalTime =
-                    leave.ToDate.Date +
-                    TimeSpan.Parse(leave.ReturnTime);
-            }
-            else
-            {
-                lastApprovalTime =
-                    leave.ToDate.Date
-                        .AddHours(23)
-                        .AddMinutes(59)
-                        .AddSeconds(59);
-            }
-
-           if (now > lastApprovalTime)
-{
-    if (leave.ApprovalStage == "None")
-    {
-        leave.Status =
-            "Not Accepted By Class Incharge";
+        return StatusCode(
+            500,
+            ex.Message
+        );
     }
-    else if (
-        leave.ApprovalStage == "FirstApproved"
-    )
-    {
-        leave.Status =
-            "Not Accepted By Hostel Incharge";
-    }
-}
-        }
-
-        if (leave.Status == "Approved")
-        {
-            DateTime leaveEnd;
-
-            if (
-                leave.FromDate.Date == leave.ToDate.Date &&
-                !string.IsNullOrWhiteSpace(leave.ReturnTime)
-            )
-            {
-                leaveEnd =
-                    leave.ToDate.Date +
-                    TimeSpan.Parse(leave.ReturnTime);
-            }
-            else
-            {
-                leaveEnd =
-                    leave.ToDate.Date
-                        .AddHours(23)
-                        .AddMinutes(59)
-                        .AddSeconds(59);
-            }
-
-            if (now > leaveEnd)
-            {
-                leave.Status = "Completed";
-            }
-        }
-    }
-
-    await _context.SaveChangesAsync();
-
-    return Ok(
-        query
-            .OrderByDescending(x => x.CreatedDate)
-            .ToList()
-    );
 }
     [HttpPost("approve/{id}")]
 public async Task<IActionResult> Approve(int id)
@@ -311,7 +796,165 @@ public async Task<IActionResult> Approve(int id)
             "Principal",
             StringComparison.OrdinalIgnoreCase
         );
+// =====================================================
+// SCOPE CHECK
+// CLASS INCHARGE = COLLEGE + YEAR
+// HOSTEL INCHARGE = COLLEGE
+// =====================================================
 
+if (isClassIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no CollegeId assigned."
+        );
+    }
+
+    if (string.IsNullOrWhiteSpace(staffUser.AssignedYear))
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no AssignedYear."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var rawYear =
+        staffUser.AssignedYear.Trim().ToLower();
+
+    string normalizedYear;
+
+    if (
+        rawYear == "4th year" ||
+        rawYear == "final year" ||
+        rawYear == "4th"
+    )
+    {
+        normalizedYear = "final year";
+    }
+    else if (
+        rawYear == "intern" ||
+        rawYear == "internship"
+    )
+    {
+        normalizedYear = "internship";
+    }
+    else
+    {
+        normalizedYear = rawYear;
+    }
+
+    var studentBelongsToClass =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == leave.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+            &&
+            s.Year != null
+            &&
+            (
+                s.Year.Trim().ToLower()
+                    == normalizedYear
+
+                ||
+
+                (
+                    normalizedYear == "final year"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "4th year"
+                        ||
+                        s.Year.Trim().ToLower() == "final year"
+                    )
+                )
+
+                ||
+
+                (
+                    normalizedYear == "internship"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "intern"
+                        ||
+                        s.Year.Trim().ToLower() == "internship"
+                    )
+                )
+            )
+        );
+
+    if (!studentBelongsToClass)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to approve this student's leave request."
+        );
+    }
+}
+
+else if (isHostelIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Hostel Incharge has no CollegeId assigned."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var studentBelongsToCollege =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == leave.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+        );
+
+    if (!studentBelongsToCollege)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to approve this student's leave request."
+        );
+    }
+}
     // =====================================================
     // MANAGEMENT
     // Management can directly final approve
@@ -702,7 +1345,165 @@ public async Task<IActionResult> Reject(
             "Class Incharge",
             StringComparison.OrdinalIgnoreCase
         );
+// =====================================================
+// SCOPE CHECK
+// CLASS INCHARGE = COLLEGE + YEAR
+// HOSTEL INCHARGE = COLLEGE
+// =====================================================
 
+if (isClassIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no CollegeId assigned."
+        );
+    }
+
+    if (string.IsNullOrWhiteSpace(staffUser.AssignedYear))
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no AssignedYear."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var rawYear =
+        staffUser.AssignedYear.Trim().ToLower();
+
+    string normalizedYear;
+
+    if (
+        rawYear == "4th year" ||
+        rawYear == "final year" ||
+        rawYear == "4th"
+    )
+    {
+        normalizedYear = "final year";
+    }
+    else if (
+        rawYear == "intern" ||
+        rawYear == "internship"
+    )
+    {
+        normalizedYear = "internship";
+    }
+    else
+    {
+        normalizedYear = rawYear;
+    }
+
+    var studentBelongsToClass =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == leave.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+            &&
+            s.Year != null
+            &&
+            (
+                s.Year.Trim().ToLower()
+                    == normalizedYear
+
+                ||
+
+                (
+                    normalizedYear == "final year"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "4th year"
+                        ||
+                        s.Year.Trim().ToLower() == "final year"
+                    )
+                )
+
+                ||
+
+                (
+                    normalizedYear == "internship"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "intern"
+                        ||
+                        s.Year.Trim().ToLower() == "internship"
+                    )
+                )
+            )
+        );
+
+    if (!studentBelongsToClass)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to approve this student's leave request."
+        );
+    }
+}
+
+else if (isHostelIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Hostel Incharge has no CollegeId assigned."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var studentBelongsToCollege =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == leave.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+        );
+
+    if (!studentBelongsToCollege)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to approve this student's leave request."
+        );
+    }
+}
     // =====================================================
     // WHO CAN REJECT
     // =====================================================
@@ -1550,4 +2351,53 @@ public async Task<IActionResult> Cancel(int id)
         Message = "Leave Cancelled"
     });
 }
+
+
+// =====================================================
+// GET LEAVES FOR STUDENT
+// =====================================================
+
+[HttpGet("student/{studentId}")]
+public async Task<IActionResult> GetStudentLeaves(string studentId)
+{
+    if (string.IsNullOrWhiteSpace(studentId))
+        return BadRequest("StudentId is required.");
+
+    var leaves = await _context.LeaveRequests
+        .Where(x => x.StudentId == studentId)
+        .OrderByDescending(x => x.CreatedDate)
+        .Select(x => new
+        {
+            x.Id,
+            x.StudentId,
+            x.StudentName,
+            x.LeaveNumber,
+            x.LeaveType,
+            x.Campus,
+            x.CollegeName,
+            x.Department,
+            x.Gender,
+            x.Year,
+            x.Reason,
+            x.Destination,
+            x.FromDate,
+            x.ToDate,
+            x.ExitTime,
+            x.ReturnTime,
+            x.Status,
+            x.ApprovalStage,
+            x.FirstApprovedBy,
+            x.SecondApprovedBy,
+            x.FinalApprovedBy,
+            x.ApprovedBy,
+            x.ApprovedDate,
+            x.RejectReason,
+            x.RejectedBy,
+            x.CreatedDate
+        })
+        .ToListAsync();
+
+    return Ok(leaves);
+}
+
 }

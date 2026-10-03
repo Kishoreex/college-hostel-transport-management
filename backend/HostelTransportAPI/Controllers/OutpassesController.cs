@@ -27,45 +27,333 @@ private readonly IHubContext<NotificationHub> _hub;
     _hub = hub;
 }
 [HttpGet]
-public IActionResult GetAll([FromQuery] string? college)
+public async Task<IActionResult> GetAll([FromQuery] string? college)
 {
     try
     {
         var now = DateTime.Now;
 
-        var query = _context.Outpasses
-            .AsQueryable();
+        // =====================================================
+        // GET LOGGED-IN USER
+        // =====================================================
 
-        if (!string.IsNullOrWhiteSpace(college))
+        var userId =
+            User.FindFirst(ClaimTypes.Name)?.Value
+            ?? User.FindFirst("userId")?.Value
+            ?? User.FindFirst("UserId")?.Value;
+
+        var nameIdentifier =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        User? staffUser = null;
+
+        if (!string.IsNullOrWhiteSpace(userId))
         {
+            staffUser = await _context.Users
+                .Include(x => x.Role)
+                .FirstOrDefaultAsync(x => x.UserId == userId);
+        }
+
+        if (
+            staffUser == null &&
+            int.TryParse(nameIdentifier, out var databaseUserId)
+        )
+        {
+            staffUser = await _context.Users
+                .Include(x => x.Role)
+                .FirstOrDefaultAsync(x => x.Id == databaseUserId);
+        }
+
+        if (staffUser == null)
+        {
+            return StatusCode(
+                403,
+                "Logged-in staff user could not be identified."
+            );
+        }
+
+        // =====================================================
+        // ROLE
+        // =====================================================
+
+        var role =
+            staffUser.Role?.Name?.Trim() ?? "";
+
+        var isManagement =
+            role.Equals("Management", StringComparison.OrdinalIgnoreCase) ||
+            role.Equals("System Admin", StringComparison.OrdinalIgnoreCase) ||
+            role.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+
+        var isClassIncharge =
+            role.Equals(
+                "Class Incharge",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+        var isHostelIncharge =
+            role.Equals(
+                "Hostel Incharge",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+        var isPrincipal =
+            role.Equals(
+                "Principal",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+        // =====================================================
+        // BASE QUERY
+        // =====================================================
+
+        var query = _context.Outpasses.AsQueryable();
+
+        // =====================================================
+        // MANAGEMENT
+        // ALL COLLEGES + ALL YEARS
+        // =====================================================
+
+        if (isManagement)
+        {
+            // No filter
+        }
+
+        // =====================================================
+        // CLASS INCHARGE
+        // ONLY ASSIGNED COLLEGE + ASSIGNED YEAR
+        // =====================================================
+
+        else if (isClassIncharge)
+        {
+            if (!staffUser.CollegeId.HasValue)
+            {
+                return StatusCode(
+                    403,
+                    "Class Incharge has no CollegeId assigned."
+                );
+            }
+
+            if (string.IsNullOrWhiteSpace(staffUser.AssignedYear))
+            {
+                return StatusCode(
+                    403,
+                    "Class Incharge has no AssignedYear."
+                );
+            }
+
+            var collegeName = await _context.Colleges
+                .Where(c => c.Id == staffUser.CollegeId.Value)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(collegeName))
+            {
+                return StatusCode(
+                    403,
+                    "Assigned college could not be found."
+                );
+            }
+
+            var normalizedCollege =
+                collegeName.Trim().ToLower();
+
+            var rawYear =
+                staffUser.AssignedYear.Trim().ToLower();
+
+            string normalizedYear;
+
+            if (
+                rawYear == "4th year" ||
+                rawYear == "final year" ||
+                rawYear == "4th"
+            )
+            {
+                normalizedYear = "final year";
+            }
+            else if (
+                rawYear == "intern" ||
+                rawYear == "internship"
+            )
+            {
+                normalizedYear = "internship";
+            }
+            else
+            {
+                normalizedYear = rawYear;
+            }
+
             query = query.Where(x =>
                 _context.StudentRegistrations.Any(s =>
-                    s.StudentId == x.StudentId &&
-                    s.CollegeName == college
+                    s.StudentId == x.StudentId
+                    &&
+                    s.CollegeName != null
+                    &&
+                    s.CollegeName.Trim().ToLower()
+                        == normalizedCollege
+                    &&
+                    s.Year != null
+                    &&
+                    (
+                        s.Year.Trim().ToLower()
+                            == normalizedYear
+
+                        ||
+
+                        (
+                            normalizedYear == "final year"
+                            &&
+                            (
+                                s.Year.Trim().ToLower()
+                                    == "4th year"
+                                ||
+                                s.Year.Trim().ToLower()
+                                    == "final year"
+                            )
+                        )
+
+                        ||
+
+                        (
+                            normalizedYear == "internship"
+                            &&
+                            (
+                                s.Year.Trim().ToLower()
+                                    == "intern"
+                                ||
+                                s.Year.Trim().ToLower()
+                                    == "internship"
+                            )
+                        )
+                    )
+                )
+            );
+
+            Console.WriteLine(
+                $"CLASS INCHARGE FILTER -> College: {collegeName}, Year: {normalizedYear}"
+            );
+        }
+
+        // =====================================================
+        // HOSTEL INCHARGE
+        // ONLY ASSIGNED COLLEGE
+        // =====================================================
+
+        else if (isHostelIncharge)
+        {
+            if (!staffUser.CollegeId.HasValue)
+            {
+                return StatusCode(
+                    403,
+                    "Hostel Incharge has no CollegeId assigned."
+                );
+            }
+
+            var collegeName = await _context.Colleges
+                .Where(c => c.Id == staffUser.CollegeId.Value)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(collegeName))
+            {
+                return StatusCode(
+                    403,
+                    "Assigned college could not be found."
+                );
+            }
+
+            var normalizedCollege =
+                collegeName.Trim().ToLower();
+
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId
+                    &&
+                    s.CollegeName != null
+                    &&
+                    s.CollegeName.Trim().ToLower()
+                        == normalizedCollege
                 )
             );
         }
 
-        var outpasses = query.ToList();
+        // =====================================================
+        // PRINCIPAL
+        // ONLY ASSIGNED COLLEGE
+        // =====================================================
+
+        else if (isPrincipal)
+        {
+            if (!staffUser.CollegeId.HasValue)
+            {
+                return StatusCode(
+                    403,
+                    "Principal has no CollegeId assigned."
+                );
+            }
+
+            var collegeName = await _context.Colleges
+                .Where(c => c.Id == staffUser.CollegeId.Value)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(collegeName))
+            {
+                return StatusCode(
+                    403,
+                    "Assigned college could not be found."
+                );
+            }
+
+            var normalizedCollege =
+                collegeName.Trim().ToLower();
+
+            query = query.Where(x =>
+                _context.StudentRegistrations.Any(s =>
+                    s.StudentId == x.StudentId
+                    &&
+                    s.CollegeName != null
+                    &&
+                    s.CollegeName.Trim().ToLower()
+                        == normalizedCollege
+                )
+            );
+        }
+
+        else
+        {
+            return StatusCode(
+                403,
+                $"Role '{role}' is not allowed to view outpasses."
+            );
+        }
+
+        // =====================================================
+        // GET OUTPASSES
+        // =====================================================
+
+        var outpasses = await query
+            .OrderByDescending(x => x.Id)
+            .ToListAsync();
+
+        // =====================================================
+        // EXPIRE OLD PENDING OUTPASSES
+        // =====================================================
 
         foreach (var outpass in outpasses)
         {
-            if (outpass.Status == "Pending")
+            if (
+                outpass.Status == "Pending" &&
+                now > outpass.ValidTo
+            )
             {
-                if (now > outpass.ValidTo)
-                {
-                    outpass.Status = "Not Accepted By Class Incharge";
-                }
+                outpass.Status =
+                    "Not Accepted By Class Incharge";
             }
         }
 
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
 
-        return Ok(
-            query
-                .OrderByDescending(x => x.Id)
-                .ToList()
-        );
+        return Ok(outpasses);
     }
     catch (Exception ex)
     {
@@ -74,7 +362,7 @@ public IActionResult GetAll([FromQuery] string? college)
         return StatusCode(500, ex.Message);
     }
 }
-    [HttpGet("{studentId}")]
+   [HttpGet("{studentId}")]
     public IActionResult GetByStudent(string studentId)
     {
         var outpasses = _context.Outpasses
@@ -252,7 +540,165 @@ public async Task<IActionResult> Approve(int id)
             "Principal",
             StringComparison.OrdinalIgnoreCase
         );
+// =====================================================
+// SCOPE CHECK
+// CLASS INCHARGE = COLLEGE + YEAR
+// HOSTEL INCHARGE = COLLEGE
+// =====================================================
 
+if (isClassIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no CollegeId assigned."
+        );
+    }
+
+    if (string.IsNullOrWhiteSpace(staffUser.AssignedYear))
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no AssignedYear."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var rawYear =
+        staffUser.AssignedYear.Trim().ToLower();
+
+    string normalizedYear;
+
+    if (
+        rawYear == "4th year" ||
+        rawYear == "final year" ||
+        rawYear == "4th"
+    )
+    {
+        normalizedYear = "final year";
+    }
+    else if (
+        rawYear == "intern" ||
+        rawYear == "internship"
+    )
+    {
+        normalizedYear = "internship";
+    }
+    else
+    {
+        normalizedYear = rawYear;
+    }
+
+    var studentBelongsToClass =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == outpass.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+            &&
+            s.Year != null
+            &&
+            (
+                s.Year.Trim().ToLower()
+                    == normalizedYear
+
+                ||
+
+                (
+                    normalizedYear == "final year"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "4th year"
+                        ||
+                        s.Year.Trim().ToLower() == "final year"
+                    )
+                )
+
+                ||
+
+                (
+                    normalizedYear == "internship"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "intern"
+                        ||
+                        s.Year.Trim().ToLower() == "internship"
+                    )
+                )
+            )
+        );
+
+    if (!studentBelongsToClass)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to approve this student's outpass."
+        );
+    }
+}
+
+else if (isHostelIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Hostel Incharge has no CollegeId assigned."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var studentBelongsToCollege =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == outpass.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+        );
+
+    if (!studentBelongsToCollege)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to approve this student's outpass."
+        );
+    }
+}
     // =====================================================
     // MANAGEMENT
     // =====================================================
@@ -510,7 +956,165 @@ public async Task<IActionResult> Reject(
             "Principal",
             StringComparison.OrdinalIgnoreCase
         );
+// =====================================================
+// SCOPE CHECK
+// CLASS INCHARGE = COLLEGE + YEAR
+// HOSTEL INCHARGE = COLLEGE
+// =====================================================
 
+if (isClassIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no CollegeId assigned."
+        );
+    }
+
+    if (string.IsNullOrWhiteSpace(staffUser.AssignedYear))
+    {
+        return StatusCode(
+            403,
+            "Class Incharge has no AssignedYear."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var rawYear =
+        staffUser.AssignedYear.Trim().ToLower();
+
+    string normalizedYear;
+
+    if (
+        rawYear == "4th year" ||
+        rawYear == "final year" ||
+        rawYear == "4th"
+    )
+    {
+        normalizedYear = "final year";
+    }
+    else if (
+        rawYear == "intern" ||
+        rawYear == "internship"
+    )
+    {
+        normalizedYear = "internship";
+    }
+    else
+    {
+        normalizedYear = rawYear;
+    }
+
+    var studentBelongsToClass =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == outpass.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+            &&
+            s.Year != null
+            &&
+            (
+                s.Year.Trim().ToLower()
+                    == normalizedYear
+
+                ||
+
+                (
+                    normalizedYear == "final year"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "4th year"
+                        ||
+                        s.Year.Trim().ToLower() == "final year"
+                    )
+                )
+
+                ||
+
+                (
+                    normalizedYear == "internship"
+                    &&
+                    (
+                        s.Year.Trim().ToLower() == "intern"
+                        ||
+                        s.Year.Trim().ToLower() == "internship"
+                    )
+                )
+            )
+        );
+
+    if (!studentBelongsToClass)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to reject this student's outpass."
+        );
+    }
+}
+
+else if (isHostelIncharge)
+{
+    if (!staffUser.CollegeId.HasValue)
+    {
+        return StatusCode(
+            403,
+            "Hostel Incharge has no CollegeId assigned."
+        );
+    }
+
+    var collegeName = await _context.Colleges
+        .Where(c => c.Id == staffUser.CollegeId.Value)
+        .Select(c => c.Name)
+        .FirstOrDefaultAsync();
+
+    if (string.IsNullOrWhiteSpace(collegeName))
+    {
+        return StatusCode(
+            403,
+            "Assigned college could not be found."
+        );
+    }
+
+    var normalizedCollege =
+        collegeName.Trim().ToLower();
+
+    var studentBelongsToCollege =
+        await _context.StudentRegistrations.AnyAsync(s =>
+            s.StudentId == outpass.StudentId
+            &&
+            s.CollegeName != null
+            &&
+            s.CollegeName.Trim().ToLower()
+                == normalizedCollege
+        );
+
+    if (!studentBelongsToCollege)
+    {
+        return StatusCode(
+            403,
+            "You are not allowed to reject this student's outpass."
+        );
+    }
+}
     var canReject = false;
 
     // Management

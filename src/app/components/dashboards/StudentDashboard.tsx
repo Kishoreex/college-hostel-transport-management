@@ -137,6 +137,8 @@ export default function StudentDashboard({ user, onLogout }: StudentDashboardPro
 const [locationAllowed, setLocationAllowed] = useState(false);
 const [checkingLocation, setCheckingLocation] = useState(true);
 
+const [locationDisclosureOpen, setLocationDisclosureOpen] = useState(false);
+
 const checkLocationPermission = async () => {
   try {
     setCheckingLocation(true);
@@ -198,12 +200,12 @@ const checkLocationPermission = async () => {
     setCheckingLocation(false);
   }
 };
-
-const handleEnableLocation = async () => {
+const handleLocationDisclosureAgree = async () => {
   try {
+    setLocationDisclosureOpen(false);
     setCheckingLocation(true);
 
-    console.log("📍 Enable Location clicked");
+    console.log("📍 User agreed to location disclosure");
 
     // =========================================================
     // ANDROID / CAPACITOR APP
@@ -269,12 +271,10 @@ const handleEnableLocation = async () => {
 
       setLocationAllowed(false);
 
-      // Open Android App Settings
       await OutpassLocation.openAppSettings();
 
       return;
     }
-
 
     // =========================================================
     // WEB BROWSER
@@ -295,10 +295,6 @@ const handleEnableLocation = async () => {
 
     navigator.geolocation.getCurrentPosition(
 
-      // -------------------------------------------------------
-      // LOCATION GRANTED
-      // -------------------------------------------------------
-
       (position) => {
 
         console.log(
@@ -309,10 +305,6 @@ const handleEnableLocation = async () => {
 
         setLocationAllowed(true);
       },
-
-      // -------------------------------------------------------
-      // LOCATION DENIED / ERROR
-      // -------------------------------------------------------
 
       (error) => {
 
@@ -327,8 +319,7 @@ const handleEnableLocation = async () => {
 
           alert(
             "Location permission is blocked for this website. " +
-            "Please allow Location permission in your browser settings, " +
-            "then click Enable Location again."
+            "Please allow Location permission in your browser settings."
           );
 
         } else if (error.code === 2) {
@@ -341,8 +332,7 @@ const handleEnableLocation = async () => {
         } else if (error.code === 3) {
 
           alert(
-            "Location request timed out. " +
-            "Please try again."
+            "Location request timed out. Please try again."
           );
 
         } else {
@@ -363,15 +353,11 @@ const handleEnableLocation = async () => {
   } catch (error) {
 
     console.error(
-      "❌ Enable Location failed:",
+      "❌ Location permission request failed:",
       error
     );
 
     setLocationAllowed(false);
-
-    // ---------------------------------------------------------
-    // ONLY ANDROID CAN OPEN APP SETTINGS
-    // ---------------------------------------------------------
 
     if (Capacitor.isNativePlatform()) {
 
@@ -399,6 +385,50 @@ const handleEnableLocation = async () => {
 
     setCheckingLocation(false);
   }
+};
+const handleEnableLocation = async () => {
+  console.log("📍 Enable Location clicked");
+
+  // If permission is already granted, no Android permission
+  // request is needed.
+  const permission = await Geolocation.checkPermissions();
+
+  console.log(
+    "📍 Current location permission:",
+    permission.location
+  );
+
+  if (permission.location === "granted") {
+    try {
+      setCheckingLocation(true);
+
+      await Geolocation.getCurrentPosition({
+        enableHighAccuracy: true,
+        timeout: 10000,
+      });
+
+      setLocationAllowed(true);
+
+    } catch (error) {
+      console.error("❌ GPS unavailable:", error);
+
+      setLocationAllowed(false);
+
+      alert(
+        "Please turn ON Location/GPS on your phone and try again."
+      );
+
+    } finally {
+      setCheckingLocation(false);
+    }
+
+    return;
+  }
+
+  // IMPORTANT:
+  // Show our Prominent Disclosure BEFORE Android
+  // asks for location permission.
+  setLocationDisclosureOpen(true);
 };
 
   useEffect(() => {
@@ -1681,12 +1711,82 @@ const getStatusColor = (status: string) => {
   Enable Location
 </button>
 
-        <p className="text-xs text-gray-400 mt-5 max-w-xs">
-          If you previously denied permission, please enable
-          Location permission for Madha Campus from Android Settings.
-        </p>
+       <p className="text-xs text-gray-400 mt-5 max-w-xs">
+  If you previously denied permission, please enable
+  Location permission for Madha Campus from Android Settings.
+</p>
 
+{/* =========================================================
+    GOOGLE PLAY PROMINENT LOCATION DISCLOSURE
+========================================================= */}
+
+<Dialog
+  open={locationDisclosureOpen}
+  onClose={() => setLocationDisclosureOpen(false)}
+  fullWidth
+  maxWidth="sm"
+>
+  <div className="p-6">
+
+    <div className="flex items-center gap-3 mb-5">
+
+      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+        <MapPin
+          size={26}
+          className="text-blue-600"
+        />
       </div>
+
+      <h2 className="text-xl font-bold text-gray-800">
+        Location Access Required
+      </h2>
+
+    </div>
+
+    <p className="text-gray-700 text-sm leading-relaxed">
+      Madha Campus collects location data to enable hostel
+      outpass verification. The app uses your location to
+      detect when you leave the hostel area and when you
+      return, record your actual exit and return times, and
+      automatically update your active outpass status.
+    </p>
+
+    <p className="text-gray-700 text-sm leading-relaxed mt-4">
+      Location may be accessed in the background, including
+      when the app is closed or not in use, because you may
+      leave or return to the hostel while Madha Campus is
+      not open.
+    </p>
+
+    <p className="text-gray-600 text-sm leading-relaxed mt-4">
+      Your location is used for hostel outpass verification
+      and related safety functionality.
+    </p>
+
+    <div className="flex gap-3 mt-6">
+
+      <button
+        type="button"
+        onClick={() => setLocationDisclosureOpen(false)}
+        className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-xl font-semibold"
+      >
+        Not Now
+      </button>
+
+      <button
+        type="button"
+        onClick={handleLocationDisclosureAgree}
+        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-semibold"
+      >
+        Agree
+      </button>
+
+    </div>
+
+  </div>
+</Dialog>
+
+</div>
     );
   }
 

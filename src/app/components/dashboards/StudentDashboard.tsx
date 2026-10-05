@@ -387,48 +387,205 @@ const handleLocationDisclosureAgree = async () => {
   }
 };
 const handleEnableLocation = async () => {
-  console.log("📍 Enable Location clicked");
+  try {
+    setCheckingLocation(true);
 
-  // If permission is already granted, no Android permission
-  // request is needed.
-  const permission = await Geolocation.checkPermissions();
+    console.log("📍 Enable Location clicked");
 
-  console.log(
-    "📍 Current location permission:",
-    permission.location
-  );
+    // =========================================================
+    // ANDROID / CAPACITOR APP
+    // =========================================================
 
-  if (permission.location === "granted") {
-    try {
-      setCheckingLocation(true);
+    if (Capacitor.isNativePlatform()) {
 
-      await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10000,
-      });
+      console.log("📱 Native Android detected");
 
-      setLocationAllowed(true);
+      const requested =
+        await Geolocation.requestPermissions();
 
-    } catch (error) {
-      console.error("❌ GPS unavailable:", error);
+      console.log(
+        "📍 Android permission result:",
+        requested.location
+      );
+
+      // -------------------------------------------------------
+      // LOCATION GRANTED
+      // -------------------------------------------------------
+
+      if (requested.location === "granted") {
+
+        try {
+
+          await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 10000,
+          });
+
+          console.log(
+            "✅ Android location granted and GPS working"
+          );
+
+          setLocationAllowed(true);
+
+          return;
+
+        } catch (gpsError) {
+
+          console.error(
+            "❌ Android GPS is not available:",
+            gpsError
+          );
+
+          setLocationAllowed(false);
+
+          alert(
+            "Please turn ON Location/GPS on your phone and try again."
+          );
+
+          return;
+        }
+      }
+
+      // -------------------------------------------------------
+      // USER DENIED LOCATION
+      // -------------------------------------------------------
+
+      console.log(
+        "⚠️ Android location permission denied"
+      );
 
       setLocationAllowed(false);
 
-      alert(
-        "Please turn ON Location/GPS on your phone and try again."
-      );
+      // Open Android App Settings
+      await OutpassLocation.openAppSettings();
 
-    } finally {
-      setCheckingLocation(false);
+      return;
     }
 
-    return;
-  }
 
-  // IMPORTANT:
-  // Show our Prominent Disclosure BEFORE Android
-  // asks for location permission.
-  setLocationDisclosureOpen(true);
+    // =========================================================
+    // WEB BROWSER
+    // =========================================================
+
+    console.log("🌐 Web browser detected");
+
+    if (!navigator.geolocation) {
+
+      alert(
+        "Location is not supported by this browser."
+      );
+
+      setLocationAllowed(false);
+
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+
+      // -------------------------------------------------------
+      // LOCATION GRANTED
+      // -------------------------------------------------------
+
+      (position) => {
+
+        console.log(
+          "✅ Browser location granted:",
+          position.coords.latitude,
+          position.coords.longitude
+        );
+
+        setLocationAllowed(true);
+      },
+
+      // -------------------------------------------------------
+      // LOCATION DENIED / ERROR
+      // -------------------------------------------------------
+
+      (error) => {
+
+        console.error(
+          "❌ Browser location error:",
+          error
+        );
+
+        setLocationAllowed(false);
+
+        if (error.code === 1) {
+
+          alert(
+            "Location permission is blocked for this website. " +
+            "Please allow Location permission in your browser settings, " +
+            "then click Enable Location again."
+          );
+
+        } else if (error.code === 2) {
+
+          alert(
+            "Your location could not be detected. " +
+            "Please turn ON Location/GPS and try again."
+          );
+
+        } else if (error.code === 3) {
+
+          alert(
+            "Location request timed out. " +
+            "Please try again."
+          );
+
+        } else {
+
+          alert(
+            "Unable to get your location. Please try again."
+          );
+        }
+      },
+
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "❌ Enable Location failed:",
+      error
+    );
+
+    setLocationAllowed(false);
+
+    // ---------------------------------------------------------
+    // ONLY ANDROID CAN OPEN APP SETTINGS
+    // ---------------------------------------------------------
+
+    if (Capacitor.isNativePlatform()) {
+
+      try {
+
+        await OutpassLocation.openAppSettings();
+
+      } catch (settingsError) {
+
+        console.error(
+          "❌ Could not open Android app settings:",
+          settingsError
+        );
+      }
+
+    } else {
+
+      alert(
+        "Please allow Location permission for this website " +
+        "from your browser settings."
+      );
+    }
+
+  } finally {
+
+    setCheckingLocation(false);
+  }
 };
 
   useEffect(() => {
@@ -1711,7 +1868,7 @@ const getStatusColor = (status: string) => {
   Enable Location
 </button>
 
-       <p className="text-xs text-gray-400 mt-5 max-w-xs">
+<p className="text-xs text-gray-400 mt-5 max-w-xs">
   If you previously denied permission, please enable
   Location permission for Madha Campus from Android Settings.
 </p>

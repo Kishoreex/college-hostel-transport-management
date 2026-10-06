@@ -6,11 +6,7 @@ import {
   expireOldOutpasses,
   cancelOutpass
 } from "../../services/outpassService";
-import {
-  startBackgroundLocation,
-  stopBackgroundLocation,
-  addBackgroundLocationListener
-} from "../../services/backgroundLocationService";
+
 import type { PluginListenerHandle } from "@capacitor/core";
 import * as signalR from "@microsoft/signalr";
 import API_URL from "../../../api/api";
@@ -640,55 +636,9 @@ const handleEnableLocation = async () => {
   const [vacateReason, setVacateReason] = useState('');
   const connectionRef =
   useRef<signalR.HubConnection | null>(null);
-  const testBackgroundLocation = async () => {
-  try {
-    await startBackgroundLocation();
 
-    await addBackgroundLocationListener(
-      (latitude, longitude) => {
 
-        console.log(
-          "🔥 BACKGROUND LOCATION:",
-          latitude,
-          longitude
-        );
 
-      }
-    );
-
-    console.log(
-      "✅ Background tracking test started"
-    );
-
-  } catch (error) {
-
-    console.error(
-      "❌ Background tracking test failed:",
-      error
-    );
-
-  }
-};
-
-const stopTestBackgroundLocation = async () => {
-
-  try {
-
-    await stopBackgroundLocation();
-
-    console.log(
-      "🛑 Background tracking test stopped"
-    );
-
-  } catch (error) {
-
-    console.error(
-      "❌ Failed to stop background tracking:",
-      error
-    );
-
-  }
-};
   const [
   vacatingRequest,
   setVacatingRequest

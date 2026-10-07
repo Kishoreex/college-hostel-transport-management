@@ -30,12 +30,9 @@ interface ParentDashboardProps {
 }
 
 export default function ParentDashboard({ user, onLogout }: ParentDashboardProps) {
-const [studentData, setStudentData] = useState<any>(null);
-const [outpasses, setOutpasses] = useState<any[]>([]);
-const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
-
-const [loading, setLoading] = useState(true);
-const [loadError, setLoadError] = useState("");
+ const [studentData, setStudentData] = useState<any>(null);
+ const [outpasses, setOutpasses] = useState<any[]>([]);
+ const [leaveRequests, setLeaveRequests] = useState<any[]>([]);
  const [selectedOutpass, setSelectedOutpass] = useState<any>(null);
 
 const [qrCardOpen, setQrCardOpen] = useState(false);
@@ -61,91 +58,31 @@ onClick:()=>setCurrentView("history")
 
 ];
 const loadStudent = async () => {
+  try {
+    const response = await fetch(
+      `https://api.madhapharma.in/api/Student/parent/${user.userId}`
+    );
 
-    try {
-
-        setLoading(true);
-        setLoadError("");
-
-        const token = localStorage.getItem("authToken");
-
-        console.log("========== PARENT DASHBOARD ==========");
-        console.log("Parent User ID:", user.userId);
-        console.log("Auth Token exists:", !!token);
-
-        const response = await fetch(
-            `https://api.madhapharma.in/api/Student/parent/${user.userId}`,
-            {
-                headers: token
-                    ? {
-                        Authorization: `Bearer ${token}`
-                    }
-                    : {}
-            }
-        );
-
-        console.log(
-            "Student API Status:",
-            response.status
-        );
-
-        if (!response.ok) {
-
-            throw new Error(
-                `Failed to load student (${response.status})`
-            );
-
-        }
-
-        const data = await response.json();
-
-        console.log(
-            "Student Data:",
-            data
-        );
-
-        setStudentData(data);
-
-        // Load parent outpasses
-        const outpassData =
-            await getParentOutpasses(user.userId);
-
-        console.log(
-            "Parent Outpasses:",
-            outpassData
-        );
-
-        setOutpasses(outpassData);
-
-        // Load parent leaves
-        const leaveData =
-            await getParentLeaves(user.userId);
-
-        console.log(
-            "Parent Leaves:",
-            leaveData
-        );
-
-        setLeaveRequests(leaveData);
-
-    } catch (err: any) {
-
-        console.error(
-            "========== PARENT DASHBOARD ERROR =========="
-        );
-
-        console.error(err);
-
-        setLoadError(
-            err?.message ||
-            "Unable to load parent dashboard."
-        );
-
-    } finally {
-
-        setLoading(false);
-
+    if (!response.ok) {
+      throw new Error("Failed to load student");
     }
+
+    const data = await response.json();
+
+    setStudentData(data);
+
+    const outpassData = await getParentOutpasses(user.userId);
+
+    setOutpasses(outpassData);
+const leaveData = await getParentLeaves(user.userId);
+
+setLeaveRequests(leaveData);
+    console.log("Student:", data);
+    console.log("Outpasses:", outpassData);
+
+  } catch (err) {
+    console.error(err);
+  }
 };
 
 useEffect(() => {
@@ -233,65 +170,24 @@ const getStatusIcon = (status: string) => {
   }
 
 };
-if (loading) {
+if (!studentData) {
 
-    return (
-       <DashboardLayout
-    user={user}
-    onLogout={onLogout}
-    title="Parent Portal"
-    menuItems={menuItems}
->
-
-            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-10">
-
-                <div className="text-lg font-semibold text-gray-700">
-                    Loading Parent Dashboard...
-                </div>
-
-                <div className="text-sm text-gray-500 mt-2">
-                    Please wait while we load your student's information.
-                </div>
-
-            </div>
-
-        </DashboardLayout>
-    );
-}
-
-
-if (loadError || !studentData) {
-
-    return (
+  return (
     <DashboardLayout
     user={user}
     onLogout={onLogout}
     title="Parent Portal"
     menuItems={menuItems}
 >
+      <div className="p-10">
+        Loading...
+ </div>
 
-            <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-10">
 
-                <div className="text-xl font-bold text-red-600">
-                    Unable to Load Parent Dashboard
-                </div>
 
-                <div className="text-sm text-gray-500 mt-2 max-w-md">
-                    {loadError ||
-                        "Student information could not be loaded."}
-                </div>
+</DashboardLayout>
+  );
 
-                <button
-                    onClick={loadStudent}
-                    className="mt-5 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold"
-                >
-                    Try Again
-                </button>
-
-            </div>
-
-        </DashboardLayout>
-    );
 }
   return (
   <DashboardLayout

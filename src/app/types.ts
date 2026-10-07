@@ -1,5 +1,6 @@
 export type UserRole =
   | 'student'
+  | "parent"
   | 'warden'
   | 'transport'
   | 'security'

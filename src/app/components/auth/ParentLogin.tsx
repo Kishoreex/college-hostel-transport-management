@@ -14,42 +14,67 @@ export default function ParentLogin({ onBack, onLogin }: Props) {
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
+const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-        try {
+    try {
+        setLoading(true);
 
-            setLoading(true);
+        const result = await login(
+            userId.trim(),
+            password,
+            "Hostel"
+        );
 
-           const result = await login(
-    userId,
-    password,
-    "Hostel"
-);
+        console.log("========== PARENT LOGIN RESULT ==========");
+        console.log(result);
 
-            if (result.role !== "Parent") {
-                toast.error("Please use Parent Login");
-                return;
-            }
-
-            onLogin({
-                id: result.id,
-                userId: result.userId,
-                name: result.fullName,
-                role: "parent",
-                studentId: result.studentId
-            });
-
-            toast.success("Login Successful");
-
-        } catch (err: any) {
-            toast.error(err.message);
+        // Must be a Parent account
+        if (result.role !== "Parent") {
+            toast.error("Please use Parent Login");
+            return;
         }
 
-        finally {
-            setLoading(false);
+        // Token is required
+        if (!result.token) {
+            toast.error("Login token was not received");
+            return;
         }
-    };
+
+        // Save authentication token
+        localStorage.setItem(
+            "authToken",
+            result.token
+        );
+
+        // Create parent user
+        const parentUser = {
+            id: result.id?.toString(),
+            userId: result.userId,
+            name: result.fullName,
+            role: "parent",
+            studentId: result.studentId
+        };
+
+        console.log("PARENT USER =", parentUser);
+
+        // Pass parent to App
+        onLogin(parentUser);
+
+        toast.success("Login Successful");
+
+    } catch (err: any) {
+
+        console.error("PARENT LOGIN ERROR:", err);
+
+        toast.error(
+            err?.message || "Parent Login Failed"
+        );
+
+    } finally {
+        setLoading(false);
+    }
+};
 
   return (
   <div className="min-h-screen bg-gray-50 flex flex-col">

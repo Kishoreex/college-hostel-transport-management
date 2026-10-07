@@ -36,15 +36,22 @@ useEffect(() => {
 
 const handleLogin = (userData: User) => {
 
-    console.log("LOGIN USER");
+    console.log("========== LOGIN USER ==========");
     console.log(userData);
 
+    // Remove any old login information
+    localStorage.removeItem("hostelUser");
+    localStorage.removeItem("authUser");
+
+    // Save the new user
     localStorage.setItem(
         "hostelUser",
         JSON.stringify(userData)
     );
 
+    // Set current user
     setUser(userData);
+
 };
 const handleLogout = async (force = false) => {
   console.log("LOGOUT USER");
@@ -128,10 +135,11 @@ const handleLogout = async (force = false) => {
       "CLEARING LOCAL LOGIN"
     );
 
-    localStorage.removeItem("hostelUser");
-    localStorage.removeItem("authToken");
+localStorage.removeItem("hostelUser");
+localStorage.removeItem("authUser");
+localStorage.removeItem("authToken");
 
-    sessionStorage.clear();
+sessionStorage.clear();
 
     setUser(null);
 
@@ -198,29 +206,42 @@ const handleLogout = async (force = false) => {
               {/* STUDENT */}
               {/* ============================= */}
 
-              <Route
-                path="/student"
-                element={
-                  <StudentDashboard
-                    user={user}
-                    onLogout={handleLogout}
-                  />
-                }
-              />
+          <Route
+    path="/student"
+    element={
+        user.role === "student" ? (
+            <StudentDashboard
+                user={user}
+                onLogout={handleLogout}
+            />
+        ) : (
+            <Navigate
+                to={`/${user.role}`}
+                replace
+            />
+        )
+    }
+/>
 
               {/* ============================= */}
               {/* PARENT */}
               {/* ============================= */}
-
-              <Route
-                path="/parent"
-                element={
-                  <ParentDashboard
-                    user={user}
-                    onLogout={handleLogout}
-                  />
-                }
-              />
+<Route
+    path="/parent"
+    element={
+        user.role === "parent" ? (
+            <ParentDashboard
+                user={user}
+                onLogout={handleLogout}
+            />
+        ) : (
+            <Navigate
+                to={`/${user.role}`}
+                replace
+            />
+        )
+    }
+/>
 
               {/* ============================= */}
               {/* ADMIN */}
@@ -373,15 +394,22 @@ const handleLogout = async (force = false) => {
               {/* TRANSPORT */}
               {/* ============================= */}
 
-              <Route
-                path="/transport"
-                element={
-                  <TransportDashboard
-                    user={user}
-                    onLogout={handleLogout}
-                  />
-                }
-              />
+<Route
+    path="/transport"
+    element={
+        user.role === "transport" ? (
+            <TransportDashboard
+                user={user}
+                onLogout={handleLogout}
+            />
+        ) : (
+            <Navigate
+                to={`/${user.role}`}
+                replace
+            />
+        )
+    }
+/>
 
               {/* ============================= */}
               {/* UNKNOWN LOGGED-IN ROUTE */}

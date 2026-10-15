@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "815164836661",
+    "project_id": "madhacampusnotifications",
+    "storage_bucket": "madhacampusnotifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:815164836661:android:0e962dae61fc7c42bada7c",
+        "android_client_info": {
+          "package_name": "com.mdch.hosteltransport"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQLcWdn8KXgwG1-FKcJHIorfpdrSLzpxc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

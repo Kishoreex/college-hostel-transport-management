@@ -759,60 +759,87 @@ const [cancelRequest, setCancelRequest] =
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
   
-const handlePhotoChange = async (
+
+const handlePhotoChange = (
   e: React.ChangeEvent<HTMLInputElement>
 ) => {
-  const file = e.target.files?.[0];
+  const input = e.currentTarget;
+  const file = input.files?.[0];
+
+  // Allow selecting the same image again.
+  input.value = "";
 
   if (!file) return;
 
-  // Only allow images
-  if (!file.type.startsWith("image/")) {
-    toast.error("Please select an image");
+  // Some Android image providers may return an empty MIME type.
+  const isImage =
+    file.type.startsWith("image/") ||
+    /\.(jpe?g|png|webp|gif|heic|heif|bmp|avif)$/i.test(
+      file.name
+    );
+
+  if (!isImage) {
+    toast.error("Please select a valid image.");
     return;
   }
 
-  // Limit size to 10 MB
   if (file.size > 10 * 1024 * 1024) {
-    toast.error("Photo must be smaller than 10 MB");
+    toast.error("Photo must be smaller than 10 MB.");
     return;
+  }
+
+  // Clean up the previous temporary preview.
+  if (pendingPhotoUrl) {
+    URL.revokeObjectURL(pendingPhotoUrl);
   }
 
   const previewUrl = URL.createObjectURL(file);
 
   setPendingPhoto(file);
   setPendingPhotoUrl(previewUrl);
-
-  // Reset adjustment
   setPhotoZoom(1);
   setPhotoX(0);
   setPhotoY(0);
-
-  // Open adjustment screen
   setPhotoAdjustOpen(true);
-
-  // Reset input so same photo can be selected again
-  e.target.value = "";
 };
 
+
+
 const confirmPhotoUpload = async () => {
-  if (!pendingPhoto || !pendingPhotoUrl) return;
+  if (!pendingPhoto || !pendingPhotoUrl || uploadingPhoto) {
+    return;
+  }
+
+  let temporaryPreviewUrl: string | null = null;
 
   try {
     setUploadingPhoto(true);
 
-    const image = new Image();
+    if (!user.studentId) {
+      throw new Error("Student ID is missing.");
+    }
 
+    // Load the selected image.
+    const image = new Image();
     image.src = pendingPhotoUrl;
 
     await new Promise<void>((resolve, reject) => {
       image.onload = () => resolve();
-      image.onerror = reject;
+      image.onerror = () =>
+        reject(
+          new Error(
+            "Cannot read this image. Please choose a JPG or PNG photo."
+          )
+        );
     });
 
-    const canvas = document.createElement("canvas");
+    if (!image.naturalWidth || !image.naturalHeight) {
+      throw new Error("The selected image is invalid.");
+    }
 
+    // Crop to an 800 x 800 JPEG.
     const outputSize = 800;
+    const canvas = document.createElement("canvas");
 
     canvas.width = outputSize;
     canvas.height = outputSize;
@@ -820,153 +847,121 @@ const confirmPhotoUpload = async () => {
     const ctx = canvas.getContext("2d");
 
     if (!ctx) {
-      throw new Error("Canvas not supported");
+      throw new Error("Image processing is not supported.");
     }
 
-    /*
-     * Get the actual visible crop size.
-     * This lets the uploaded image match
-     * exactly what the student positioned.
-     */
     const cropSize =
       photoCropRef.current?.getBoundingClientRect().width || 320;
 
-    /*
-     * Scale image so it covers the square.
-     */
     const scale =
       Math.max(
-        outputSize / image.width,
-        outputSize / image.height
+        outputSize / image.naturalWidth,
+        outputSize / image.naturalHeight
       ) * photoZoom;
 
-    const width = image.width * scale;
-    const height = image.height * scale;
-
-    /*
-     * Convert screen drag distance into
-     * 800x800 canvas coordinates.
-     */
-    const positionScale =
-      outputSize / cropSize;
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    const positionScale = outputSize / cropSize;
 
     const x =
-      (outputSize - width) / 2 +
-      photoX * positionScale;
+      (outputSize - width) / 2 + photoX * positionScale;
 
     const y =
-      (outputSize - height) / 2 +
-      photoY * positionScale;
+      (outputSize - height) / 2 + photoY * positionScale;
 
-    /*
-     * Draw exactly what the user positioned.
-     */
-    ctx.drawImage(
-      image,
-      x,
-      y,
-      width,
-      height
-    );
+    ctx.drawImage(image, x, y, width, height);
 
-    /*
-     * Convert to JPEG.
-     */
-    const blob = await new Promise<Blob | null>(
-      (resolve) => {
-        canvas.toBlob(
-          resolve,
-          "image/jpeg",
-          0.92
-        );
-      }
-    );
-
-    if (!blob) {
-      throw new Error(
-        "Failed to process image"
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error("Could not process the selected photo."));
+          }
+        },
+        "image/jpeg",
+        0.9
       );
+    });
+
+    if (blob.size === 0) {
+      throw new Error("The processed image is empty.");
     }
 
-    /*
-     * Create final upload file.
-     */
-    const adjustedFile = new File(
+    const uploadFile = new File(
       [blob],
       "profile-photo.jpg",
-      {
-        type: "image/jpeg",
-      }
+      { type: "image/jpeg" }
     );
 
-    /*
-     * Show final image immediately.
-     */
-    const finalPreviewUrl =
-      URL.createObjectURL(blob);
+    console.log("Profile photo upload:", {
+      studentId: user.studentId,
+      size: uploadFile.size,
+      type: uploadFile.type
+    });
 
-    setProfilePhoto(finalPreviewUrl);
-
-    /*
-     * Upload adjusted image.
-     */
-    const result =
-      await uploadStudentProfilePhoto(
-        user.studentId || "",
-        adjustedFile
-      );
-
-    /*
-     * Update profile state.
-     */
-    setStudentProfile(
-      (prev: any) => ({
-        ...prev,
-        profilePhoto:
-          result.profilePhoto,
-      })
+    // Keep using the existing backend API.
+    const result = await uploadStudentProfilePhoto(
+      user.studentId,
+      uploadFile
     );
 
-    /*
-     * Close adjustment screen.
-     */
-    setPhotoAdjustOpen(false);
-
-    setPendingPhoto(null);
-
-    if (pendingPhotoUrl) {
-      URL.revokeObjectURL(
-        pendingPhotoUrl
+    if (!result?.profilePhoto) {
+      throw new Error(
+        "The server did not return a saved profile photo path."
       );
     }
 
+    // Build the permanent server URL, not a temporary blob URL.
+    const savedPath = result.profilePhoto;
+    const savedPhotoUrl = /^https?:\/\//i.test(savedPath)
+      ? savedPath
+      : `https://api.madhapharma.in${
+          savedPath.startsWith("/") ? "" : "/"
+        }${savedPath}`;
+
+    // Update the profile only after the upload succeeds.
+    setStudentProfile((prev: any) => ({
+      ...prev,
+      profilePhoto: savedPath
+    }));
+
+    // Clear the previous displayed URL if it was temporary.
+    setProfilePhoto((previous) => {
+      if (previous?.startsWith("blob:")) {
+        URL.revokeObjectURL(previous);
+      }
+      return savedPhotoUrl;
+    });
+
+    setPhotoAdjustOpen(false);
+    setPendingPhoto(null);
+
+    URL.revokeObjectURL(pendingPhotoUrl);
     setPendingPhotoUrl(null);
 
     setPhotoZoom(1);
     setPhotoX(0);
     setPhotoY(0);
 
-    toast.success(
-      "Profile photo updated"
-    );
+    toast.success("Profile photo updated successfully.");
 
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Profile photo upload failed:", error);
 
-    console.error(
-      "Profile photo upload error:",
-      error
-    );
+    const message =
+      error instanceof Error
+        ? error.message
+        : "An unexpected error occurred.";
 
-    toast.error(
-      "Photo upload failed"
-    );
+    toast.error(`Photo upload failed: ${message}`);
 
   } finally {
-
     setUploadingPhoto(false);
-
   }
 };
+
 
 const cancelPhotoAdjustment = () => {
   setPhotoAdjustOpen(false);

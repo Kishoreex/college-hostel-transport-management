@@ -756,7 +756,8 @@ const [cancelRequest, setCancelRequest] =
 }, [cancelRequest]);
   const [cancelRejectPopupOpen, setCancelRejectPopupOpen] = useState(false);
   const [announcements, setAnnouncements] = useState<any[]>([]);
-
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const profileFileInputRef = useRef<HTMLInputElement>(null);
   
 const handlePhotoChange = async (
   e: React.ChangeEvent<HTMLInputElement>
@@ -2173,22 +2174,13 @@ outpass.outpassState==="Outside Hostel"
     }}
   />
 </div>
-             
-<label
-  className="absolute bottom-0 right-0 z-10 bg-blue-600 text-white rounded-full p-2 shadow-md border-2 border-white cursor-pointer"
-  aria-label="Choose profile picture"
->
-  <Camera size={14} />
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handlePhotoChange}
-    aria-label="Choose profile picture"
-    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-  />
-</label>
-
-           
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 shadow-md border-2 border-white active:scale-90 transition-transform"
+                    >
+                      <Camera size={12} />
+                    </button>
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   </div>
                   <div className="flex-1 mt-10">
                     <h2 className="text-xl font-bold text-gray-800">{studentProfile?.studentName}</h2>
@@ -3230,21 +3222,9 @@ onChange={(e) => setVacateReason(e.target.value)}
     }}
   />
 </div>
-                
-<label
-  className="absolute bottom-0 right-0 z-10 bg-white text-blue-600 rounded-full p-2 shadow-md cursor-pointer"
-  aria-label="Choose profile picture"
->
-  <Camera size={14} />
-  <input
-    type="file"
-    accept="image/*"
-    onChange={handlePhotoChange}
-    aria-label="Choose profile picture"
-    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-  />
-</label>
-
+                    <button onClick={() => profileFileInputRef.current?.click()} className="absolute bottom-0 right-0 bg-white text-blue-600 rounded-full p-1 shadow-md active:scale-90 transition-transform">
+                      <Camera size={12} />
+                    </button>
                     <input ref={profileFileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   </div>
                   <div>

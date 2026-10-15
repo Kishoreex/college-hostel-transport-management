@@ -2188,7 +2188,7 @@ outpass.outpassState==="Outside Hostel"
   />
 </label>
 
-           
+                    <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
                   </div>
                   <div className="flex-1 mt-10">
                     <h2 className="text-xl font-bold text-gray-800">{studentProfile?.studentName}</h2>

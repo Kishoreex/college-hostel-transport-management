@@ -9,25 +9,46 @@ export async function getStudentProfile(studentId: string) {
 
   return await response.json();
 }
+
 export async function uploadStudentProfilePhoto(
   studentId: string,
   file: File
 ) {
+  const token = localStorage.getItem("authToken");
   const formData = new FormData();
 
   formData.append("file", file);
 
   const response = await fetch(
-    `https://api.madhapharma.in/api/Student/${studentId}/profile-photo`,
+    `https://api.madhapharma.in/api/Student/${encodeURIComponent(studentId)}/profile-photo`,
     {
       method: "POST",
+      headers: {
+        ...(token
+          ? { Authorization: `Bearer ${token}` }
+          : {}),
+      },
       body: formData,
     }
   );
 
-  if (!response.ok) {
-    throw new Error(await response.text());
+  const text = await response.text();
+  let result: any;
+
+  try {
+    result = text ? JSON.parse(text) : null;
+  } catch {
+    result = text;
   }
 
-  return await response.json();
+  if (!response.ok) {
+    throw new Error(
+      result?.message ||
+      result?.title ||
+      (typeof result === "string" ? result : null) ||
+      `Photo upload failed (${response.status})`
+    );
+  }
+
+  return result;
 }

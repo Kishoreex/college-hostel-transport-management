@@ -596,10 +596,17 @@ const handleEnableLocation = async () => {
       listener = await App.addListener(
         "appStateChange",
         ({ isActive }) => {
-          if (isActive) {
-            console.log("📱 App became active - checking location again");
-            checkLocationPermission();
-          }
+     
+if (isActive) {
+  if (photoPickerActiveRef.current) {
+    console.log("📷 Returned from photo picker; skipping location recheck");
+    return;
+  }
+
+  console.log("📍 App became active - checking location again");
+  checkLocationPermission();
+}
+
         }
       );
     };
@@ -638,6 +645,8 @@ const handleEnableLocation = async () => {
   useRef<signalR.HubConnection | null>(null);
 
 
+
+const photoPickerActiveRef = useRef(false);
 
   const [
   vacatingRequest,
@@ -3217,10 +3226,33 @@ onChange={(e) => setVacateReason(e.target.value)}
     }}
   />
 </div>
-                    <button onClick={() => profileFileInputRef.current?.click()} className="absolute bottom-0 right-0 bg-white text-blue-600 rounded-full p-1 shadow-md active:scale-90 transition-transform">
-                      <Camera size={12} />
-                    </button>
-                    <input ref={profileFileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+
+
+<button
+  type="button"
+  onClick={() => {
+    photoPickerActiveRef.current = true;
+    profileFileInputRef.current?.click();
+  }}
+  className="absolute bottom-0 right-0 bg-white text-blue-600 rounded-full p-1 shadow-md active:scale-90 transition-transform"
+>
+  <Camera size={12} />
+</button>
+
+<input
+  ref={profileFileInputRef}
+  type="file"
+  accept="image/*"
+  className="hidden"
+  onChange={(e) => {
+    photoPickerActiveRef.current = false;
+    handlePhotoChange(e);
+  }}
+  onCancel={() => {
+    photoPickerActiveRef.current = false;
+  }}
+/>
+
                   </div>
                   <div>
                     <h3 className="font-bold text-xl">{user.name}</h3>

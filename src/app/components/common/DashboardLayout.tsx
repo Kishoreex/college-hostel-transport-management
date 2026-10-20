@@ -6,7 +6,7 @@ import {
 }
 from "../../../api/notificationService";
 
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate } from 'react-router';
 import {
   AppBar,
   Toolbar,
@@ -38,7 +38,6 @@ import {
   AlertCircle,
   Clock,
   Info,
-  MoreHorizontal,
 } from 'lucide-react';
 import type { User } from '../../types';
 
@@ -109,10 +108,8 @@ console.log(
   "Current User",
   JSON.stringify(user, null, 2)
 );
-const navigate = useNavigate();
-const location = useLocation();
-
-const [drawerOpen, setDrawerOpen] = useState(false);
+  const navigate = useNavigate();
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationCount,
 setNotificationCount] =
@@ -244,37 +241,19 @@ if (user.role === 'admin') {
 
   return (
     <div className="min-h-screen bg-gray-50">
-{/* Premium Dashboard Header */}
-<AppBar
-  position="sticky"
-  elevation={0}
-  sx={{
-    bgcolor: '#1e40af',
-    boxShadow: 'none',
-  }}
->
-  <Toolbar className="px-4">
-    <div className="flex-1 min-w-0">
-      <h1 className="text-white font-bold text-lg truncate">
-        {title}
-      </h1>
-      <p className="text-blue-100 text-xs truncate">
-        Welcome, {user.name}
-      </p>
-    </div>
+      {/* Mobile Header */}
+      <AppBar position="sticky" sx={{ bgcolor: '#1e40af' }} elevation={0}>
+        <Toolbar className="px-4">
+          <IconButton edge="start" color="inherit" onClick={() => setDrawerOpen(true)} sx={{ mr: 2 }}>
+            <MenuIcon size={24} />
+          </IconButton>
 
-    <IconButton
-      color="inherit"
-      aria-label="Open notifications"
-      onClick={() => setNotificationsOpen(true)}
-      sx={{ ml: 1 }}
-    >
-      <Badge badgeContent={unreadCount} color="error">
-        <Bell size={22} />
-      </Badge>
-    </IconButton>
-  </Toolbar>
-</AppBar>
+          <div className="flex-1">
+            <h1 className="text-white font-bold text-lg truncate">{title}</h1>
+          </div>
+
+     </Toolbar>
+      </AppBar>
       
       {/* Side Drawer */}
       <Drawer
@@ -442,95 +421,10 @@ if (user.role === 'admin') {
         </div>
       </Drawer>
 
-{/* Main Content */}
-<main className="min-h-[calc(100vh-64px)] px-4 py-6 pb-32 md:px-8 md:py-8 md:pb-20">
-  {children}
-</main>
-
-
-{/* Premium Floating Navigation */}
-<nav
-  aria-label="Main navigation"
-  className="fixed bottom-5 left-1/2 z-[1200] -translate-x-1/2
-    w-[calc(100%-32px)] max-w-[440px]
-    rounded-[22px] border border-slate-200/80
-    bg-white/95 backdrop-blur-2xl
-    shadow-[0_12px_40px_rgba(15,23,42,0.12)]
-    px-2 py-2"
-  style={{
-    paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
-  }}
->
-  <div className="flex items-center justify-around gap-1">
-    {items.slice(0, 4).map((item) => {
-      const path = location.pathname.toLowerCase();
-
-      const active =
-        item.active === true ||
-        (item.label === 'Dashboard' &&
-          path === `/${user.role.toLowerCase()}`) ||
-        (item.label === 'Hostel Management' &&
-          path.startsWith('/admin/hostel')) ||
-        (item.label === 'Transport Management' &&
-          path.startsWith('/admin/transport')) ||
-        (item.label === 'Settings' &&
-          path.startsWith('/admin/settings'));
-
-      return (
-        <button
-          key={item.label}
-          type="button"
-          aria-label={item.label}
-          aria-current={active ? 'page' : undefined}
-          onClick={() => {
-            item.onClick();
-            setDrawerOpen(false);
-          }}
-          className={`group relative flex min-w-0 flex-1 flex-col
-            items-center justify-center gap-1.5 rounded-2xl
-            px-1.5 py-2.5 transition-all duration-200
-            focus-visible:outline-none focus-visible:ring-2
-            focus-visible:ring-blue-500 ${
-              active
-                ? 'bg-slate-900 text-white shadow-md shadow-slate-900/15'
-                : 'text-slate-500 hover:bg-slate-100 hover:text-slate-900'
-            }`}
-        >
-          <span
-            className={`transition-transform duration-200 ${
-              active ? 'scale-105' : 'group-hover:-translate-y-0.5'
-            }`}
-          >
-            {item.icon}
-          </span>
-
-          <span className="w-full truncate text-center text-[10px]
-            font-semibold tracking-wide">
-            {item.label}
-          </span>
-        </button>
-      );
-    })}
-
-    <button
-      type="button"
-      aria-label="More navigation options"
-      onClick={() => setDrawerOpen(true)}
-      className="flex min-w-0 flex-1 flex-col items-center
-        justify-center gap-1.5 rounded-2xl px-1.5 py-2.5
-        text-slate-500 transition-colors duration-200
-        hover:bg-slate-100 hover:text-slate-900
-        focus-visible:outline-none focus-visible:ring-2
-        focus-visible:ring-blue-500"
-    >
-      <MoreHorizontal size={23} strokeWidth={1.8} />
-      <span className="text-[10px] font-semibold tracking-wide">
-        More
-      </span>
-    </button>
-  </div>
-</nav>
-
+      {/* Main Content */}
+      <main className="p-4 pb-20">
+        {children}
+      </main>
     </div>
   );
 }

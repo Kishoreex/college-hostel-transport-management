@@ -6,7 +6,7 @@ import {
 }
 from "../../../api/notificationService";
 
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import {
   AppBar,
   Toolbar,
@@ -38,6 +38,7 @@ import {
   AlertCircle,
   Clock,
   Info,
+  MoreHorizontal,
 } from 'lucide-react';
 import type { User } from '../../types';
 
@@ -108,8 +109,10 @@ console.log(
   "Current User",
   JSON.stringify(user, null, 2)
 );
-  const navigate = useNavigate();
-  const [drawerOpen, setDrawerOpen] = useState(false);
+const navigate = useNavigate();
+const location = useLocation();
+
+const [drawerOpen, setDrawerOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [notificationCount,
 setNotificationCount] =
@@ -241,19 +244,37 @@ if (user.role === 'admin') {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header */}
-      <AppBar position="sticky" sx={{ bgcolor: '#1e40af' }} elevation={0}>
-        <Toolbar className="px-4">
-          <IconButton edge="start" color="inherit" onClick={() => setDrawerOpen(true)} sx={{ mr: 2 }}>
-            <MenuIcon size={24} />
-          </IconButton>
+{/* Premium Dashboard Header */}
+<AppBar
+  position="sticky"
+  elevation={0}
+  sx={{
+    bgcolor: '#1e40af',
+    boxShadow: 'none',
+  }}
+>
+  <Toolbar className="px-4">
+    <div className="flex-1 min-w-0">
+      <h1 className="text-white font-bold text-lg truncate">
+        {title}
+      </h1>
+      <p className="text-blue-100 text-xs truncate">
+        Welcome, {user.name}
+      </p>
+    </div>
 
-          <div className="flex-1">
-            <h1 className="text-white font-bold text-lg truncate">{title}</h1>
-          </div>
-
-     </Toolbar>
-      </AppBar>
+    <IconButton
+      color="inherit"
+      aria-label="Open notifications"
+      onClick={() => setNotificationsOpen(true)}
+      sx={{ ml: 1 }}
+    >
+      <Badge badgeContent={unreadCount} color="error">
+        <Bell size={22} />
+      </Badge>
+    </IconButton>
+  </Toolbar>
+</AppBar>
       
       {/* Side Drawer */}
       <Drawer
@@ -421,10 +442,91 @@ if (user.role === 'admin') {
         </div>
       </Drawer>
 
-      {/* Main Content */}
-      <main className="p-4 pb-20">
-        {children}
-      </main>
+{/* Main Content */}
+<main className="p-4 pb-32 md:pb-20">
+  {children}
+</main>
+
+{/* Premium Floating Bottom Navigation */}
+<nav
+  aria-label="Main navigation"
+  className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[1200]
+             w-[calc(100%-24px)] max-w-md
+             rounded-2xl border border-white/70
+             bg-white/90 backdrop-blur-xl
+             shadow-[0_8px_35px_rgba(15,23,42,0.18)]
+             px-2 py-2"
+  style={{
+    paddingBottom: 'max(8px, env(safe-area-inset-bottom))',
+  }}
+>
+  <div className="flex items-center justify-around gap-1">
+    {items.slice(0, 4).map((item, index) => {
+      const path = location.pathname.toLowerCase();
+
+      const active =
+        item.active === true ||
+        (item.label === 'Dashboard' &&
+          path === `/${user.role.toLowerCase()}`) ||
+        (item.label === 'Hostel Management' &&
+          path.startsWith('/admin/hostel')) ||
+        (item.label === 'Transport Management' &&
+          path.startsWith('/admin/transport')) ||
+        (item.label === 'Settings' &&
+          path.startsWith('/admin/settings'));
+
+      return (
+        <button
+          key={item.label}
+          type="button"
+          aria-label={item.label}
+          aria-current={active ? 'page' : undefined}
+          onClick={item.onClick}
+          className={`flex min-w-0 flex-1 flex-col items-center
+                      justify-center gap-1 rounded-xl px-1 py-2
+                      transition-all duration-200
+                      focus-visible:outline-none
+                      focus-visible:ring-2 focus-visible:ring-blue-500
+                      ${
+                        active
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-blue-600'
+                      }`}
+        >
+          <span
+            className={`transition-transform duration-200 ${
+              active ? '-translate-y-0.5 scale-110' : ''
+            }`}
+          >
+            {item.icon}
+          </span>
+
+          <span className="w-full truncate text-center text-[10px] font-semibold">
+            {item.label}
+          </span>
+        </button>
+      );
+    })}
+
+    <button
+      type="button"
+      aria-label="More navigation options"
+      onClick={() => setDrawerOpen(true)}
+      className="flex min-w-0 flex-1 flex-col items-center
+                 justify-center gap-1 rounded-xl px-1 py-2
+                 text-gray-500 transition-all duration-200
+                 hover:bg-gray-50 hover:text-blue-600
+                 focus-visible:outline-none
+                 focus-visible:ring-2 focus-visible:ring-blue-500"
+    >
+      <MoreHorizontal size={23} />
+
+      <span className="text-[10px] font-semibold">
+        More
+      </span>
+    </button>
+  </div>
+</nav>
     </div>
   );
 }

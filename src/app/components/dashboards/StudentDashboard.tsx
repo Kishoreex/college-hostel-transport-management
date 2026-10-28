@@ -36,6 +36,11 @@ import {
 } from "../../../api/authService";
 import { useState, useRef, useEffect } from 'react';
 import { Geolocation } from '@capacitor/geolocation';
+import {
+  Camera as CapCamera,
+  CameraResultType,
+  CameraSource
+} from '@capacitor/camera';
 import { App } from '@capacitor/app';
 import { Capacitor, registerPlugin } from '@capacitor/core';
 
@@ -132,68 +137,48 @@ export default function StudentDashboard({ user, onLogout }: StudentDashboardPro
 
 const [locationAllowed, setLocationAllowed] = useState(false);
 const [checkingLocation, setCheckingLocation] = useState(true);
+const [photoFlowActive, setPhotoFlowActive] = useState(false);
 
 const [locationDisclosureOpen, setLocationDisclosureOpen] = useState(false);
 
-const checkLocationPermission = async () => {
+const checkLocationPermission = async (silent = false) => {
   try {
-    setCheckingLocation(true);
+    if (!silent) {
+      setCheckingLocation(true);
+    }
 
     const permission = await Geolocation.checkPermissions();
 
-    console.log(
-      "📍 Current location permission:",
-      permission.location
-    );
-
-    // =====================================================
-    // LOCATION ALREADY GRANTED
-    // =====================================================
-
     if (permission.location === "granted") {
+      // Silent check (app resume): permission is enough, no GPS test
+      if (silent) {
+        setLocationAllowed(true);
+        return;
+      }
 
       try {
-
         await Geolocation.getCurrentPosition({
           enableHighAccuracy: true,
           timeout: 10000,
         });
-
-        console.log("✅ Location is working");
-
         setLocationAllowed(true);
-        return;
-
       } catch (gpsError) {
-
-        console.error(
-          "❌ GPS is not available:",
-          gpsError
-        );
-
+        console.error("GPS is not available:", gpsError);
         setLocationAllowed(false);
-        return;
       }
+      return;
     }
 
-    // =====================================================
-    // PERMISSION NOT GRANTED
-    // =====================================================
-
     setLocationAllowed(false);
-
   } catch (error) {
-
-    console.error(
-      "❌ Location permission check failed:",
-      error
-    );
-
-    setLocationAllowed(false);
-
+    console.error("Location permission check failed:", error);
+    if (!silent) {
+      setLocationAllowed(false);
+    }
   } finally {
-
-    setCheckingLocation(false);
+    if (!silent) {
+      setCheckingLocation(false);
+    }
   }
 };
 const handleLocationDisclosureAgree = async () => {
@@ -584,41 +569,57 @@ const handleEnableLocation = async () => {
   }
 };
 
-  useEffect(() => {
-    checkLocationPermission();
 
-    // IMPORTANT:
-    // When student goes to Android Settings and enables
-    // location, then comes back to the app, check again.
-    let listener: any;
+useEffect(() => {
+  let listener: { remove: () => Promise<void> } | undefined;
+  let mounted = true;
 
-    const setupAppListener = async () => {
-      listener = await App.addListener(
-        "appStateChange",
-        ({ isActive }) => {
-     
-if (isActive) {
-  if (photoPickerActiveRef.current) {
-    console.log("📷 Returned from photo picker; skipping location recheck");
-    return;
-  }
+  void checkLocationPermission();
 
-  console.log("📍 App became active - checking location again");
-  checkLocationPermission();
-}
+  const setupAppListener = async () => {
+    const registeredListener = await App.addListener(
+      "appStateChange",
+      ({ isActive }) => {
+        if (!isActive || !mounted) return;
 
+        // Coming back from the photo picker: do NOT block the screen
+        if (
+          photoPickerActiveRef.current ||
+          skipNextResumeLocationCheckRef.current
+        ) {
+          skipNextResumeLocationCheckRef.current = false;
+
+          setTimeout(() => {
+            photoPickerActiveRef.current = false;
+            setPhotoFlowActive(false);
+          }, 8000);
+
+          return;
         }
-      );
-    };
 
-    setupAppListener();
-
-    return () => {
-      if (listener) {
-        listener.remove();
+        void checkLocationPermission(true);
       }
-    };
-  }, []);
+    );
+
+    if (mounted) {
+      listener = registeredListener;
+    } else {
+      await registeredListener.remove();
+    }
+  };
+
+  void setupAppListener();
+
+  return () => {
+    mounted = false;
+    if (listener) {
+      void listener.remove();
+    }
+  };
+}, []);
+
+
+
   const getApprovalLabel = (item: any) => {
   if (item.status?.toLowerCase() !== "pending") {
     return item.status;
@@ -645,8 +646,8 @@ if (isActive) {
   useRef<signalR.HubConnection | null>(null);
 
 
-
 const photoPickerActiveRef = useRef(false);
+const skipNextResumeLocationCheckRef = useRef(false);
 
   const [
   vacatingRequest,
@@ -768,6 +769,93 @@ const [cancelRequest, setCancelRequest] =
   const fileInputRef = useRef<HTMLInputElement>(null);
   const profileFileInputRef = useRef<HTMLInputElement>(null);
   
+const openAdjustFromWebPath = async (webPath: string) => {
+  const response = await fetch(webPath);
+  const blob = await response.blob();
+
+  if (blob.size > 10 * 1024 * 1024) {
+    toast.error("Photo must be smaller than 10 MB.");
+    return;
+  }
+
+  const file = new File(
+    [blob],
+    "profile-photo.jpg",
+    { type: blob.type || "image/jpeg" }
+  );
+
+  setPendingPhoto(file);
+  setPendingPhotoUrl(URL.createObjectURL(blob));
+  setPhotoZoom(1);
+  setPhotoX(0);
+  setPhotoY(0);
+  setPhotoAdjustOpen(true);
+};
+
+const pickProfilePhoto = async () => {
+  // Browser: use the normal file input
+  if (!Capacitor.isNativePlatform()) {
+    if (profileDialogOpen) {
+      profileFileInputRef.current?.click();
+    } else {
+      fileInputRef.current?.click();
+    }
+    return;
+  }
+
+  try {
+    photoPickerActiveRef.current = true;
+    skipNextResumeLocationCheckRef.current = true;
+    setPhotoFlowActive(true);
+
+    const photo = await CapCamera.getPhoto({
+      source: CameraSource.Photos,
+      resultType: CameraResultType.Uri,
+      quality: 90,
+    });
+
+    if (photo.webPath) {
+      await openAdjustFromWebPath(photo.webPath);
+    }
+  } catch (error: any) {
+    const msg = String(error?.message || error || "");
+    if (!/cancel/i.test(msg)) {
+      toast.error("Photo error: " + msg);
+    }
+  } finally {
+    setTimeout(() => {
+      photoPickerActiveRef.current = false;
+      skipNextResumeLocationCheckRef.current = false;
+      setPhotoFlowActive(false);
+    }, 1500);
+  }
+};
+
+useEffect(() => {
+  if (!Capacitor.isNativePlatform()) return;
+
+  let handle: { remove: () => Promise<void> } | undefined;
+  let alive = true;
+
+  App.addListener("appRestoredResult", (event: any) => {
+    if (
+      event?.pluginId === "Camera" &&
+      event?.methodName === "getPhoto" &&
+      event?.success &&
+      event?.data?.webPath
+    ) {
+      void openAdjustFromWebPath(event.data.webPath);
+    }
+  }).then((h) => {
+    if (alive) handle = h;
+    else void h.remove();
+  });
+
+  return () => {
+    alive = false;
+    if (handle) void handle.remove();
+  };
+}, []);
 
 const handlePhotoChange = (
   e: React.ChangeEvent<HTMLInputElement>
@@ -775,6 +863,8 @@ const handlePhotoChange = (
   const input = e.currentTarget;
   const file = input.files?.[0];
 
+  photoPickerActiveRef.current = false;
+  skipNextResumeLocationCheckRef.current = false;
   // Allow selecting the same image again.
   input.value = "";
 
@@ -1780,7 +1870,7 @@ const getStatusColor = (status: string) => {
   // BLOCK APP UNTIL LOCATION IS ENABLED
   // =========================================================
 
-  if (checkingLocation) {
+    if (checkingLocation && !photoFlowActive && !photoAdjustOpen && !uploadingPhoto) {
     return (
       <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center">
         <div className="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mb-5">
@@ -1798,7 +1888,7 @@ const getStatusColor = (status: string) => {
     );
   }
 
-  if (!locationAllowed) {
+    if (!locationAllowed && !photoFlowActive && !photoAdjustOpen && !uploadingPhoto) {
     return (
       <div className="fixed inset-0 z-[99999] bg-white flex flex-col items-center justify-center p-6 text-center">
 
@@ -2178,8 +2268,9 @@ outpass.outpassState==="Outside Hostel"
     }}
   />
 </div>
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
+                                    <button
+                      type="button"
+                                        onClick={() => { void pickProfilePhoto(); }}
                       className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 shadow-md border-2 border-white active:scale-90 transition-transform"
                     >
                       <Camera size={12} />
@@ -3230,10 +3321,7 @@ onChange={(e) => setVacateReason(e.target.value)}
 
 <button
   type="button"
-  onClick={() => {
-    photoPickerActiveRef.current = true;
-    profileFileInputRef.current?.click();
-  }}
+onClick={() => { void pickProfilePhoto(); }}
   className="absolute bottom-0 right-0 bg-white text-blue-600 rounded-full p-1 shadow-md active:scale-90 transition-transform"
 >
   <Camera size={12} />
@@ -3250,6 +3338,7 @@ onChange={(e) => setVacateReason(e.target.value)}
   }}
   onCancel={() => {
     photoPickerActiveRef.current = false;
+    skipNextResumeLocationCheckRef.current = false;
   }}
 />
 

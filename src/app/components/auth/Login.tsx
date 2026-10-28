@@ -499,7 +499,7 @@ className="w-full bg-white rounded-3xl border border-blue-100 shadow-lg hover:sh
                 value={credentials.id}
                 onChange={(e) => setCredentials({ ...credentials, id: e.target.value })}
                 className="w-full py-2 bg-transparent border-0 focus:outline-none text-gray-800 text-base placeholder-gray-300"
-                placeholder="e.g. 2111222104010"
+                placeholder="e.g. 211122210"
                 required
               />
             </div>
